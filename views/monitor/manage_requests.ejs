@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Product Requests</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>Pending Product Requests</h1>
+
+  <% if (requests && requests.length > 0) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Employee Name</th>
+          <th>Product Name</th>
+          <th>Quantity</th>
+          <th>Purpose</th>
+          <th>Requested At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% requests.forEach(request => { %>
+          <tr>
+            <td><%= request.employee_name %></td>
+            <td><%= request.product_name %></td>
+            <td><%= request.quantity %></td>
+            <td><%= request.purpose %></td>
+            <td><%= request.requested_at %></td>
+            <td>
+              <form action="/monitor/requests/approve/<%= request.request_id %>" method="POST" style="display: inline;">
+                <button type="submit">Approve</button>
+              </form>
+              <form action="/monitor/requests/reject/<%= request.request_id %>" method="POST" style="display: inline;">
+                <button type="submit">Reject</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No pending product requests.</p>
+  <% } %>
+
+  <p><a href="/monitor/dashboard">Back to Monitor Dashboard</a></p>
+</body>
+</html>

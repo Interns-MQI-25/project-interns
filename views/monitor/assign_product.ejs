@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Assign Product</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>Assign Product</h1>
+
+  <% if (request) { %>
+    <p><strong>Employee:</strong> <%= request.employee_name %></p>
+    <p><strong>Product:</strong> <%= request.product_name %></p>
+    <p><strong>Requested Quantity:</strong> <%= request.quantity %></p>
+    <p><strong>Purpose:</strong> <%= request.purpose %></p>
+
+    <form action="/monitor/assignments/assign/<%= request.request_id %>" method="POST">
+      <div>
+        <label for="quantity">Quantity to Assign:</label>
+        <input type="number" id="quantity" name="quantity" required min="1" max="<%= request.quantity %>">
+        <%-- Max quantity should also consider available stock --%>
+      </div>
+      <%-- Monitor ID will be determined from the logged-in user --%>
+      <button type="submit">Assign Product</button>
+    </form>
+  <% } else { %>
+    <p>Product request not found.</p>
+  <% } %>
+
+  <p><a href="/monitor/requests/pending">Back to Pending Requests</a></p>
+</body>
+</html>

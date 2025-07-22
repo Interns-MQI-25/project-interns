@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Report</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>Stock Report</h1>
+
+  <% if (stockData && stockData.length > 0) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Total Quantity</th>
+          <th>Quantity Assigned</th>
+          <th>Quantity Available</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% stockData.forEach(item => { %>
+          <tr>
+            <td><%= item.product_name %></td>
+            <td><%= item.total_quantity %></td>
+            <td><%= item.quantity_assigned %></td>
+            <td><%= item.quantity_available %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No stock data available.</p>
+  <% } %>
+
+  <p><a href="/monitor/dashboard">Back to Monitor Dashboard</a></p>
+</body>
+</html>

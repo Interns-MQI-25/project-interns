@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Assigned Products</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>Assigned Products</h1>
+
+  <% if (assignments && assignments.length > 0) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Employee Name</th>
+          <th>Assigned Quantity</th>
+          <th>Assigned By</th>
+          <th>Assigned At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% assignments.forEach(assignment => { %>
+          <tr>
+            <td><%= assignment.product_name %></td>
+            <td><%= assignment.employee_name %></td>
+            <td><%= assignment.quantity %></td>
+            <td><%= assignment.monitor_name %></td>
+            <td><%= assignment.assigned_at %></td>
+            <td>
+              <% if (!assignment.is_returned) { %>
+                <form action="/monitor/assignments/return/<%= assignment.assignment_id %>" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to mark this product as returned?');">
+                  <button type="submit">Return</button>
+                </form>
+              <% } else { %>
+                Returned
+              <% } %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No products currently assigned.</p>
+  <% } %>
+
+  <p><a href="/monitor/dashboard">Back to Monitor Dashboard</a></p>
+</body>
+</html>

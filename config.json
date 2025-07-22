@@ -1,0 +1,28 @@
+{
+  "development": {
+    "database": {
+      "host": "localhost",
+      "user": "root",
+      "password": "",
+      "database": "asset_management",
+      "port": 3306
+    },
+    "server": {
+      "port": 3000,
+      "session_secret": "asset-management-secret-key-dev"
+    }
+  },
+  "production": {
+    "database": {
+      "host": "localhost",
+      "user": "root",
+      "password": "",
+      "database": "asset_management",
+      "port": 3306
+    },
+    "server": {
+      "port": 3000,
+      "session_secret": "change-this-in-production"
+    }
+  }
+}

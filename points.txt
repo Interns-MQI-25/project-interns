@@ -1,0 +1,36 @@
+Employees->
+    1. dashboard: here it should show the four buttons 
+        buttons: 
+            1. records(to show the history of employee)
+            2. requests(from where it will send the request to its manager)
+            3. stock(available products in the stock)
+            4. account history
+
+    2. records: it will show the history of the products asssigned to that employee
+    3. requests: from where the employee will send the request for getting the product they need for their on going project
+    4. stock: available products in the stock(also include the quantity column(no of available products))
+    5. account history: such as userid, change password logout
+
+Manager->
+    1. dashboard: here it should show the four buttons 
+        buttons: 
+            1. records(to show the history of employee)
+            2. approvals(from where the manager will approve the request for getting the product they need for their on going project)
+            3. stock(available products in the stock)
+            4. account history 
+    2. approvals: from where the manager will approve the request for getting the product they need for their on going project
+    3. records: it will show the history of the products asssigned by the manager
+    4. stock: available products in the stock(also include the quantity column(no of available products))
+    5. account history: such as userid, change password logout
+
+Admin->
+    1. Add products to inventory
+    2. Assign product
+    3. Return product
+    4. stock(also include the quantity column(no of available products))
+
+This entire website should be responsive following the concept of REST
+
+Database: mysql2 with NodeJS
+Front end: ejs, tailwind
+Backend: express, node

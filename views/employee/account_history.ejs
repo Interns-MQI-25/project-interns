@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Account History</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>My Account Information</h1>
+
+  <% if (employee) { %>
+    <p><strong>Full Name:</strong> <%= employee.full_name %></p>
+    <p><strong>Username:</strong> <%= employee.username %></p>
+    <p><strong>Email:</strong> <%= employee.email %></p>
+    <p><strong>Department:</strong> <%= employee.department_name %></p>
+    <%-- Add other relevant account details here --%>
+  <% } else { %>
+    <p>Account information not found.</p>
+  <% } %>
+
+  <p><a href="/employee/dashboard">Back to Employee Dashboard</a></p>
+</body>
+</html>

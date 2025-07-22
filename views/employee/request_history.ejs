@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Request History</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>My Product Request History</h1>
+
+  <% if (requests && requests.length > 0) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Quantity</th>
+          <th>Purpose</th>
+          <th>Status</th>
+          <th>Requested At</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% requests.forEach(request => { %>
+          <tr>
+            <td><%= request.product_name %></td>
+            <td><%= request.quantity %></td>
+            <td><%= request.purpose %></td>
+            <td><%= request.status %></td>
+            <td><%= request.requested_at %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No product requests found.</p>
+  <% } %>
+
+  <p><a href="/employee/dashboard">Back to Employee Dashboard</a></p>
+</body>
+</html>

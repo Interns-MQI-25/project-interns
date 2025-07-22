@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Assignment Records</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>My Product Assignment Records</h1>
+
+  <% if (assignments && assignments.length > 0) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th>Assigned Quantity</th>
+          <th>Assigned By (Monitor)</th>
+          <th>Assigned At</th>
+          <th>Status</th>
+          <th>Returned At</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% assignments.forEach(assignment => { %>
+          <tr>
+            <td><%= assignment.product_name %></td>
+            <td><%= assignment.quantity %></td>
+            <td><%= assignment.monitor_name %></td>
+            <td><%= assignment.assigned_at %></td>
+            <td><%= assignment.is_returned ? 'Returned' : 'Assigned' %></td>
+            <td><%= assignment.returned_at || 'N/A' %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No product assignments found for your account.</p>
+  <% } %>
+
+  <p><a href="/employee/dashboard">Back to Employee Dashboard</a></p>
+</body>
+</html>

@@ -1,3 +1,6 @@
+UI: HTML, Tailwind CSS
+Backend: Express and node with sql
+
 Types of people who are going to use the website:
     1. employees: 
         - they will be able to view their own information,

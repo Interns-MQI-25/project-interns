@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Product Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#4f46e5',
+                            600: '#4338ca',
+                            700: '#3730a3',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 font-inter">
+    <% if (typeof user !== 'undefined' && user) { %>
+        <%- include('partials/navbar') %>
+    <% } %>
+    
+    <main class="<%= typeof user !== 'undefined' && user ? 'ml-64 p-6' : '' %>">
+        <%- include('partials/messages') %>
+        <%- body %>
+    </main>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>

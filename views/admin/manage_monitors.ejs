@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Monitors</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>Manage Monitors</h1>
+
+  <h2>Current Monitors</h2>
+  <% if (monitors && monitors.length > 0) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Full Name</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Assigned From</th>
+          <th>Assigned Until</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% monitors.forEach(monitor => { %>
+          <tr>
+            <td><%= monitor.full_name %></td>
+            <td><%= monitor.username %></td>
+            <td><%= monitor.email %></td>
+            <td><%= monitor.start_date %></td>
+            <td><%= monitor.end_date %></td>
+            <td>
+              <form action="/admin/manage-monitors/unassign/<%= monitor.user_id %>" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to unassign this monitor?');">
+                <button type="submit">Unassign</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No monitors currently assigned.</p>
+  <% } %>
+
+  <h2>Assign New Monitor</h2>
+  <% if (availableEmployees && availableEmployees.length > 0) { %>
+    <form action="/admin/manage-monitors/assign" method="POST">
+      <div>
+        <label for="employee_id">Select Employee:</label>
+        <select name="employee_id" id="employee_id" required>
+          <% availableEmployees.forEach(employee => { %>
+            <option value="<%= employee.user_id %>"><%= employee.full_name %> (<%= employee.username %>)</option>
+          <% }); %>
+        </select>
+      </div>
+      <div>
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" required>
+      </div>
+      <div>
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date" required>
+      </div>
+      <button type="submit">Assign Monitor</button>
+    </form>
+  <% } else { %>
+    <p>No employees available to assign as monitors.</p>
+  <% } %>
+
+  <p><a href="/admin/dashboard">Back to Admin Dashboard</a></p>
+</body>
+</html>

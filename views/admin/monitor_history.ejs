@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Monitor History</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>Monitor Assignment History</h1>
+
+  <% if (assignments && assignments.length > 0) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Monitor Name</th>
+          <th>Assigned By</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% assignments.forEach(assignment => { %>
+          <tr>
+            <td><%= assignment.monitor_name %></td>
+            <td><%= assignment.assigned_by_name %></td>
+            <td><%= assignment.start_date %></td>
+            <td><%= assignment.end_date %></td>
+            <td><%= assignment.is_active ? 'Active' : 'Inactive' %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No monitor assignment history found.</p>
+  <% } %>
+
+  <p><a href="/admin/dashboard">Back to Admin Dashboard</a></p>
+</body>
+</html>

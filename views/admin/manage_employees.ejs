@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Employees - Registration Requests</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>Manage Employee Registration Requests</h1>
+
+  <% if (requests && requests.length > 0) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Full Name</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Department ID</th>
+          <th>Requested At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% requests.forEach(request => { %>
+          <tr>
+            <td><%= request.full_name %></td>
+            <td><%= request.username %></td>
+            <td><%= request.email %></td>
+            <td><%= request.department_id %></td>
+            <td><%= request.requested_at %></td>
+            <td>
+              <form action="/admin/manage-employees/requests/approve/<%= request.request_id %>" method="POST" style="display: inline;">
+                <button type="submit">Approve</button>
+              </form>
+              <form action="/admin/manage-employees/requests/reject/<%= request.request_id %>" method="POST" style="display: inline;">
+                <button type="submit">Reject</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>No pending registration requests.</p>
+  <% } %>
+
+  <p><a href="/admin/dashboard">Back to Admin Dashboard</a></p>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Employee</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h1>Edit Employee</h1>
+
+  <% if (employee) { %>
+    <form action="/admin/manage-employees/edit/<%= employee.user_id %>" method="POST">
+      <div>
+        <label for="full_name">Full Name:</label>
+        <input type="text" id="full_name" name="full_name" value="<%= employee.full_name %>" required>
+      </div>
+      <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" value="<%= employee.username %>" required>
+      </div>
+      <div>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" value="<%= employee.email %>" required>
+      </div>
+      <%-- Department cannot be edited via this form based on the current schema --%>
+      <button type="submit">Update Employee</button>
+    </form>
+  <% } else { %>
+    <p>Employee not found.</p>
+  <% } %>
+
+  <p><a href="/admin/manage-employees/view">Back to View Employees</a></p>
+</body>
+</html>

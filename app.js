@@ -19,6 +19,9 @@ connection.connect(err => {
   console.log('Connected to the database.');
 });
 
+// Make the connection available to models
+module.exports.connection = connection;
+
 // Set up EJS as the view engine
 app.set('view engine', 'ejs');
 
@@ -31,7 +34,14 @@ app.use(bodyParser.json());
 
 // Routes
 const authRoutes = require('./routes/auth');
+const employeeRoutes = require('./routes/employee');
+const monitorRoutes = require('./routes/monitor');
+const adminRoutes = require('./routes/admin');
+
 app.use('/', authRoutes);
+app.use('/employee', employeeRoutes);
+app.use('/monitor', monitorRoutes);
+app.use('/admin', adminRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 3000;

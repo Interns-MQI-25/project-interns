@@ -79,7 +79,7 @@ A comprehensive web application for managing product inventory and employee requ
    PORT=3000
    NODE_ENV=development
    ```
-
+e
 5. **Start the application**
    ```bash
    # Development mode

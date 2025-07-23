@@ -1,13 +1,112 @@
-# Project Interns - Product Management System
+# Product Management System
 
-## Overview
-A comprehensive product management system designed for organizations to manage inventory, employee requests, and monitor approvals efficiently.
+A comprehensive web application for managing product inventory and employee requests with role-based access control.
 
-## User Roles
+## Features
 
-### 1. Employees
-- View their own information and department details
-- Request products for project purposes
+### For Employees
+- Submit product requests for projects
+- View request history and status
+- Browse available stock
+- View assigned product records
+- Account management
+
+### For Monitors
+- Approve/reject product requests
+- Add new products to inventory
+- Assign products to employees
+- Process product returns
+- View assignment records and reports
+- Manage stock levels
+
+### For Admins
+- Manage employee accounts
+- Process registration requests
+- Assign/unassign monitor roles
+- View comprehensive system history
+- Manage stock and generate reports
+- Full system oversight
+
+## Technology Stack
+
+- **Frontend**: EJS templates, CSS, JavaScript
+- **Backend**: Node.js, Express.js
+- **Database**: MySQL
+- **Authentication**: Express sessions with bcryptjs
+- **Additional**: Font Awesome icons, responsive design
+
+## Prerequisites
+
+- Node.js (v14 or higher)
+- MySQL (v8.0 or higher)
+- npm or yarn package manager
+
+## Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd product-management-system
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up the database**
+   ```bash
+   # Login to MySQL
+   mysql -u root -p
+   
+   # Create database and tables
+   source database.sql
+   
+   # Insert sample data (optional)
+   source sample_data.sql
+   ```
+
+4. **Configure environment variables**
+   Edit `.env` file with your database credentials:
+   ```env
+   DB_HOST=localhost
+   DB_USER=root
+   DB_PASSWORD=your_mysql_password
+   DB_NAME=product_management_system
+   DB_PORT=3306
+   
+   SESSION_SECRET=your_session_secret_key_here
+   PORT=3000
+   NODE_ENV=development
+   ```
+
+5. **Start the application**
+   ```bash
+   # Development mode
+   npm run dev
+   
+   # Production mode
+   npm start
+   ```
+
+6. **Access the application**
+   Open your browser and navigate to `http://localhost:3000`
+
+## Default Login Credentials
+
+After running the sample data script:
+
+### Admin Account
+- **Username**: admin
+- **Password**: admin123
+
+### Employee Accounts
+- **Username**: john.doe | **Password**: password123
+- **Username**: jane.smith | **Password**: password123
+- **Username**: mike.wilson | **Password**: password123
+- **Username**: sarah.johnson | **Password**: password123
+
+Note: John Doe and Mike Wilson are also assigned as monitors in the sample data.
 - Track status of their requests
 - Access personal account history
 

@@ -123,6 +123,14 @@ CREATE TABLE stock_history (
 INSERT INTO users (username, full_name, email, password, role) 
 VALUES ('admin', 'System Administrator', 'admin@example.com', '$2y$10$somehashedpassword', 'admin');
 
+-- Insert sample departments
+INSERT INTO departments (department_name, description) VALUES 
+('IT', 'Information Technology Department'),
+('HR', 'Human Resources Department'),
+('Finance', 'Finance and Accounting Department'),
+('Marketing', 'Marketing and Sales Department'),
+('Operations', 'Operations and Logistics Department');
+
 -- Create indexes for performance
 CREATE INDEX idx_product_requests_status ON product_requests(status);
 CREATE INDEX idx_product_assignments_employee ON product_assignments(employee_id);

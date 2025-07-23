@@ -1,0 +1,95 @@
+<!-- Sidebar -->
+<div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
+    <div class="flex flex-col h-full">
+        <!-- Logo -->
+        <div class="flex items-center justify-center h-16 bg-primary-600 text-white">
+            <h1 class="text-xl font-bold">PMS</h1>
+        </div>
+        
+        <!-- User Info -->
+        <div class="p-4 bg-gray-50 border-b">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold">
+                    <%= user.full_name.charAt(0).toUpperCase() %>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900"><%= user.full_name %></p>
+                    <p class="text-sm text-gray-500 capitalize"><%= user.role %></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <a href="/dashboard" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                <i class="fas fa-tachometer-alt mr-3"></i>
+                Dashboard
+            </a>
+            
+            <% if (user.role === 'employee') { %>
+                <a href="/employee/records" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-history mr-3"></i>
+                    Records
+                </a>
+                <a href="/employee/requests" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-plus-circle mr-3"></i>
+                    Requests
+                </a>
+                <a href="/employee/stock" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-boxes mr-3"></i>
+                    Stock
+                </a>
+            <% } else if (user.role === 'monitor') { %>
+                <a href="/monitor/approvals" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-check-circle mr-3"></i>
+                    Approvals
+                </a>
+                <a href="/monitor/records" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-history mr-3"></i>
+                    Records
+                </a>
+                <a href="/monitor/stock" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-boxes mr-3"></i>
+                    Stock
+                </a>
+                <a href="/monitor/inventory" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-warehouse mr-3"></i>
+                    Inventory
+                </a>
+                <a href="/monitor/reports" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    Reports
+                </a>
+            <% } else if (user.role === 'admin') { %>
+                <a href="/admin/employees" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-users mr-3"></i>
+                    Manage Employees
+                </a>
+                <a href="/admin/monitors" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-user-shield mr-3"></i>
+                    Manage Monitors
+                </a>
+                <a href="/admin/stock" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-boxes mr-3"></i>
+                    Stock Management
+                </a>
+                <a href="/admin/history" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-history mr-3"></i>
+                    History
+                </a>
+                <a href="/admin/registration-requests" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-user-plus mr-3"></i>
+                    Registration Requests
+                </a>
+            <% } %>
+        </nav>
+        
+        <!-- Logout -->
+        <div class="p-4 border-t">
+            <a href="/logout" class="flex items-center px-4 py-2 text-red-600 rounded-lg hover:bg-red-50">
+                <i class="fas fa-sign-out-alt mr-3"></i>
+                Logout
+            </a>
+        </div>
+    </div>
+</div>

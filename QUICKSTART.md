@@ -10,14 +10,14 @@
 # Make the script executable and run for Linux/MacOS
 cd scripts
 chmod +x setup.sh
-./setup.sh
+.\setup.sh
 ```
 
 2. For Windows(You doublee-click the files to directly execute)
 ```ps1
 # Make the script executable and run for Windows(PowerShell)
 cd scripts
-./setup.ps1
+.\setup.ps1
 ```
 
 ```batch
@@ -175,6 +175,7 @@ npm start
 ✅ **Department Management**  
 
 ## 📁 Project Structure
+
 
 ```
 product-management-system/

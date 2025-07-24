@@ -32,8 +32,35 @@
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                         <div>
+                            <label for="asset_type" class="block text-sm font-medium text-gray-700">Asset Type</label>
+                            <select id="asset_type" name="asset_type" required
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">Select Asset Type</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Software">Software</option>
+                                <option value="License">License</option>
+                                <option value="Laptop">Laptop</option>
+                                <option value="Misc">Miscellaneous</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="product_category" class="block text-sm font-medium text-gray-700">Product Category</label>
+                            <input type="text" id="product_category" name="product_category" required 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
                             <label for="quantity" class="block text-sm font-medium text-gray-700">Initial Quantity</label>
                             <input type="number" id="quantity" name="quantity" min="0" required 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="model_number" class="block text-sm font-medium text-gray-700">Model Number</label>
+                            <input type="text" id="model_number" name="model_number" 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="serial_number" class="block text-sm font-medium text-gray-700">Serial Number</label>
+                            <input type="text" id="serial_number" name="serial_number" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                         <div class="md:flex md:items-end">
@@ -66,7 +93,10 @@
                                     Product Name
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Description
+                                    Asset Type
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Category
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Current Quantity
@@ -89,8 +119,13 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             <%= product.product_name %>
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                <%= product.asset_type %>
+                                            </span>
+                                        </td>
                                         <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
-                                            <%= product.description || 'No description' %>
+                                            <%= product.product_category || 'No category' %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span class="font-semibold"><%= product.quantity %></span>
@@ -122,7 +157,7 @@
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                         No products found
                                     </td>
                                 </tr>

@@ -42,6 +42,10 @@ app.set('views', path.join(__dirname, 'views'));
 // Middleware to check authentication
 const requireAuth = (req, res, next) => {
     if (req.session.user) {
+        // Set headers to prevent caching of authenticated pages
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
         next();
     } else {
         res.redirect('/login');
@@ -71,6 +75,103 @@ app.get('/', (req, res) => {
 // Authentication routes
 app.get('/login', (req, res) => {
     res.render('auth/login', { messages: req.flash() });
+});
+
+// Forgot Password routes
+app.get('/auth/forgot-password', (req, res) => {
+    res.render('auth/forgot-password', { messages: req.flash(), user: req.session.user || null });
+});
+
+// Change Password page route
+app.get('/auth/change-password', requireAuth, (req, res) => {
+    res.render('auth/forgot-password', { messages: req.flash(), user: req.session.user || null });
+});
+
+app.post('/auth/forgot-password', async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        req.flash('error', 'Email is required.');
+        return res.redirect('/auth/forgot-password');
+    }
+
+    try {
+        // Check if user exists with the email
+        const [users] = await pool.execute(
+            'SELECT * FROM users WHERE email = ?',
+            [email]
+        );
+
+        if (users.length === 0) {
+            req.flash('error', 'No account found with that email.');
+            return res.redirect('/auth/forgot-password');
+        }
+
+        // TODO: Implement sending password reset email with token
+        // For now, just flash success message
+        req.flash('success', 'If an account with that email exists, a password reset link has been sent.');
+        res.redirect('/login');
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        req.flash('error', 'An error occurred while processing your request.');
+        res.redirect('/auth/forgot-password');
+    }
+});
+
+// Change Password routes
+app.post('/auth/change-password', requireAuth, async (req, res) => {
+    const { current_password, new_password, confirm_new_password } = req.body;
+
+    if (!current_password || !new_password || !confirm_new_password) {
+        req.flash('error', 'All password fields are required.');
+        return res.redirect('/auth/forgot-password');
+    }
+
+    if (new_password !== confirm_new_password) {
+        req.flash('error', 'New password and confirmation do not match.');
+        return res.redirect('/auth/forgot-password');
+    }
+
+    try {
+        // Get user from session
+        const userId = req.session.user.user_id;
+
+        // Fetch current password hash from DB
+        const [users] = await pool.execute(
+            'SELECT password FROM users WHERE user_id = ?',
+            [userId]
+        );
+
+        if (users.length === 0) {
+            req.flash('error', 'User not found.');
+            return res.redirect('/auth/forgot-password');
+        }
+
+        const user = users[0];
+
+        // Verify current password
+        const isMatch = await bcrypt.compare(current_password, user.password);
+        if (!isMatch) {
+            req.flash('error', 'Current password is incorrect.');
+            return res.redirect('/auth/forgot-password');
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+
+        // Update password in DB
+        await pool.execute(
+            'UPDATE users SET password = ? WHERE user_id = ?',
+            [hashedPassword, userId]
+        );
+
+        req.flash('success', 'Password changed successfully.');
+        res.redirect('/employee/account');
+    } catch (error) {
+        console.error('Change password error:', error);
+        req.flash('error', 'An error occurred while changing password.');
+        res.redirect('/auth/forgot-password');
+    }
 });
 
 app.post('/login', async (req, res) => {
@@ -154,13 +255,23 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
 });
 
-// Dashboard routes
 app.get('/dashboard', requireAuth, async (req, res) => {
     try {
         const role = req.session.user.role;
-        
+
         if (role === 'employee') {
-            res.render('employee/dashboard', { user: req.session.user });
+            // Fetch recent approved product requests for the employee
+            const [recentRequests] = await pool.execute(`
+                SELECT pr.request_id, p.product_name, pr.quantity, pr.status, pr.requested_at
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                WHERE e.user_id = ? AND pr.status IN ('approved', 'rejected', 'pending')
+                ORDER BY pr.requested_at DESC
+                LIMIT 5
+            `, [req.session.user.user_id]);
+
+            res.render('employee/dashboard', { user: req.session.user, recentRequests });
         } else if (role === 'monitor') {
             res.render('monitor/dashboard', { user: req.session.user });
         } else if (role === 'admin') {
@@ -172,11 +283,43 @@ app.get('/dashboard', requireAuth, async (req, res) => {
     }
 });
 
-// Employee routes
+app.post('/employee/return-product', requireAuth, requireRole(['employee']), async (req, res) => {
+    const { assignment_id } = req.body;
+
+    if (!assignment_id) {
+        req.flash('error', 'Invalid request.');
+        return res.redirect('/employee/records');
+    }
+
+    try {
+        const [assignments] = await pool.execute(
+            'SELECT * FROM product_assignments WHERE assignment_id = ? AND is_returned = 0',
+            [assignment_id]
+        );
+
+        if (assignments.length === 0) {
+            req.flash('error', 'Assignment not found or already returned.');
+            return res.redirect('/employee/records');
+        }
+
+        await pool.execute(
+            'UPDATE product_assignments SET is_returned = 1, return_date = NOW() WHERE assignment_id = ?',
+            [assignment_id]
+        );
+
+        req.flash('success', 'Product returned successfully.');
+        res.redirect('/employee/records');
+    } catch (error) {
+        console.error('Return product error:', error);
+        req.flash('error', 'Error processing return.');
+        res.redirect('/employee/records');
+    }
+});
+
 app.get('/employee/records', requireAuth, requireRole(['employee']), async (req, res) => {
     try {
         const [records] = await pool.execute(`
-            SELECT pa.*, p.product_name, u.full_name as monitor_name 
+            SELECT pa.*, p.product_name, u.full_name as monitor_name, pa.return_date, pa.assignment_id, pa.is_returned
             FROM product_assignments pa
             JOIN products p ON pa.product_id = p.product_id
             JOIN users u ON pa.monitor_id = u.user_id
@@ -189,6 +332,28 @@ app.get('/employee/records', requireAuth, requireRole(['employee']), async (req,
     } catch (error) {
         console.error('Records error:', error);
         res.render('error', { message: 'Error loading records' });
+    }
+});
+
+app.get('/employee/account', requireAuth, requireRole(['employee']), async (req, res) => {
+    try {
+        const [employeeDetails] = await pool.execute(`
+            SELECT u.user_id, u.username, u.full_name, u.email, u.role, e.is_active, d.department_name
+            FROM users u
+            JOIN employees e ON u.user_id = e.user_id
+            JOIN departments d ON e.department_id = d.department_id
+            WHERE u.user_id = ?
+        `, [req.session.user.user_id]);
+
+        if (!employeeDetails || employeeDetails.length === 0) {
+            req.flash('error', 'Employee details not found.');
+            return res.redirect('/employee/dashboard');
+        }
+
+        res.render('employee/account', { user: req.session.user, employee: employeeDetails[0] });
+    } catch (error) {
+        console.error('Account error:', error);
+        res.render('error', { message: 'Error loading account details' });
     }
 });
 
@@ -213,24 +378,58 @@ app.get('/employee/requests', requireAuth, requireRole(['employee']), async (req
 });
 
 app.post('/employee/request-product', requireAuth, requireRole(['employee']), async (req, res) => {
-    const { product_id, quantity, purpose } = req.body;
-    
+    const { product_id, quantity, purpose, return_date } = req.body;
+
+    // Input validation
+    if (!product_id || !quantity || !purpose) {
+        req.flash('error', 'Product, quantity, and purpose are required fields.');
+        return res.redirect('/employee/requests');
+    }
+
+    // Validate quantity is a positive integer
+    const qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty <= 0) {
+        req.flash('error', 'Quantity must be a positive number.');
+        return res.redirect('/employee/requests');
+    }
+
     try {
         const [employee] = await pool.execute(
             'SELECT employee_id FROM employees WHERE user_id = ?',
             [req.session.user.user_id]
         );
-        
-        await pool.execute(
-            'INSERT INTO product_requests (employee_id, product_id, quantity, purpose) VALUES (?, ?, ?, ?)',
-            [employee[0].employee_id, product_id, quantity, purpose]
+
+        if (!employee || employee.length === 0) {
+            req.flash('error', 'Employee record not found. Cannot submit request.');
+            return res.redirect('/employee/requests');
+        }
+
+        // Check if product exists and has sufficient quantity
+        const [products] = await pool.execute(
+            'SELECT quantity FROM products WHERE product_id = ?',
+            [product_id]
         );
-        
+
+        if (!products || products.length === 0) {
+            req.flash('error', 'Selected product does not exist.');
+            return res.redirect('/employee/requests');
+        }
+
+        if (products[0].quantity < qty) {
+            req.flash('error', `Requested quantity exceeds available stock (${products[0].quantity}).`);
+            return res.redirect('/employee/requests');
+        }
+
+        await pool.execute(
+            'INSERT INTO product_requests (employee_id, product_id, quantity, purpose, return_date) VALUES (?, ?, ?, ?, ?)',
+            [employee[0].employee_id, product_id, qty, purpose, return_date || null]
+        );
+
         req.flash('success', 'Product request submitted successfully');
         res.redirect('/employee/requests');
     } catch (error) {
         console.error('Request product error:', error);
-        req.flash('error', 'Error submitting request');
+        req.flash('error', `Error submitting request: ${error.message}`);
         res.redirect('/employee/requests');
     }
 });

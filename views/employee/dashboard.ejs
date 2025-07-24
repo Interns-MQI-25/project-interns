@@ -90,7 +90,7 @@
             </a>
             
             <!-- Account History Card -->
-            <a href="#" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
+            <a href="/employee/account" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
                 <div class="p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
@@ -103,7 +103,7 @@
                                 </dt>
                                 <dd>
                                     <div class="text-lg font-medium text-gray-900">
-                                        Settings
+                                        View Profile
                                     </div>
                                 </dd>
                             </dl>
@@ -119,8 +119,30 @@
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
                     Recent Activity
                 </h3>
-                <div class="text-gray-500">
-                    <p>No recent activity to display.</p>
+                <div class="text-gray-700">
+                    <% if (recentRequests && recentRequests.length > 0) { %>
+                        <ul class="divide-y divide-gray-200">
+                            <% recentRequests.forEach(request => { %>
+                                <li class="py-3 flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900"><%= request.product_name %></p>
+                                        <p class="text-sm text-gray-500">Quantity: <%= request.quantity %></p>
+                                    </div>
+                                    <div>
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                            <%= request.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                                request.status === 'rejected' ? 'bg-red-100 text-red-800' : 
+                                                'bg-yellow-100 text-yellow-800' %>">
+                                            <%= request.status.charAt(0).toUpperCase() + request.status.slice(1) %>
+                                        </span>
+                                        <p class="text-xs text-gray-400 mt-1"><%= new Date(request.requested_at).toLocaleDateString() %></p>
+                                    </div>
+                                </li>
+                            <% }); %>
+                        </ul>
+                    <% } else { %>
+                        <p>No recent activity to display.</p>
+                    <% } %>
                 </div>
             </div>
         </div>

@@ -25,7 +25,7 @@
                     New Product Request
                 </h3>
                 <form action="/employee/request-product" method="POST" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <label for="product_id" class="block text-sm font-medium text-gray-700">Product</label>
                             <select id="product_id" name="product_id" required 
@@ -41,6 +41,11 @@
                         <div>
                             <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
                             <input type="number" id="quantity" name="quantity" min="1" required 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="return_date" class="block text-sm font-medium text-gray-700">Return Date</label>
+                            <input type="date" id="return_date" name="return_date" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                         <div class="md:flex md:items-end">

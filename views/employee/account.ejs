@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Employee Account - Product Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-50">
+    <%- include('../partials/navbar') %>
+
+    <main class="ml-64 p-6">
+        <%- include('../partials/messages') %>
+
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Employee Account Details</h1>
+            <p class="text-gray-600">Profile and status information</p>
+        </div>
+
+        <div class="flex justify-center">
+            <div class="bg-white shadow-lg rounded-lg p-8 max-w-3xl w-full border border-gray-300">
+                <div class="mb-6 border-b border-gray-200 pb-4">
+                    <h2 class="text-2xl font-semibold text-gray-900 tracking-wide">Profile Information</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-gray-700">
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Full Name</dt>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= employee.full_name %></dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Username</dt>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= employee.username %></dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Email</dt>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= employee.email %></dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Role</dt>
+                        <dd class="mt-1 text-base font-medium text-gray-900 capitalize"><%= employee.role %></dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Department</dt>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= employee.department_name %></dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active Status</dt>
+                        <dd class="mt-1">
+                            <% if (employee.is_active) { %>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-900 shadow-sm">
+                                    Active
+                                </span>
+                            <% } else { %>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-900 shadow-sm">
+                                    Inactive
+                                </span>
+                            <% } %>
+                        </dd>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-4">
+                    <a href="/auth/forgot-password" class="inline-block px-6 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-center">
+                        Forgot Password
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

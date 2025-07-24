@@ -82,6 +82,11 @@ app.get('/auth/forgot-password', (req, res) => {
     res.render('auth/forgot-password', { messages: req.flash(), user: req.session.user || null });
 });
 
+// Change Password page route
+app.get('/auth/change-password', requireAuth, (req, res) => {
+    res.render('auth/forgot-password', { messages: req.flash(), user: req.session.user || null });
+});
+
 app.post('/auth/forgot-password', async (req, res) => {
     const { email } = req.body;
 
@@ -109,6 +114,62 @@ app.post('/auth/forgot-password', async (req, res) => {
     } catch (error) {
         console.error('Forgot password error:', error);
         req.flash('error', 'An error occurred while processing your request.');
+        res.redirect('/auth/forgot-password');
+    }
+});
+
+// Change Password routes
+app.post('/auth/change-password', requireAuth, async (req, res) => {
+    const { current_password, new_password, confirm_new_password } = req.body;
+
+    if (!current_password || !new_password || !confirm_new_password) {
+        req.flash('error', 'All password fields are required.');
+        return res.redirect('/auth/forgot-password');
+    }
+
+    if (new_password !== confirm_new_password) {
+        req.flash('error', 'New password and confirmation do not match.');
+        return res.redirect('/auth/forgot-password');
+    }
+
+    try {
+        // Get user from session
+        const userId = req.session.user.user_id;
+
+        // Fetch current password hash from DB
+        const [users] = await pool.execute(
+            'SELECT password FROM users WHERE user_id = ?',
+            [userId]
+        );
+
+        if (users.length === 0) {
+            req.flash('error', 'User not found.');
+            return res.redirect('/auth/forgot-password');
+        }
+
+        const user = users[0];
+
+        // Verify current password
+        const isMatch = await bcrypt.compare(current_password, user.password);
+        if (!isMatch) {
+            req.flash('error', 'Current password is incorrect.');
+            return res.redirect('/auth/forgot-password');
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+
+        // Update password in DB
+        await pool.execute(
+            'UPDATE users SET password = ? WHERE user_id = ?',
+            [hashedPassword, userId]
+        );
+
+        req.flash('success', 'Password changed successfully.');
+        res.redirect('/employee/account');
+    } catch (error) {
+        console.error('Change password error:', error);
+        req.flash('error', 'An error occurred while changing password.');
         res.redirect('/auth/forgot-password');
     }
 });

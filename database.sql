@@ -133,7 +133,6 @@ INSERT INTO departments (department_name, description) VALUES
 
 -- Create indexes for performance
 ALTER TABLE product_requests ADD COLUMN return_date TIMESTAMP NULL;
-
 CREATE INDEX idx_product_requests_status ON product_requests(status);
 CREATE INDEX idx_product_assignments_employee ON product_assignments(employee_id);
 CREATE INDEX idx_product_assignments_returned ON product_assignments(is_returned);

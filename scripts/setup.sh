@@ -34,6 +34,10 @@ EOF
 
 echo "Starting Product Management System..."
 
+# Moving out of scripts directory
+cd ..
+
+
 # Create admin account
 echo "Creating admin account..."
 node fix-admin.js
@@ -43,6 +47,7 @@ echo "Configuring database connection..."
 node setup-db.js
 
 # Check if .env exists and create from example if not
+
 if [ ! -f .env ]; then
     echo "Warning: .env file not found"
     if [ -f .env.example ]; then

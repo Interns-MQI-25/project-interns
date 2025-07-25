@@ -67,7 +67,16 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= record.return_date ? new Date(record.return_date).toLocaleDateString() : '-' %>
+                                            <% if (!record.is_returned) { %>
+                                                <form action="/employee/return-product" method="POST" onsubmit="return confirm('Are you sure you want to return this product?');">
+                                                    <input type="hidden" name="assignment_id" value="<%= record.assignment_id %>" />
+                                                    <button type="submit" title="Return Product" class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                                        <i class="fas fa-box-open mr-1"></i> Return
+                                                    </button>
+                                                </form>
+                                            <% } else { %>
+                                                <%= record.return_date ? new Date(record.return_date).toLocaleDateString() : '-' %>
+                                            <% } %>
                                         </td>
                                     </tr>
                                 <% }); %>

@@ -66,7 +66,7 @@ const requireRole = (roles) => {
 // Routes
 app.get('/', (req, res) => {
     if (req.session.user) {
-        res.redirect('/dashboard');
+        res.redirect('/dashboard'); 
     } else {
         res.redirect('/login');
     }

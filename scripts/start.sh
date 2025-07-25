@@ -3,6 +3,11 @@
 # Quick Start Script for Product Management System
 
 echo "🚀 Starting Product Management System..."
+echo "Create admin username and password"
+    node fix-admin.js   
+
+echo "Connect the project with mySQL"
+    node setup-db.js
 
 # Check if .env exists
 if [ ! -f .env ]; then
@@ -12,4 +17,4 @@ fi
 
 # Start the application in development mode
 echo "🔧 Starting development server on port 3000..."
-npm run dev
+    npm run dev

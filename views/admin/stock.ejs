@@ -35,10 +35,12 @@
                                     </dt>
                                     <dd>
                                         <div class="text-lg font-medium text-gray-900">
-                                            <%= stat.total_items %> items
+                                            Available: <%= stat.available_quantity %> items
+                                            
                                         </div>
                                         <div class="text-xs text-gray-500">
-                                            Available: <%= stat.available_quantity %>
+                                            Total items: <%= stat.total_items %> 
+                                            
                                         </div>
                                         <% if (stat.calibration_items > 0) { %>
                                             <div class="text-xs text-orange-600">
@@ -67,7 +69,7 @@
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
                     Recent Stock Activity
                 </h3>
-                <div class="flow-root">
+                <div class="flow-root max-h-[400px] overflow-y-auto">
                     <ul class="-mb-8">
                         <% recentActivity.slice(0, 5).forEach((activity, index) => { %>
                             <li>
@@ -112,115 +114,189 @@
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
                     Complete Product Inventory
                 </h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Product Details
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Asset Type
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Serial/Model
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Total Stock
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Currently Assigned
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Available
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Calibration
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Added By
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Added Date
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <% if (products && products.length > 0) { %>
-                                <% products.forEach(product => { %>
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">
-                                                <%= product.product_name %>
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                <%= product.product_category %>
-                                            </div>
-                                            <% if (product.description) { %>
-                                                <div class="text-xs text-gray-400 truncate max-w-xs">
-                                                    <%= product.description.substring(0, 50) %>...
-                                                </div>
-                                            <% } %>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                <%= product.asset_type %>
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div><strong>SN:</strong> <%= product.serial_number || 'N/A' %></div>
-                                            <div><strong>Model:</strong> <%= product.model_number || 'N/A' %></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="font-semibold"><%= (product.quantity || 0) + (product.currently_assigned || 0) %></span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="font-semibold text-yellow-600"><%= product.currently_assigned || 0 %></span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="font-semibold text-green-600"><%= product.quantity || 0 %></span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <% if (product.calibration_required) { %>
-                                                <% if (product.calibration_status === 'Overdue') { %>
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                        Overdue
-                                                    </span>
-                                                <% } else if (product.calibration_status === 'Due Soon') { %>
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                        Due Soon
-                                                    </span>
-                                                <% } else { %>
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                        Current
-                                                    </span>
-                                                <% } %>
-                                                <div class="text-xs text-gray-400">
-                                                    <%= product.calibration_frequency || 'N/A' %>
-                                                </div>
-                                            <% } else { %>
-                                                <span class="text-gray-400">Not Required</span>
-                                            <% } %>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= product.added_by_name || 'System' %>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= new Date(product.added_at).toLocaleDateString() %>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr>
-                                    <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                        No products found
-                                    </td>
-                                </tr>
+                <div class="mb-4">
+    <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+            <input type="text" id="productFilter" placeholder="Search products..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div class="flex-1">
+            <select id="assetTypeFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Select Asset Type</option>
+                <option value="Accessories">Accessories</option>
+                <option value="Consumables">Consumables</option>
+                <option value="Embedded Devices">Embedded Devices</option>
+                <option value="Hardware">Hardware</option>
+                <option value="Infrastructure">Infrastructure</option>
+                <option value="IT Equipment">IT Equipment</option>
+                <option value="Lab Equipment">Lab Equipment</option>
+                <option value="Laptop">Laptop</option>
+                <option value="License">License</option>
+                <option value="Measuring Instruments">Measuring Instruments</option>
+                <option value="Misc">Miscellaneous</option>
+                <option value="Network Equipment">Network Equipment</option>
+                <option value="Prototypes">Prototypes</option>
+                <option value="Software">Software</option>
+                <option value="Test Equipment">Test Equipment</option>
+                <option value="Tooling">Tooling</option>
+                <option value="Vehicle Equipment">Vehicle Equipment</option>            
+            </select>
+        </div>
+        <div class="flex-1">
+            <select id="calibrationFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <option value="">All Calibration Status</option>
+                <option value="Overdue">Overdue</option>
+                <option value="Due Soon">Due Soon</option>
+                <option value="Current">Current</option>
+                <option value="Not Required">Not Required</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50 sticky top-0 z-10">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Product Details
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Asset Type
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Serial/Model
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Stock
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Currently Assigned
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Available
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Calibration
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Added By
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Added Date
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200" id="productTableBody">
+            <% if (products && products.length > 0) { %>
+                <% products.forEach(product => { %>
+                    <tr class="product-row" 
+                        data-product-name="<%= product.product_name.toLowerCase() %>"
+                        data-asset-type="<%= product.asset_type %>"
+                        data-calibration-status="<%= product.calibration_required ? product.calibration_status : 'Not Required' %>">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">
+                                <%= product.product_name %>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                <%= product.product_category %>
+                            </div>
+                            <% if (product.description) { %>
+                                <div class="text-xs text-gray-400 truncate max-w-xs">
+                                    <%= product.description.substring(0, 50) %>...
+                                </div>
                             <% } %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                <%= product.asset_type %>
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div><strong>SN:</strong> <%= product.serial_number || 'N/A' %></div>
+                            <div><strong>Model:</strong> <%= product.model_number || 'N/A' %></div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="font-semibold"><%= (product.quantity || 0) + (product.currently_assigned || 0) %></span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="font-semibold text-yellow-600"><%= product.currently_assigned || 0 %></span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="font-semibold text-green-600"><%= product.quantity || 0 %></span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <% if (product.calibration_required) { %>
+                                <% if (product.calibration_status === 'Overdue') { %>
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Overdue
+                                    </span>
+                                <% } else if (product.calibration_status === 'Due Soon') { %>
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        Due Soon
+                                    </span>
+                                <% } else { %>
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Current
+                                    </span>
+                                <% } %>
+                                <div class="text-xs text-gray-400">
+                                    <%= product.calibration_frequency || 'N/A' %>
+                                </div>
+                            <% } else { %>
+                                <span class="text-gray-400">Not Required</span>
+                            <% } %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <%= product.added_by_name || 'System' %>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <%= new Date(product.added_at).toLocaleDateString() %>
+                        </td>
+                    </tr>
+                <% }); %>
+            <% } else { %>
+                <tr>
+                    <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        No products found
+                    </td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<script>
+const productFilter = document.getElementById('productFilter');
+const assetTypeFilter = document.getElementById('assetTypeFilter');
+const calibrationFilter = document.getElementById('calibrationFilter');
+const productRows = document.querySelectorAll('.product-row');
+
+function filterProducts() {
+    const searchTerm = productFilter.value.toLowerCase();
+    const assetType = assetTypeFilter.value;
+    const calibrationStatus = calibrationFilter.value;
+
+    productRows.forEach(row => {
+        const productName = row.dataset.productName;
+        const rowAssetType = row.dataset.assetType;
+        const rowCalibrationStatus = row.dataset.calibrationStatus;
+
+        const matchesSearch = productName.includes(searchTerm);
+        const matchesAssetType = !assetType || rowAssetType === assetType;
+        const matchesCalibration = !calibrationStatus || rowCalibrationStatus === calibrationStatus;
+
+        if (matchesSearch && matchesAssetType && matchesCalibration) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+productFilter.addEventListener('input', filterProducts);
+assetTypeFilter.addEventListener('change', filterProducts);
+calibrationFilter.addEventListener('change', filterProducts);
+</script>            </div>
         </div>
     </main>
 </body>

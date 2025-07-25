@@ -64,8 +64,20 @@ CREATE TABLE registration_requests (
 -- Products table
 CREATE TABLE products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
-    product_name VARCHAR(100) NOT NULL,
-    description TEXT,
+    name VARCHAR(100) NOT NULL,
+    product_category ENUM('hardware', 'software', 'furniture', 'electronics', 'vehicle', 'general') NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    model VARCHAR(100),
+    serial VARCHAR(100),
+    purchase_date DATE,
+    pr_no VARCHAR(50),
+    po_number VARCHAR(50),
+    inward_date DATE,
+    inwarded_by VARCHAR(100),
+    requires_calibration BOOLEAN DEFAULT FALSE,
+    last_calibration_date DATE,
+    calibration_frequency_months INT DEFAULT 12,
+    calibration_notes TEXT,
     quantity INT NOT NULL DEFAULT 0,
     added_by INT NOT NULL,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -136,4 +148,55 @@ CREATE INDEX idx_product_requests_status ON product_requests(status);
 CREATE INDEX idx_product_assignments_employee ON product_assignments(employee_id);
 CREATE INDEX idx_product_assignments_returned ON product_assignments(is_returned);
 CREATE INDEX idx_registration_requests_status ON registration_requests(status);
-CREATE INDEX idx_monitor_assignments_active ON monitor_assignments(is_active);
+CREATE INDEX idx_monitor_assignments_active ON monitor_assignments(is_active);DROP TABLE IF EXISTS product_assignments;
+DROP TABLE IF EXISTS product_requests;
+DROP TABLE IF EXISTS stock_history;
+DROP TABLE IF EXISTS products;
+
+CREATE TABLE products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    product_category ENUM('hardware', 'software', 'furniture', 'electronics', 'vehicle', 'general') NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    model VARCHAR(100),
+    serial VARCHAR(100),
+    purchase_date DATE,
+    pr_no VARCHAR(50),
+    po_number VARCHAR(50),
+    inward_date DATE,
+    inwarded_by VARCHAR(100),
+    requires_calibration BOOLEAN DEFAULT FALSE,
+    last_calibration_date DATE,
+    calibration_frequency_months INT DEFAULT 12,
+    calibration_notes TEXT,
+    quantity INT NOT NULL DEFAULT 0,
+    added_by INT NOT NULL,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (added_by) REFERENCES users(user_id)
+);
+DROP TABLE IF EXISTS product_assignments;
+DROP TABLE IF EXISTS product_requests;
+DROP TABLE IF EXISTS stock_history;
+DROP TABLE IF EXISTS products;
+
+CREATE TABLE products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    product_category ENUM('hardware', 'software', 'furniture', 'electronics', 'vehicle', 'general') NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    model VARCHAR(100),
+    serial VARCHAR(100),
+    purchase_date DATE,
+    pr_no VARCHAR(50),
+    po_number VARCHAR(50),
+    inward_date DATE,
+    inwarded_by VARCHAR(100),
+    requires_calibration BOOLEAN DEFAULT FALSE,
+    last_calibration_date DATE,
+    calibration_frequency_months INT DEFAULT 12,
+    calibration_notes TEXT,
+    quantity INT NOT NULL DEFAULT 0,
+    added_by INT NOT NULL,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (added_by) REFERENCES users(user_id)
+);

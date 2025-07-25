@@ -255,4 +255,3 @@ ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
 
 -- Update existing users to be active
 UPDATE users SET is_active = TRUE;
-ALTER TABLE product_requests ADD COLUMN return_date TIMESTAMP NULL;

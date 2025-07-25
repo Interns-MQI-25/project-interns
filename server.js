@@ -286,11 +286,108 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 LIMIT 5
             `, [req.session.user.user_id]);
 
-            res.render('employee/dashboard', { user: req.session.user, recentRequests });
+            // Fetch recent activity for employee
+            const [recentActivity] = await pool.execute(`
+                SELECT 'assignment' as action, pa.assigned_at as performed_at, p.product_name,
+                       u.full_name as performed_by_name, pa.quantity, 'Product assigned to you' as notes
+                FROM product_assignments pa
+                JOIN products p ON pa.product_id = p.product_id
+                JOIN employees e ON pa.employee_id = e.employee_id
+                JOIN users u ON pa.monitor_id = u.user_id
+                WHERE e.user_id = ? AND pa.assigned_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                ORDER BY pa.assigned_at DESC
+                LIMIT 5
+            `, [req.session.user.user_id]);
+            
+            res.render('employee/dashboard', { user: req.session.user, recentRequests, recentActivity });
         } else if (role === 'monitor') {
-            res.render('monitor/dashboard', { user: req.session.user });
+            // Fetch recent activity for monitor
+            const [recentActivity] = await pool.execute(`
+                SELECT sh.action, sh.performed_at, p.product_name,
+                       u.full_name as performed_by_name, sh.quantity, sh.notes
+                FROM stock_history sh
+                JOIN products p ON sh.product_id = p.product_id
+                JOIN users u ON sh.performed_by = u.user_id
+                WHERE sh.performed_by = ? AND sh.performed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                ORDER BY sh.performed_at DESC
+                LIMIT 5
+            `, [req.session.user.user_id]);
+            
+            res.render('monitor/dashboard', { user: req.session.user, recentActivity });
         } else if (role === 'admin') {
-            res.render('admin/dashboard', { user: req.session.user });
+            // Fetch dashboard statistics for admin
+            const [totalEmployees] = await pool.execute(
+                'SELECT COUNT(*) as count FROM users WHERE role IN ("employee", "monitor")'
+            );
+            
+            const [activeMonitors] = await pool.execute(
+                'SELECT COUNT(*) as count FROM users WHERE role = "monitor"'
+            );
+            
+            const [pendingRegistrations] = await pool.execute(
+                'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
+            );
+            
+            const [totalProducts] = await pool.execute(
+                'SELECT COUNT(*) as count FROM products'
+            );
+            
+            // Fetch recent system activity
+            const [recentActivity] = await pool.execute(`
+                SELECT 'request' as type, pr.requested_at as date, p.product_name, 
+                       u.full_name as employee_name, pr.status, pr.quantity
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                WHERE pr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                UNION ALL
+                SELECT 'assignment' as type, pa.assigned_at as date, p.product_name,
+                       u.full_name as employee_name, 
+                       CASE WHEN pa.is_returned THEN 'returned' ELSE 'assigned' END as status,
+                       pa.quantity
+                FROM product_assignments pa
+                JOIN products p ON pa.product_id = p.product_id
+                JOIN employees e ON pa.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                WHERE pa.assigned_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                UNION ALL
+                SELECT 'registration' as type, rr.requested_at as date, 'User Registration' as product_name,
+                       rr.full_name as employee_name, rr.status, 1 as quantity
+                FROM registration_requests rr
+                WHERE rr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ORDER BY date DESC
+                LIMIT 10
+            `);
+            
+            // Fetch stock analytics
+            const stockStatsQuery = `
+                SELECT 
+                    asset_type,
+                    COUNT(*) as total_items,
+                    SUM(quantity) as total_quantity,
+                    SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) as available_quantity,
+                    SUM(CASE WHEN COALESCE(calibration_required, FALSE) = TRUE THEN 1 ELSE 0 END) as calibration_items,
+                    SUM(CASE WHEN calibration_due_date IS NOT NULL AND calibration_due_date < CURDATE() THEN 1 ELSE 0 END) as overdue_calibrations
+                FROM products
+                GROUP BY asset_type
+            `;
+            
+            const [stockStats] = await pool.execute(stockStatsQuery);
+            
+            const dashboardStats = {
+                totalEmployees: totalEmployees[0].count,
+                activeMonitors: activeMonitors[0].count,
+                pendingRegistrations: pendingRegistrations[0].count,
+                totalProducts: totalProducts[0].count
+            };
+            
+            res.render('admin/dashboard', { 
+                user: req.session.user, 
+                stats: dashboardStats,
+                recentActivity: recentActivity || [],
+                stockStats: stockStats || []
+            });
         }
     } catch (error) {
         console.error('Dashboard error:', error);
@@ -393,7 +490,7 @@ app.get('/employee/requests', requireAuth, requireRole(['employee']), async (req
 });
 
 app.post('/employee/request-product', requireAuth, requireRole(['employee']), async (req, res) => {
-    const { product_id, quantity, purpose, return_date } = req.body;
+    const { product_id, quantity, purpose } = req.body;
 
     // Input validation
     if (!product_id || !quantity || !purpose) {
@@ -436,8 +533,8 @@ app.post('/employee/request-product', requireAuth, requireRole(['employee']), as
         }
 
         await pool.execute(
-            'INSERT INTO product_requests (employee_id, product_id, quantity, purpose, return_date) VALUES (?, ?, ?, ?, ?)',
-            [employee[0].employee_id, product_id, qty, purpose, return_date || null]
+            'INSERT INTO product_requests (employee_id, product_id, quantity, purpose) VALUES (?, ?, ?, ?)',
+            [employee[0].employee_id, product_id, qty, purpose]
         );
 
         req.flash('success', 'Product request submitted successfully');
@@ -638,16 +735,92 @@ app.get('/monitor/stock', requireAuth, requireRole(['monitor']), async (req, res
     }
 });
 
+// API endpoint for real-time dashboard stats and activity
+app.get('/api/admin/dashboard-stats', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+        const [totalEmployees] = await pool.execute(
+            'SELECT COUNT(*) as count FROM users WHERE role IN ("employee", "monitor")'
+        );
+        
+        const [activeMonitors] = await pool.execute(
+            'SELECT COUNT(*) as count FROM users WHERE role = "monitor"'
+        );
+        
+        const [pendingRegistrations] = await pool.execute(
+            'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
+        );
+        
+        const [totalProducts] = await pool.execute(
+            'SELECT COUNT(*) as count FROM products'
+        );
+        
+        // Fetch recent system activity
+        const [recentActivity] = await pool.execute(`
+            SELECT 'request' as type, pr.requested_at as date, p.product_name, 
+                   u.full_name as employee_name, pr.status, pr.quantity
+            FROM product_requests pr
+            JOIN products p ON pr.product_id = p.product_id
+            JOIN employees e ON pr.employee_id = e.employee_id
+            JOIN users u ON e.user_id = u.user_id
+            WHERE pr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            UNION ALL
+            SELECT 'assignment' as type, pa.assigned_at as date, p.product_name,
+                   u.full_name as employee_name, 
+                   CASE WHEN pa.is_returned THEN 'returned' ELSE 'assigned' END as status,
+                   pa.quantity
+            FROM product_assignments pa
+            JOIN products p ON pa.product_id = p.product_id
+            JOIN employees e ON pa.employee_id = e.employee_id
+            JOIN users u ON e.user_id = u.user_id
+            WHERE pa.assigned_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            UNION ALL
+            SELECT 'registration' as type, rr.requested_at as date, 'User Registration' as product_name,
+                   rr.full_name as employee_name, rr.status, 1 as quantity
+            FROM registration_requests rr
+            WHERE rr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            ORDER BY date DESC
+            LIMIT 10
+        `);
+        
+        // Fetch stock analytics
+        const stockStatsQuery = `
+            SELECT 
+                asset_type,
+                COUNT(*) as total_items,
+                SUM(quantity) as total_quantity,
+                SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) as available_quantity,
+                SUM(CASE WHEN COALESCE(calibration_required, FALSE) = TRUE THEN 1 ELSE 0 END) as calibration_items,
+                SUM(CASE WHEN calibration_due_date IS NOT NULL AND calibration_due_date < CURDATE() THEN 1 ELSE 0 END) as overdue_calibrations
+            FROM products
+            GROUP BY asset_type
+        `;
+        
+        const [stockStats] = await pool.execute(stockStatsQuery);
+        
+        res.json({
+            totalEmployees: totalEmployees[0].count,
+            activeMonitors: activeMonitors[0].count,
+            pendingRegistrations: pendingRegistrations[0].count,
+            totalProducts: totalProducts[0].count,
+            recentActivity: recentActivity || [],
+            stockStats: stockStats || []
+        });
+    } catch (error) {
+        console.error('Dashboard stats error:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    }
+});
+
 // Admin routes
 app.get('/admin/employees', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
         const [employees] = await pool.execute(`
-            SELECT u.*, e.employee_id, d.department_name, e.is_active
+            SELECT u.*, e.employee_id, d.department_name, e.is_active as employee_active
             FROM users u
             LEFT JOIN employees e ON u.user_id = e.user_id
             LEFT JOIN departments d ON e.department_id = d.department_id
             WHERE u.role IN ('employee', 'monitor')
-            ORDER BY u.full_name
+            ORDER BY u.is_active DESC, u.full_name
         `);
         
         const [departments] = await pool.execute('SELECT * FROM departments');
@@ -1224,8 +1397,8 @@ app.post('/admin/update-employee/:id', requireAuth, requireRole(['admin']), asyn
     res.redirect('/admin/employees');
 });
 
-// Admin: Delete Employee Route
-app.post('/admin/delete-employee/:id', requireAuth, requireRole(['admin']), async (req, res) => {
+// Admin: Toggle Employee Status Route (Deactivate/Activate)
+app.post('/admin/toggle-employee-status/:id', requireAuth, requireRole(['admin']), async (req, res) => {
     const employeeId = req.params.id;
     
     try {
@@ -1233,23 +1406,9 @@ app.post('/admin/delete-employee/:id', requireAuth, requireRole(['admin']), asyn
         await connection.beginTransaction();
         
         try {
-            // Check if employee has any active assignments
-            const [assignments] = await connection.execute(`
-                SELECT COUNT(*) as count 
-                FROM product_assignments pa
-                JOIN employees e ON pa.employee_id = e.employee_id
-                WHERE e.user_id = ? AND pa.is_returned = FALSE
-            `, [employeeId]);
-            
-            if (assignments[0].count > 0) {
-                req.flash('error', 'Cannot delete employee with active product assignments');
-                res.redirect('/admin/employees');
-                return;
-            }
-            
-            // Get user info before deletion
+            // Get current user status
             const [users] = await connection.execute(
-                'SELECT full_name FROM users WHERE user_id = ?',
+                'SELECT full_name, is_active FROM users WHERE user_id = ?',
                 [employeeId]
             );
             
@@ -1259,16 +1418,41 @@ app.post('/admin/delete-employee/:id', requireAuth, requireRole(['admin']), asyn
                 return;
             }
             
-            const userName = users[0].full_name;
+            const user = users[0];
+            const newStatus = !user.is_active;
+            const userName = user.full_name;
             
-            // Delete user (this will cascade to employees table)
+            // If deactivating, check for active assignments
+            if (!newStatus) {
+                const [assignments] = await connection.execute(`
+                    SELECT COUNT(*) as count 
+                    FROM product_assignments pa
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    WHERE e.user_id = ? AND pa.is_returned = FALSE
+                `, [employeeId]);
+                
+                if (assignments[0].count > 0) {
+                    req.flash('error', 'Cannot deactivate employee with active product assignments');
+                    res.redirect('/admin/employees');
+                    return;
+                }
+            }
+            
+            // Update user status
             await connection.execute(
-                'DELETE FROM users WHERE user_id = ?',
-                [employeeId]
+                'UPDATE users SET is_active = ? WHERE user_id = ?',
+                [newStatus, employeeId]
+            );
+            
+            // Update employee status
+            await connection.execute(
+                'UPDATE employees SET is_active = ? WHERE user_id = ?',
+                [newStatus, employeeId]
             );
             
             await connection.commit();
-            req.flash('success', `Employee ${userName} deleted successfully`);
+            const action = newStatus ? 'activated' : 'deactivated';
+            req.flash('success', `Employee ${userName} ${action} successfully`);
         } catch (error) {
             await connection.rollback();
             throw error;
@@ -1277,8 +1461,118 @@ app.post('/admin/delete-employee/:id', requireAuth, requireRole(['admin']), asyn
         }
         
     } catch (error) {
-        console.error('Delete employee error:', error);
-        req.flash('error', 'Error deleting employee');
+        console.error('Toggle employee status error:', error);
+        req.flash('error', 'Error updating employee status');
+    }
+    
+    res.redirect('/admin/employees');
+});
+
+// Admin: Bulk Deactivate Employees Route
+app.post('/admin/bulk-deactivate-employees', requireAuth, requireRole(['admin']), async (req, res) => {
+    const { employee_ids } = req.body;
+    
+    if (!employee_ids || employee_ids.length === 0) {
+        req.flash('error', 'No employees selected');
+        return res.redirect('/admin/employees');
+    }
+    
+    const ids = Array.isArray(employee_ids) ? employee_ids : [employee_ids];
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            let deactivatedCount = 0;
+            let skippedCount = 0;
+            
+            for (const employeeId of ids) {
+                // Check for active assignments
+                const [assignments] = await connection.execute(`
+                    SELECT COUNT(*) as count 
+                    FROM product_assignments pa
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    WHERE e.user_id = ? AND pa.is_returned = FALSE
+                `, [employeeId]);
+                
+                if (assignments[0].count > 0) {
+                    skippedCount++;
+                    continue;
+                }
+                
+                // Deactivate user and employee
+                await connection.execute(
+                    'UPDATE users SET is_active = FALSE WHERE user_id = ?',
+                    [employeeId]
+                );
+                await connection.execute(
+                    'UPDATE employees SET is_active = FALSE WHERE user_id = ?',
+                    [employeeId]
+                );
+                deactivatedCount++;
+            }
+            
+            await connection.commit();
+            
+            let message = `${deactivatedCount} employee(s) deactivated successfully`;
+            if (skippedCount > 0) {
+                message += `. ${skippedCount} employee(s) skipped due to active assignments`;
+            }
+            req.flash('success', message);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Bulk deactivate error:', error);
+        req.flash('error', 'Error deactivating employees');
+    }
+    
+    res.redirect('/admin/employees');
+});
+
+// Admin: Bulk Activate Employees Route
+app.post('/admin/bulk-activate-employees', requireAuth, requireRole(['admin']), async (req, res) => {
+    const { employee_ids } = req.body;
+    
+    if (!employee_ids || employee_ids.length === 0) {
+        req.flash('error', 'No employees selected');
+        return res.redirect('/admin/employees');
+    }
+    
+    const ids = Array.isArray(employee_ids) ? employee_ids : [employee_ids];
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // Activate selected users and employees
+            for (const employeeId of ids) {
+                await connection.execute(
+                    'UPDATE users SET is_active = TRUE WHERE user_id = ?',
+                    [employeeId]
+                );
+                await connection.execute(
+                    'UPDATE employees SET is_active = TRUE WHERE user_id = ?',
+                    [employeeId]
+                );
+            }
+            
+            await connection.commit();
+            req.flash('success', `${ids.length} employee(s) activated successfully`);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Bulk activate error:', error);
+        req.flash('error', 'Error activating employees');
     }
     
     res.redirect('/admin/employees');

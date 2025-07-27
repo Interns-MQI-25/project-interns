@@ -99,7 +99,7 @@ NODE_ENV=development
 ### 4. Initialize Application
 ```bash
 # Create admin account
-node fix-admin.js
+node create-admin.js
 
 # Setup database connection
 node setup-db.js

@@ -247,11 +247,11 @@ CREATE INDEX idx_products_category ON products(product_category);
 CREATE INDEX idx_product_assignments_employee ON product_assignments(employee_id);
 CREATE INDEX idx_product_assignments_returned ON product_assignments(is_returned);
 
--- Display completion message
-SELECT 'Database setup completed successfully!' as message;
-
 -- Add is_active column to users table
 ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
 
 -- Update existing users to be active
 UPDATE users SET is_active = TRUE;
+
+-- Display completion message
+SELECT 'Database setup completed successfully!' as message;

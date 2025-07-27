@@ -52,7 +52,7 @@ echo Starting Product Management System...
 
 :: Create admin account
 echo Creating admin account...
-call node fix-admin.js
+call node create-admin.js
 if errorlevel 1 (
     echo Warning: Failed to create admin account - you may need to do this manually
 )

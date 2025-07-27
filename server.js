@@ -875,6 +875,11 @@ app.get('/admin/stock', requireAuth, requireRole(['admin']), async (req, res) =>
                     FROM product_assignments pa 
                     WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
                 ), 0) as currently_assigned,
+                (p.quantity + COALESCE((
+                    SELECT SUM(pa.quantity) 
+                    FROM product_assignments pa 
+                    WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
+                ), 0)) as total_quantity,
                 CASE 
                     WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date < CURDATE() THEN 'Overdue'
                     WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'Due Soon'

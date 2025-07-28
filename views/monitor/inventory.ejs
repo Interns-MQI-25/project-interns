@@ -8,6 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50">
+
     <%- include('../partials/navbar') %>
     
     <main class="ml-64 p-6">
@@ -20,176 +21,184 @@
         
         <!-- Add Product Form -->
         <div class="bg-white shadow rounded-lg mb-8">
-    <div class="px-4 py-5 sm:p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">
-                Add New Product
-            </h3>
-            <button type="button" onclick="toggleForm()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                <i class="fas fa-plus mr-2"></i>Add Product
-            </button>
-        </div>
-
-        <form action="/add-product" method="POST" class="space-y-6" id="productForm">
-            <!-- Basic Information -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700">Product Name *</label>
-                    <input type="text" id="name" name="name" required 
-                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
-                
-                <div>
-                    <label for="product_category" class="block text-sm font-medium text-gray-700">Product Category *</label>
-                    <select name="product_category" id="productCategory" required onchange="toggleCalibrationFields()" 
-                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="">Select Category</option>
-                        <option value="hardware">Hardware</option>
-                        <option value="software">Software</option>
-                        <option value="furniture">Furniture</option>
-                        <option value="electronics">Electronics</option>
-                        <option value="vehicle">Vehicle</option>
-                        <option value="general">General</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="type" class="block text-sm font-medium text-gray-700">Type *</label>
-                    <input type="text" id="type" name="type" required placeholder="e.g., Laptop, Printer, Chair" 
-                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
-                
-                <div>
-                    <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
-                    <input type="text" id="model" name="model" placeholder="e.g., Dell Inspiron 15" 
-                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label for="serial" class="block text-sm font-medium text-gray-700">Product Serial Number</label>
-                    <input type="text" id="serial" name="serial" placeholder="Unique identifier" 
-                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Add New Product
+                    </h3>
+                    <button type="button" onclick="toggleForm()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <i class="fas fa-plus mr-2"></i>Add Product
+                    </button>
                 </div>
 
-                <div>
-                    <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date</label>
-                    <input type="date" id="purchase_date" name="purchase_date"
-                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
-
-                <div>
-                    <label for="pr_no" class="block text-sm font-medium text-gray-700">PR No</label>
-                    <input type="text" id="pr_no" name="pr_no" placeholder="Purchase Request Number"
-                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label for="po_number" class="block text-sm font-medium text-gray-700">PO Number</label>
-                    <input type="text" id="po_number" name="po_number" placeholder="Purchase Order Number"
-                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
-
-                <div>
-                    <label for="inward_date" class="block text-sm font-medium text-gray-700">Inward Date</label>
-                    <input type="date" id="inward_date" name="inward_date"
-                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
-
-                <div>
-                    <label for="inwarded_by" class="block text-sm font-medium text-gray-700">Inwarded By</label>
-                    <input type="text" id="inwarded_by" name="inwarded_by" placeholder="Name of person"
-                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
-            </div>
-
-            <div class="flex justify-end">
-                <button type="submit" class="px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <i class="fas fa-save mr-2"></i>Save Product
-                </button>
-            </div>
-        </form>
-            <!-- Calibration Section (Hidden by default) -->
-            <div id="calibrationSection" class="hidden">
-                <h4 class="text-md font-medium text-gray-800 mb-3">🔬 Calibration Information</h4>
-                
-                <div class="bg-blue-50 rounded-lg p-3 mb-4">
-                    <label class="flex items-center space-x-3">
-                        <input type="checkbox" name="requires_calibration" id="requiresCalibration" onchange="toggleCalibrationDetails()" 
-                               class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                        <span class="text-sm font-medium text-gray-700">This hardware requires calibration</span>
-                    </label>
-                </div>
-                
-                <div id="calibrationDetails" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="last_calibration_date" class="block text-sm font-medium text-gray-700">Last Calibration Date</label>
-                        <input type="date" id="last_calibration_date" name="last_calibration_date" 
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <form action="/add-product" method="POST" class="space-y-6" id="productForm">
+                    <!-- Basic Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Product Name *</label>
+                            <input type="text" id="name" name="name" required 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        
+                        <div>
+                            <label for="product_category" class="block text-sm font-medium text-gray-700">Product Category *</label>
+                            <select name="product_category" id="productCategory" required onchange="toggleCalibrationFields()" 
+                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">Select Category</option>
+                                <option value="hardware">Hardware</option>
+                                <option value="software">Test Equipment</option>
+                                <option value="software">Software</option>
+                                <option value="furniture">Tooling</option>
+                                <option value="electronics">Consumables</option>
+                                <option value="vehicle">Measuring Instrument</option>
+                                <option value="general"> Devices</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="type" class="block text-sm font-medium text-gray-700">Type *</label>
+                            <input type="text" id="type" name="type" required placeholder="e.g., Laptop, Printer, Chair" 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        
+                        <div>
+                            <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
+                            <input type="text" id="model" name="model" placeholder="e.g., Dell Inspiron 15" 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
                     </div>
-                    
-                    <div>
-                        <label for="calibration_frequency_months" class="block text-sm font-medium text-gray-700">Calibration Frequency (Months)</label>
-                        <select name="calibration_frequency_months" id="calibration_frequency_months" 
-                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="3">3 Months</option>
-                            <option value="6">6 Months</option>
-                            <option value="12" selected>12 Months</option>
-                            <option value="24">24 Months</option>
-                            <option value="36">36 Months</option>
-                        </select>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="serial" class="block text-sm font-medium text-gray-700">Product Serial Number</label>
+                            <input type="text" id="serial" name="serial" placeholder="Unique identifier" 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date</label>
+                            <input type="date" id="purchase_date" name="purchase_date"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="pr_no" class="block text-sm font-medium text-gray-700">PR No</label>
+                            <input type="text" id="pr_no" name="pr_no" placeholder="Purchase Request Number"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
                     </div>
-                    
-                    <div class="md:col-span-2">
-                        <label for="calibration_notes" class="block text-sm font-medium text-gray-700">Calibration Notes</label>
-                        <textarea id="calibration_notes" name="calibration_notes" rows="2" 
-                                  placeholder="Special calibration requirements or notes..." 
-                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="po_number" class="block text-sm font-medium text-gray-700">PO Number</label>
+                            <input type="text" id="po_number" name="po_number" placeholder="Purchase Order Number"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="inward_date" class="block text-sm font-medium text-gray-700">Inward Date</label>
+                            <input type="date" id="inward_date" name="inward_date"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="inwarded_by" class="block text-sm font-medium text-gray-700">Inwarded By</label>
+                            <input type="text" id="inwarded_by" name="inwarded_by" placeholder="Name of person"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
                     </div>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
 
-<script>
-function toggleForm() {
-    const form = document.getElementById('productForm');
-    form.style.display = form.style.display === 'none' ? 'block' : 'none';
-}
+                    <!-- Calibration Section -->
+                    <div id="calibrationSection" class="hidden">
+                        <h4 class="text-md font-medium text-gray-800 mb-3">🔬 Calibration Information</h4>
+                        
+                        <div class="bg-blue-50 rounded-lg p-3 mb-4">
+                            <label class="flex items-center space-x-3">
+                                <input type="checkbox" name="requires_calibration" id="requiresCalibration" onchange="toggleCalibrationDetails()" 
+                                       class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                <span class="text-sm font-medium text-gray-700">This hardware requires calibration</span>
+                            </label>
+                        </div>
+                        
+                        <div id="calibrationDetails" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="last_calibration_date" class="block text-sm font-medium text-gray-700">Last Calibration Date</label>
+                                <input type="date" id="last_calibration_date" name="last_calibration_date" 
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            
+                            <div>
+                                <label for="calibration_frequency_months" class="block text-sm font-medium text-gray-700">Calibration Frequency (Months)</label>
+                                <select name="calibration_frequency_months" id="calibration_frequency_months" 
+                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="3">3 Months</option>
+                                    <option value="6">6 Months</option>
+                                    <option value="12" selected>12 Months</option>
+                                    <option value="24">24 Months</option>
+                                    <option value="36">36 Months</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="calibration_notes" class="block text-sm font-medium text-gray-700">Calibration Notes</label>
+                                <textarea id="calibration_notes" name="calibration_notes" rows="2" 
+                                          placeholder="Special calibration requirements or notes..." 
+                                          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                            </div>
+                        </div>
+                    </div>
 
-function toggleCalibrationFields() {
-    const category = document.getElementById('productCategory').value;
-    const calibrationSection = document.getElementById('calibrationSection');
-    
-    if (category === 'hardware') {
-        calibrationSection.classList.remove('hidden');
-    } else {
-        calibrationSection.classList.add('hidden');
-        document.getElementById('requiresCalibration').checked = false;
-        document.getElementById('calibrationDetails').classList.add('hidden');
-    }
-}
+                    <!-- Software Section -->
+                    <div id="softwareSection" class="hidden">
+                        <h4 class="text-md font-medium text-gray-800 mb-3">💻 Software Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="version_number" class="block text-sm font-medium text-gray-700">Version Number</label>
+                                <input type="text" id="version_number" name="version_number"
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="software_license_type" class="block text-sm font-medium text-gray-700">License Type</label>
+                                <select name="software_license_type" id="software_license_type"
+                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        onchange="toggleLicenseDetails()">
+                                    <option value="">Select Type</option>
+                                    <option value="licensed">Licensed</option>
+                                    <option value="free">Free</option>
+                                    <option value="open_source">Open Source</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="licenseDetails" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="license_expiry" class="block text-sm font-medium text-gray-700">License Expiry Date</label>
+                                <input type="date" id="license_expiry" name="license_expiry"
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="renewal_frequency" class="block text-sm font-medium text-gray-700">Renewal Frequency</label>
+                                <select name="renewal_frequency" id="renewal_frequency"
+                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="">Select Frequency</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="quarterly">Quarterly</option>
+                                    <option value="yearly">Yearly</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="next_renewal_date" class="block text-sm font-medium text-gray-700">Next Renewal Date</label>
+                                <input type="date" id="next_renewal_date" name="next_renewal_date"
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
 
-function toggleCalibrationDetails() {
-    const requiresCalibration = document.getElementById('requiresCalibration').checked;
-    const calibrationDetails = document.getElementById('calibrationDetails');
-    
-    if (requiresCalibration) {
-        calibrationDetails.classList.remove('hidden');
-    } else {
-        calibrationDetails.classList.add('hidden');
-    }
-}
-
-// Initially hide the form
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('productForm').style.display = 'none';
-});
-</script>
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-save mr-2"></i>Save Product
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
         
@@ -197,32 +206,38 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="bg-white shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Current Products
+                    Complete Product Inventory
                 </h3>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Product Name
+                                    Product Details
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Category
+                                    Asset Type
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Type
+                                    Serial/Model
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Model
+                                    Total Stock
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Serial
+                                    Currently Assigned
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Purchase Date
+                                    Available
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
+                                    Calibration
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Added By
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Added Date
                                 </th>
                             </tr>
                         </thead>
@@ -230,37 +245,70 @@ document.addEventListener('DOMContentLoaded', function() {
                             <% if (products && products.length > 0) { %>
                                 <% products.forEach(product => { %>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <%= product.name %>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                <%= product.product_name %>
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                <%= product.product_category %>
+                                            </div>
+                                            <% if (product.description) { %>
+                                                <div class="text-xs text-gray-400 truncate max-w-xs">
+                                                    <%= product.description.substring(0, 50) %>...
+                                                </div>
+                                            <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="capitalize"><%= product.product_category %></span>
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                <%= product.asset_type %>
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= product.type %>
+                                            <div><strong>SN:</strong> <%= product.serial_number || 'N/A' %></div>
+                                            <div><strong>Model:</strong> <%= product.model_number || 'N/A' %></div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= product.model || '-' %>
+                                            <span class="font-semibold"><%= (product.quantity || 0) + (product.currently_assigned || 0) %></span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= product.serial || '-' %>
+                                            <span class="font-semibold text-yellow-600"><%= product.currently_assigned || 0 %></span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= product.purchase_date ? new Date(product.purchase_date).toLocaleDateString() : '-' %>
+                                            <span class="font-semibold text-green-600"><%= product.quantity || 0 %></span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button class="text-indigo-600 hover:text-indigo-900 mr-3">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </button>
-                                            <button class="text-green-600 hover:text-green-900">
-                                                <i class="fas fa-qrcode"></i> QR
-                                            </button>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <% if (product.calibration_required) { %>
+                                                <% if (product.calibration_status === 'Overdue') { %>
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                        Overdue
+                                                    </span>
+                                                <% } else if (product.calibration_status === 'Due Soon') { %>
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                        Due Soon
+                                                    </span>
+                                                <% } else { %>
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                        Current
+                                                    </span>
+                                                <% } %>
+                                                <div class="text-xs text-gray-400">
+                                                    <%= product.calibration_frequency || 'N/A' %>
+                                                </div>
+                                            <% } else { %>
+                                                <span class="text-gray-400">Not Required</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <%= product.added_by_name || 'System' %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <%= new Date(product.added_at).toLocaleDateString() %>
                                         </td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                         No products found
                                     </td>
                                 </tr>
@@ -271,5 +319,77 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
     </main>
+
+    <script>
+    function toggleForm() {
+        const form = document.getElementById('productForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function toggleCalibrationFields() {
+        const category = document.getElementById('productCategory').value;
+        const calibrationSection = document.getElementById('calibrationSection');
+        if (category === 'hardware') {
+            calibrationSection.classList.remove('hidden');
+        } else {
+            calibrationSection.classList.add('hidden');
+            document.getElementById('requiresCalibration').checked = false;
+            document.getElementById('calibrationDetails').classList.add('hidden');
+        }
+        toggleSoftwareFields(); // Call software toggle here as well
+    }
+
+    function toggleCalibrationDetails() {
+        const requiresCalibration = document.getElementById('requiresCalibration').checked;
+        const calibrationDetails = document.getElementById('calibrationDetails');
+        if (requiresCalibration) {
+            calibrationDetails.classList.remove('hidden');
+        } else {
+            calibrationDetails.classList.add('hidden');
+        }
+    }
+
+    // --- Software Section ---
+    function toggleSoftwareFields() {
+        const category = document.getElementById('productCategory').value;
+        const softwareSection = document.getElementById('softwareSection');
+        if (category === 'software') {
+            softwareSection.classList.remove('hidden');
+        } else {
+            softwareSection.classList.add('hidden');
+            document.getElementById('requiresLicense').checked = false;
+            document.getElementById('softwareDetails').classList.add('hidden');
+        }
+    }
+
+    function toggleSoftwareDetails() {
+        const requiresLicense = document.getElementById('requiresLicense').checked;
+        const softwareDetails = document.getElementById('softwareDetails');
+        if (requiresLicense) {
+            softwareDetails.classList.remove('hidden');
+        } else {
+            softwareDetails.classList.add('hidden');
+        }
+    }
+
+    function toggleLicenseDetails() {
+        const licenseType = document.getElementById('software_license_type').value;
+        const licenseDetails = document.getElementById('licenseDetails');
+        if (licenseType === 'licensed') {
+            licenseDetails.classList.remove('hidden');
+        } else {
+            licenseDetails.classList.add('hidden');
+        }
+    }
+
+    // Initially hide the form
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('productForm').style.display = 'none';
+        document.getElementById('productCategory').addEventListener('change', function() {
+            toggleCalibrationFields();
+            toggleSoftwareFields();
+        });
+    });
+    </script>
 </body>
 </html>

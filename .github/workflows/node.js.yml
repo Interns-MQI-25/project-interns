@@ -103,7 +103,7 @@ jobs:
         mysql -h127.0.0.1 -P3306 -uroot -proot -e "FLUSH PRIVILEGES;"
         
         echo "Importing database schema..."
-        mysql -h127.0.0.1 -P3306 -uroot -proot product_management_system_test < database-test.sql
+        mysql -h127.0.0.1 -P3306 -uroot -proot product_management_system_test < database.sql
         
         echo "Verifying tables were created..."
         mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system_test; SHOW TABLES;"

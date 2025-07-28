@@ -52,6 +52,16 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // Admin: Manage Admins Route (Read-only)
+    router.get('/manage-admins', requireAuth, requireRole(['admin']), async (req, res) => {
+        try {
+            res.render('admin/manage-admins', { user: req.session.user });
+        } catch (error) {
+            console.error('Manage admins error:', error);
+            res.render('error', { message: 'Error loading admin management' });
+        }
+    });
+
     // Admin: Stock Route
     router.get('/stock', requireAuth, requireRole(['admin']), async (req, res) => {
         try {

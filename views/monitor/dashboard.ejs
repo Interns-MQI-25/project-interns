@@ -19,23 +19,30 @@
         </div>
         
         <!-- Dashboard Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             <!-- Approvals Card -->
-            <a href="/monitor/approvals" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
+            <a href="/monitor/approvals" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
+                <div class="p-4 md:p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-check-circle text-2xl text-green-600"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-check-circle text-xl md:text-2xl text-green-600"></i>
+                            </div>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
+                        <div class="ml-4 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">
                                     Approvals
                                 </dt>
                                 <dd>
-                                    <div class="text-lg font-medium text-gray-900">
+                                    <div class="text-base md:text-lg font-medium text-gray-900">
                                         Pending Requests
                                     </div>
+                                    <% if (stats && stats.pendingRequests > 0) { %>
+                                        <div class="text-xs text-green-600 font-medium mt-1">
+                                            <%= stats.pendingRequests %> pending
+                                        </div>
+                                    <% } %>
                                 </dd>
                             </dl>
                         </div>
@@ -44,19 +51,21 @@
             </a>
             
             <!-- Records Card -->
-            <a href="/monitor/records" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
+            <a href="/monitor/records" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
+                <div class="p-4 md:p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-history text-2xl text-blue-600"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-history text-xl md:text-2xl text-blue-600"></i>
+                            </div>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
+                        <div class="ml-4 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">
                                     Records
                                 </dt>
                                 <dd>
-                                    <div class="text-lg font-medium text-gray-900">
+                                    <div class="text-base md:text-lg font-medium text-gray-900">
                                         Assignment History
                                     </div>
                                 </dd>
@@ -67,21 +76,28 @@
             </a>
             
             <!-- Stock Card -->
-            <a href="/monitor/stock" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
+            <a href="/monitor/stock" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
+                <div class="p-4 md:p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-boxes text-2xl text-purple-600"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-boxes text-xl md:text-2xl text-purple-600"></i>
+                            </div>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
+                        <div class="ml-4 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">
                                     Stock
                                 </dt>
                                 <dd>
-                                    <div class="text-lg font-medium text-gray-900">
+                                    <div class="text-base md:text-lg font-medium text-gray-900">
                                         View Inventory
                                     </div>
+                                    <% if (stats && stats.totalProducts > 0) { %>
+                                        <div class="text-xs text-purple-600 font-medium mt-1">
+                                            <%= stats.totalProducts %> products
+                                        </div>
+                                    <% } %>
                                 </dd>
                             </dl>
                         </div>
@@ -90,19 +106,21 @@
             </a>
             
             <!-- Inventory Card -->
-            <a href="/monitor/inventory" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
+            <a href="/monitor/inventory" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
+                <div class="p-4 md:p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-warehouse text-2xl text-orange-600"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-warehouse text-xl md:text-2xl text-orange-600"></i>
+                            </div>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
+                        <div class="ml-4 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">
                                     Inventory
                                 </dt>
                                 <dd>
-                                    <div class="text-lg font-medium text-gray-900">
+                                    <div class="text-base md:text-lg font-medium text-gray-900">
                                         Manage Products
                                     </div>
                                 </dd>
@@ -114,68 +132,92 @@
         </div>
         
         <!-- Quick Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
+            <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200">
+                <div class="p-4 md:p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-clock text-2xl text-yellow-600"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clock text-xl md:text-2xl text-yellow-600"></i>
+                            </div>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
+                        <div class="ml-4 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">
                                     Pending Requests
                                 </dt>
                                 <dd>
-                                    <div class="text-2xl font-bold text-gray-900">
-                                        0
+                                    <div class="text-xl md:text-2xl font-bold text-gray-900">
+                                        <%= stats ? stats.pendingRequests : 0 %>
                                     </div>
                                 </dd>
                             </dl>
                         </div>
                     </div>
+                    <div class="mt-3 md:mt-4">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <span>Awaiting approval</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
+            <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200">
+                <div class="p-4 md:p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-check text-2xl text-green-600"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-check text-xl md:text-2xl text-green-600"></i>
+                            </div>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
+                        <div class="ml-4 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">
                                     Approved Today
                                 </dt>
                                 <dd>
-                                    <div class="text-2xl font-bold text-gray-900">
-                                        0
+                                    <div class="text-xl md:text-2xl font-bold text-gray-900">
+                                        <%= stats ? stats.approvedToday : 0 %>
                                     </div>
                                 </dd>
                             </dl>
                         </div>
                     </div>
+                    <div class="mt-3 md:mt-4">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-calendar-day mr-1"></i>
+                            <span>Processed today</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
+            <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200 sm:col-span-2 lg:col-span-1">
+                <div class="p-4 md:p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-cube text-2xl text-blue-600"></i>
+                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-cube text-xl md:text-2xl text-blue-600"></i>
+                            </div>
                         </div>
-                        <div class="ml-5 w-0 flex-1">
+                        <div class="ml-4 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">
                                     Total Products
                                 </dt>
                                 <dd>
-                                    <div class="text-2xl font-bold text-gray-900">
-                                        0
+                                    <div class="text-xl md:text-2xl font-bold text-gray-900">
+                                        <%= stats ? stats.totalProducts : 0 %>
                                     </div>
                                 </dd>
                             </dl>
+                        </div>
+                    </div>
+                    <div class="mt-3 md:mt-4">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-warehouse mr-1"></i>
+                            <span>In inventory</span>
                         </div>
                     </div>
                 </div>

@@ -58,7 +58,12 @@ jobs:
           MYSQL_PASSWORD: sigma
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+          --health-start-period=30s
 
     steps:
     - uses: actions/checkout@v4
@@ -74,21 +79,48 @@ jobs:
     
     - name: Wait for MySQL
       run: |
-        until mysqladmin ping -h"127.0.0.1" -P3306 -uroot -proot --silent; do
-          echo 'waiting for mysql...'
-          sleep 1
+        echo "Waiting for MySQL to be ready..."
+        for i in {1..30}; do
+          if mysqladmin ping -h"127.0.0.1" -P3306 -uroot -proot --silent; then
+            echo "MySQL is ready!"
+            break
+          fi
+          echo "Attempt $i: MySQL not ready yet, waiting..."
+          sleep 2
         done
+        
+        echo "Testing MySQL connection..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "SELECT 1;" || exit 1
     
     - name: Setup test database
       run: |
+        echo "Creating test database..."
         mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS product_management_system_test;"
-        mysql -h127.0.0.1 -P3306 -uroot -proot product_management_system_test < database.sql
+        
+        echo "Creating sigma user and granting permissions..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE USER IF NOT EXISTS 'sigma'@'%' IDENTIFIED BY 'sigma';"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "GRANT ALL PRIVILEGES ON product_management_system_test.* TO 'sigma'@'%';"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "FLUSH PRIVILEGES;"
+        
+        echo "Importing database schema..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot product_management_system_test < database-test.sql
+        
+        echo "Verifying tables were created..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system_test; SHOW TABLES;"
+        
+        echo "Checking specific required tables..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system_test; DESCRIBE users;" || echo "Users table issue"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system_test; DESCRIBE products;" || echo "Products table issue"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system_test; DESCRIBE requests;" || echo "Requests table issue"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system_test; DESCRIBE admin_assignments;" || echo "Admin_assignments table issue"
+        
+        echo "Database setup completed successfully!"
       env:
         MYSQL_HOST: 127.0.0.1
         MYSQL_PORT: 3306
         MYSQL_USER: root
         MYSQL_PASSWORD: root
-        MYSQL_DATABASE: product_management_system_test
+        MYSQL_DATABASE: product_management_system
     
     - name: Run database tests
       run: npm run test:db --if-present

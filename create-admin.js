@@ -2,8 +2,8 @@ const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-async function createAdmin() {
-    console.log('🔧 Creating admin user...');
+async function createAdmins() {
+    console.log('🔧 Creating admin users...');
     
     try {
         const connection = await mysql.createConnection({
@@ -16,54 +16,146 @@ async function createAdmin() {
         
         console.log('✅ Connected to database');
         
-        // Check current admin user
-        const [adminUser] = await connection.execute('SELECT * FROM users WHERE username = ?', ['admin']);
+        // Remove any existing superadmin users
+        console.log('🗑️ Removing superadmin users...');
+        await connection.execute('DELETE FROM users WHERE role = ?', ['superadmin']);
+        console.log('✅ Superadmin users removed');
         
-        if (adminUser.length > 0) {
-            console.log('Current admin user found:', {
-                username: adminUser[0].username,
-                email: adminUser[0].email,
-                role: adminUser[0].role
-            });
-            
-            // Create new password hash
-            const newPassword = 'admin';
-            const hashedPassword = await bcrypt.hash(newPassword, 10);
-            
-            // Update the admin password
-            await connection.execute(
-                'UPDATE users SET password = ? WHERE username = ?',
-                [hashedPassword, 'admin']
+        // Define the 3 admin users
+        const adminUsers = [
+            {
+                username: 'admin1',
+                full_name: 'Admin One',
+                email: 'admin1@company.com',
+                password: 'admin123'
+            },
+            {
+                username: 'admin2',
+                full_name: 'Admin Two',
+                email: 'admin2@company.com',
+                password: 'admin123'
+            },
+            {
+                username: 'admin3',
+                full_name: 'Admin Three',
+                email: 'admin3@company.com',
+                password: 'admin123'
+            }
+        ];
+        
+        console.log('👥 Creating 3 admin users...');
+        
+        for (const adminData of adminUsers) {
+            // Check if admin user already exists
+            const [existingUser] = await connection.execute(
+                'SELECT * FROM users WHERE username = ?', 
+                [adminData.username]
             );
             
-            console.log('✅ Admin password updated successfully');
-            console.log('🔑 Login credentials:');
-            console.log('   Username: admin');
-            console.log('   Password: admin');
+            const hashedPassword = await bcrypt.hash(adminData.password, 10);
             
-            // Test the password
-            const testResult = await bcrypt.compare(newPassword, hashedPassword);
-            console.log('✅ Password verification test:', testResult ? 'PASSED' : 'FAILED');
+            if (existingUser.length > 0) {
+                console.log(`📝 Updating existing admin: ${adminData.username}`);
+                
+                // Update existing admin
+                await connection.execute(`
+                    UPDATE users 
+                    SET full_name = ?, email = ?, password = ?, role = ?, is_active = 1 
+                    WHERE username = ?
+                `, [
+                    adminData.full_name,
+                    adminData.email,
+                    hashedPassword,
+                    'admin',
+                    adminData.username
+                ]);
+            } else {
+                console.log(`➕ Creating new admin: ${adminData.username}`);
+                
+                // Create new admin user
+                await connection.execute(`
+                    INSERT INTO users (username, full_name, email, password, role, is_active) 
+                    VALUES (?, ?, ?, ?, ?, 1)
+                `, [
+                    adminData.username,
+                    adminData.full_name,
+                    adminData.email,
+                    hashedPassword,
+                    'admin'
+                ]);
+            }
             
-        } else {
-            console.log('❌ Admin user not found. Creating new admin user...');
+            // Test password verification
+            const testResult = await bcrypt.compare(adminData.password, hashedPassword);
+            console.log(`   ✅ Password verification for ${adminData.username}:`, testResult ? 'PASSED' : 'FAILED');
+        }
+        
+        // Create admin_assignments table if it doesn't exist
+        console.log('📋 Creating admin assignments table...');
+        
+        // Drop table if exists to recreate with correct schema
+        await connection.execute('DROP TABLE IF EXISTS admin_assignments');
+        
+        await connection.execute(`
+            CREATE TABLE admin_assignments (
+                assignment_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                assigned_by INT NOT NULL,
+                start_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                end_date DATETIME NULL,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                FOREIGN KEY (assigned_by) REFERENCES users(user_id) ON DELETE CASCADE
+            )
+        `);
+        
+        // Create admin assignment records
+        const [adminIds] = await connection.execute(
+            'SELECT user_id, username FROM users WHERE role = ? ORDER BY user_id', 
+            ['admin']
+        );
+        
+        if (adminIds.length > 0) {
+            const firstAdminId = adminIds[0].user_id;
             
-            const hashedPassword = await bcrypt.hash('admin', 10);
-            await connection.execute(
-                'INSERT INTO users (username, full_name, email, password, role) VALUES (?, ?, ?, ?, ?)',
-                ['admin', 'System Administrator', 'admin@example.com', hashedPassword, 'admin']
-            );
-            
-            console.log('✅ New admin user created');
+            for (const admin of adminIds) {
+                // Check if assignment already exists
+                const [existingAssignment] = await connection.execute(
+                    'SELECT * FROM admin_assignments WHERE user_id = ? AND is_active = 1',
+                    [admin.user_id]
+                );
+                
+                if (existingAssignment.length === 0) {
+                    await connection.execute(`
+                        INSERT INTO admin_assignments (user_id, assigned_by, start_date, end_date, is_active) 
+                        VALUES (?, ?, NOW(), NULL, 1)
+                    `, [admin.user_id, firstAdminId]);
+                    
+                    console.log(`   📋 Created admin assignment for: ${admin.username}`);
+                }
+            }
         }
         
         await connection.end();
-        console.log('🎉 Admin user creation complete!');
+        
+        console.log('🎉 Admin users creation complete!');
+        console.log('🔑 Login credentials:');
+        adminUsers.forEach(admin => {
+            console.log(`   Username: ${admin.username} | Password: ${admin.password}`);
+        });
+        console.log('\n📝 All admins have equal access level and can:');
+        console.log('   - Manage employees and monitors');
+        console.log('   - Process registration requests');
+        console.log('   - Manage inventory and stock');
+        console.log('   - View system history and reports');
+        console.log('   - Assign/unassign other admins (peer-to-peer)');
         
     } catch (error) {
-        console.error('❌ Error creating admin user:', error.message);
+        console.error('❌ Error creating admin users:', error.message);
         process.exit(1);
     }
 }
 
-createAdmin();
+createAdmins();

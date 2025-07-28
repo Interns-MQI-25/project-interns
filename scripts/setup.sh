@@ -40,7 +40,7 @@ cd ..
 
 # Create admin account
 echo "Creating admin account..."
-node fix-admin.js
+node create-admin.js
 
 # Setup database connection
 echo "Configuring database connection..."

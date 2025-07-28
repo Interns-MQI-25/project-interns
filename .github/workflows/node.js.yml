@@ -1,0 +1,133 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "main", "admin" ]
+  pull_request:
+    branches: [ "main", "admin" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build --if-present
+    
+    - name: Run tests
+      run: npm test --if-present
+    
+    - name: Check for security vulnerabilities
+      run: npm audit --audit-level moderate
+      continue-on-error: true
+    
+    - name: Lint code
+      run: npm run lint --if-present
+      continue-on-error: true
+
+  database-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: product_management_system
+          MYSQL_USER: sigma
+          MYSQL_PASSWORD: sigma
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+          --health-start-period=30s
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Wait for MySQL
+      run: |
+        echo "Waiting for MySQL to be ready..."
+        for i in {1..30}; do
+          if mysqladmin ping -h"127.0.0.1" -P3306 -uroot -proot --silent; then
+            echo "MySQL is ready!"
+            break
+          fi
+          echo "Attempt $i: MySQL not ready yet, waiting..."
+          sleep 2
+        done
+        
+        echo "Testing MySQL connection..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "SELECT 1;" || exit 1
+    
+    - name: Setup test database
+      run: |
+        echo "Creating test database..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE IF NOT EXISTS product_management_system;"
+        
+        echo "Creating sigma user and granting permissions..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE USER IF NOT EXISTS 'sigma'@'%' IDENTIFIED BY 'sigma';"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "GRANT ALL PRIVILEGES ON product_management_system.* TO 'sigma'@'%';"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "FLUSH PRIVILEGES;"
+        
+        echo "Importing database schema..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot product_management_system < database.sql
+        
+        echo "Verifying tables were created..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system; SHOW TABLES;"
+        
+        echo "Checking specific required tables..."
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system; DESCRIBE users;" || echo "Users table issue"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system; DESCRIBE products;" || echo "Products table issue"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system; DESCRIBE product_requests;" || echo "Product_requests table issue"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system; DESCRIBE admin_assignments;" || echo "Admin_assignments table issue"
+        
+        echo "Database setup completed successfully!"
+      env:
+        MYSQL_HOST: 127.0.0.1
+        MYSQL_PORT: 3306
+        MYSQL_USER: root
+        MYSQL_PASSWORD: root
+        MYSQL_DATABASE: product_management_system
+    
+    - name: Run database tests
+      run: npm run test:db --if-present
+      env:
+        NODE_ENV: test
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        DB_USER: sigma
+        DB_PASSWORD: sigma
+        DB_NAME: product_management_system

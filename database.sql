@@ -90,14 +90,14 @@ CREATE TABLE registration_requests (
 CREATE TABLE products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     item_number INT,
-    asset_type VARCHAR(50) NOT NULL,
-    product_category VARCHAR(100) NOT NULL,
-    product_name VARCHAR(500) NOT NULL,
+    asset_type VARCHAR(50) ,
+    product_category VARCHAR(100) ,
+    product_name VARCHAR(500) ,
     model_number VARCHAR(100),
     serial_number VARCHAR(100),
     is_available BOOLEAN DEFAULT TRUE,
-    quantity INT NOT NULL DEFAULT 1,
-    added_by INT NOT NULL,
+    quantity INT DEFAULT 1,
+    added_by INT,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     calibration_required BOOLEAN DEFAULT FALSE,
     calibration_frequency VARCHAR(50),
@@ -260,6 +260,8 @@ CREATE INDEX idx_products_asset_type ON products(asset_type);
 CREATE INDEX idx_products_category ON products(product_category);
 CREATE INDEX idx_product_assignments_employee ON product_assignments(employee_id);
 CREATE INDEX idx_product_assignments_returned ON product_assignments(is_returned);
+CREATE INDEX idx_registration_requests_status ON registration_requests(status);
+CREATE INDEX idx_monitor_assignments_active ON monitor_assignments(is_active);
 
 -- Add is_active column to users table
 ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
@@ -279,3 +281,16 @@ INSERT INTO users (username, full_name, email, password, role, is_super_admin, i
 ('admin1', 'Admin One', 'admin1@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE, TRUE),
 ('admin2', 'Admin Two', 'admin2@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE),
 ('admin3', 'Admin Three', 'admin3@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE);
+
+alter table products add column pr_no INT;
+alter table products add column po_number VARCHAR(50);
+alter table products add column inward_date DATE;
+alter table products add column inwarded_by INT REFERENCES users(user_id);
+
+ALTER TABLE products
+    ADD COLUMN version_number VARCHAR(50),
+    ADD COLUMN software_license_type VARCHAR(50),
+    ADD COLUMN license_expiry DATE,
+    ADD COLUMN renewal_frequency VARCHAR(50),
+    ADD COLUMN next_renewal_date DATE;
+  

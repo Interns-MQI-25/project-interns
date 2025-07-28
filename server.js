@@ -5,8 +5,10 @@ const mysql = require('mysql2/promise');
 const path = require('path');
 require('dotenv').config();
 
-// Import route modules
+// Import middleware
 const { requireAuth, requireRole } = require('./src/middleware/auth');
+
+// Import route modules
 const commonRoutes = require('./src/routes/commonRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const employeeRoutes = require('./src/routes/employeeRoutes');
@@ -53,6 +55,11 @@ app.use('/', commonRoutes(pool, requireAuth, requireRole));
 app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
 app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
 app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
+
+// Test route to verify monitor routes are working
+app.get('/test-monitor', (req, res) => {
+    res.json({ message: 'Monitor routes are accessible', timestamp: new Date() });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -15,7 +15,7 @@ const dbConfig = {
     port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER || 'sigma',
     password: process.env.DB_PASSWORD || 'sigma',
-    database: process.env.DB_NAME || 'product_management_system_test'
+    database: process.env.DB_NAME || 'product_management_system'
 };
 
 async function testDatabaseConnection() {
@@ -44,7 +44,7 @@ async function testTableStructure() {
         connection = await mysql.createConnection(dbConfig);
         
         // Check if main tables exist
-        const requiredTables = ['users', 'products', 'requests', 'admin_assignments'];
+        const requiredTables = ['users', 'products', 'product_requests', 'admin_assignments'];
         
         for (const table of requiredTables) {
             const [rows] = await connection.execute(`SHOW TABLES LIKE '${table}'`);
@@ -79,9 +79,9 @@ async function testBasicQueries() {
         const [productRows] = await connection.execute('SELECT COUNT(*) as count FROM products');
         console.log(`   - Products table query successful: ${productRows[0].count} products found`);
         
-        // Test SELECT query on requests table
-        const [requestRows] = await connection.execute('SELECT COUNT(*) as count FROM requests');
-        console.log(`   - Requests table query successful: ${requestRows[0].count} requests found`);
+        // Test SELECT query on product_requests table
+        const [requestRows] = await connection.execute('SELECT COUNT(*) as count FROM product_requests');
+        console.log(`   - Product requests table query successful: ${requestRows[0].count} requests found`);
         
         await connection.end();
         return true;

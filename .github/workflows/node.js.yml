@@ -111,7 +111,7 @@ jobs:
         echo "Checking specific required tables..."
         mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system; DESCRIBE users;" || echo "Users table issue"
         mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system; DESCRIBE products;" || echo "Products table issue"
-        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system; DESCRIBE requests;" || echo "Requests table issue"
+        mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system; DESCRIBE product_requests;" || echo "Product_requests table issue"
         mysql -h127.0.0.1 -P3306 -uroot -proot -e "USE product_management_system; DESCRIBE admin_assignments;" || echo "Admin_assignments table issue"
         
         echo "Database setup completed successfully!"

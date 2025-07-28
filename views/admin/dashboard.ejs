@@ -127,8 +127,8 @@
                                     Total Employees
                                 </dt>
                                 <dd>
-                                    <div class="text-2xl font-bold text-gray-900">
-                                        0
+                                    <div class="text-2xl font-bold text-gray-900" id="totalEmployees">
+                                        <%= stats ? stats.totalEmployees : 0 %>
                                     </div>
                                 </dd>
                             </dl>
@@ -149,8 +149,8 @@
                                     Active Monitors
                                 </dt>
                                 <dd>
-                                    <div class="text-2xl font-bold text-gray-900">
-                                        0
+                                    <div class="text-2xl font-bold text-gray-900" id="activeMonitors">
+                                        <%= stats ? stats.activeMonitors : 0 %>
                                     </div>
                                 </dd>
                             </dl>
@@ -171,8 +171,8 @@
                                     Pending Registrations
                                 </dt>
                                 <dd>
-                                    <div class="text-2xl font-bold text-gray-900">
-                                        0
+                                    <div class="text-2xl font-bold text-gray-900" id="pendingRegistrations">
+                                        <%= stats ? stats.pendingRegistrations : 0 %>
                                     </div>
                                 </dd>
                             </dl>
@@ -193,8 +193,8 @@
                                     Total Products
                                 </dt>
                                 <dd>
-                                    <div class="text-2xl font-bold text-gray-900">
-                                        0
+                                    <div class="text-2xl font-bold text-gray-900" id="totalProducts">
+                                        <%= stats ? stats.totalProducts : 0 %>
                                     </div>
                                 </dd>
                             </dl>
@@ -203,6 +203,51 @@
                 </div>
             </div>
         </div>
+
+        <!-- Stock Analytics -->
+        <% if (typeof stockStats !== 'undefined' && stockStats && stockStats.length > 0) { %>
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Inventory Overview & Analytics</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                <% stockStats.forEach(stat => { %>
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="p-5">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-cube text-2xl text-purple-600"></i>
+                                </div>
+                                <div class="ml-5 w-0 flex-1">
+                                    <dl>
+                                        <dt class="text-sm font-medium text-gray-500 truncate">
+                                            <%= stat.asset_type %>
+                                        </dt>
+                                        <dd>
+                                            <div class="text-lg font-medium text-gray-900">
+                                                Available: <%= stat.available_quantity %> items
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                Total items: <%= stat.total_items %>
+                                            </div>
+                                            <% if (stat.calibration_items > 0) { %>
+                                                <div class="text-xs text-orange-600">
+                                                    Cal Req: <%= stat.calibration_items %>
+                                                </div>
+                                            <% } %>
+                                            <% if (stat.overdue_calibrations > 0) { %>
+                                                <div class="text-xs text-red-600">
+                                                    Overdue: <%= stat.overdue_calibrations %>
+                                                </div>
+                                            <% } %>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+        <% } %>
         
         <!-- Recent Activity -->
         <div class="bg-white shadow rounded-lg">
@@ -210,11 +255,166 @@
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
                     Recent System Activity
                 </h3>
-                <div class="text-gray-500">
-                    <p>No recent activity to display.</p>
+                <div id="recentActivity" class="max-h-96 overflow-y-auto">
+                    <% if (recentActivity && recentActivity.length > 0) { %>
+                        <div class="space-y-3">
+                            <% recentActivity.forEach(function(activity) { %>
+                                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex-shrink-0">
+                                            <% if (activity.type === 'request') { %>
+                                                <i class="fas fa-shopping-cart text-blue-500"></i>
+                                            <% } else if (activity.type === 'assignment') { %>
+                                                <i class="fas fa-box text-green-500"></i>
+                                            <% } else if (activity.type === 'registration') { %>
+                                                <i class="fas fa-user-plus text-orange-500"></i>
+                                            <% } %>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">
+                                                <%= activity.employee_name %>
+                                                <% if (activity.type === 'request') { %>
+                                                    requested <%= activity.quantity %> x <%= activity.product_name %>
+                                                <% } else if (activity.type === 'assignment') { %>
+                                                    <%= activity.status %> <%= activity.quantity %> x <%= activity.product_name %>
+                                                <% } else if (activity.type === 'registration') { %>
+                                                    submitted registration request
+                                                <% } %>
+                                            </p>
+                                            <p class="text-xs text-gray-500">
+                                                <%= new Date(activity.date).toLocaleString() %>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            <% if (activity.status === 'pending') { %>
+                                                bg-yellow-100 text-yellow-800
+                                            <% } else if (activity.status === 'approved' || activity.status === 'assigned') { %>
+                                                bg-green-100 text-green-800
+                                            <% } else if (activity.status === 'rejected') { %>
+                                                bg-red-100 text-red-800
+                                            <% } else if (activity.status === 'returned') { %>
+                                                bg-blue-100 text-blue-800
+                                            <% } else { %>
+                                                bg-gray-100 text-gray-800
+                                            <% } %>">
+                                            <%= activity.status %>
+                                        </span>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <div class="text-gray-500">
+                            <p>No recent activity to display.</p>
+                        </div>
+                    <% } %>
                 </div>
             </div>
         </div>
     </main>
+    
+    <script>
+        // Function to update dashboard stats and activity
+        async function updateDashboardStats() {
+            try {
+                const response = await fetch('/api/admin/dashboard-stats');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Update stats
+                    document.getElementById('totalEmployees').textContent = data.totalEmployees;
+                    document.getElementById('activeMonitors').textContent = data.activeMonitors;
+                    document.getElementById('pendingRegistrations').textContent = data.pendingRegistrations;
+                    document.getElementById('totalProducts').textContent = data.totalProducts;
+                    
+                    // Update recent activity
+                    updateRecentActivity(data.recentActivity);
+                    
+                    // Update stock stats
+                    updateStockStats(data.stockStats);
+                }
+            } catch (error) {
+                console.error('Error updating dashboard stats:', error);
+            }
+        }
+        
+        // Function to update recent activity
+        function updateRecentActivity(activities) {
+            const activityContainer = document.getElementById('recentActivity');
+            
+            if (!activities || activities.length === 0) {
+                activityContainer.innerHTML = '<div class="text-gray-500"><p>No recent activity to display.</p></div>';
+                return;
+            }
+            
+            const activityHTML = activities.map(activity => {
+                const date = new Date(activity.date).toLocaleString();
+                let icon, statusClass, actionText;
+                
+                if (activity.type === 'request') {
+                    icon = 'fas fa-shopping-cart text-blue-500';
+                    actionText = `requested ${activity.quantity} x ${activity.product_name}`;
+                } else if (activity.type === 'assignment') {
+                    icon = 'fas fa-box text-green-500';
+                    actionText = `${activity.status} ${activity.quantity} x ${activity.product_name}`;
+                } else if (activity.type === 'registration') {
+                    icon = 'fas fa-user-plus text-orange-500';
+                    actionText = 'submitted registration request';
+                }
+                
+                if (activity.status === 'pending') {
+                    statusClass = 'bg-yellow-100 text-yellow-800';
+                } else if (activity.status === 'approved' || activity.status === 'assigned') {
+                    statusClass = 'bg-green-100 text-green-800';
+                } else if (activity.status === 'rejected') {
+                    statusClass = 'bg-red-100 text-red-800';
+                } else if (activity.status === 'returned') {
+                    statusClass = 'bg-blue-100 text-blue-800';
+                } else {
+                    statusClass = 'bg-gray-100 text-gray-800';
+                }
+                
+                return `
+                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                        <div class="flex items-center space-x-3">
+                            <div class="flex-shrink-0">
+                                <i class="${icon}"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">
+                                    ${activity.employee_name} ${actionText}
+                                </p>
+                                <p class="text-xs text-gray-500">
+                                    ${date}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                                ${activity.status}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            activityContainer.innerHTML = `<div class="space-y-3">${activityHTML}</div>`;
+        }
+        
+        // Function to update stock statistics
+        function updateStockStats(stockStats) {
+            // This would require more complex DOM manipulation
+            // For now, we'll just refresh the page if stock stats change significantly
+            // In a production environment, you might want to implement more sophisticated updates
+        }
+        
+        // Update stats and activity every 30 seconds
+        setInterval(updateDashboardStats, 30000);
+        
+        // Update stats and activity when page loads
+        document.addEventListener('DOMContentLoaded', updateDashboardStats);
+    </script>
 </body>
 </html>

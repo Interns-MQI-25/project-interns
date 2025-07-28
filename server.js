@@ -4,6 +4,7 @@ const flash = require('express-flash');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
@@ -40,14 +41,28 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Middleware to check authentication
-const requireAuth = (req, res, next) => {
-    if (req.session.user) {
-        // Set headers to prevent caching of authenticated pages
-        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-        res.set('Pragma', 'no-cache');
-        res.set('Expires', '0');
-        next();
-    } else {
+const requireAuth = async (req, res, next) => {
+    try {
+        if (req.session.user) {
+            // Get complete user data from database using pool instead of db
+            const [users] = await pool.execute(
+                'SELECT * FROM users WHERE user_id = ?', 
+                [req.session.user.user_id]
+            );
+
+            if (users.length === 0) {
+                req.session.destroy();
+                return res.redirect('/login');
+            }
+
+            req.user = users[0];
+            next();
+        } else {
+            res.redirect('/login');
+        }
+    } catch (error) {
+        console.error('Auth error:', error);
+        req.session.destroy();
         res.redirect('/login');
     }
 };
@@ -271,11 +286,108 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 LIMIT 5
             `, [req.session.user.user_id]);
 
-            res.render('employee/dashboard', { user: req.session.user, recentRequests });
+            // Fetch recent activity for employee
+            const [recentActivity] = await pool.execute(`
+                SELECT 'assignment' as action, pa.assigned_at as performed_at, p.product_name,
+                       u.full_name as performed_by_name, pa.quantity, 'Product assigned to you' as notes
+                FROM product_assignments pa
+                JOIN products p ON pa.product_id = p.product_id
+                JOIN employees e ON pa.employee_id = e.employee_id
+                JOIN users u ON pa.monitor_id = u.user_id
+                WHERE e.user_id = ? AND pa.assigned_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                ORDER BY pa.assigned_at DESC
+                LIMIT 5
+            `, [req.session.user.user_id]);
+            
+            res.render('employee/dashboard', { user: req.session.user, recentRequests, recentActivity });
         } else if (role === 'monitor') {
-            res.render('monitor/dashboard', { user: req.session.user });
+            // Fetch recent activity for monitor
+            const [recentActivity] = await pool.execute(`
+                SELECT sh.action, sh.performed_at, p.product_name,
+                       u.full_name as performed_by_name, sh.quantity, sh.notes
+                FROM stock_history sh
+                JOIN products p ON sh.product_id = p.product_id
+                JOIN users u ON sh.performed_by = u.user_id
+                WHERE sh.performed_by = ? AND sh.performed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                ORDER BY sh.performed_at DESC
+                LIMIT 5
+            `, [req.session.user.user_id]);
+            
+            res.render('monitor/dashboard', { user: req.session.user, recentActivity });
         } else if (role === 'admin') {
-            res.render('admin/dashboard', { user: req.session.user });
+            // Fetch dashboard statistics for admin
+            const [totalEmployees] = await pool.execute(
+                'SELECT COUNT(*) as count FROM users WHERE role IN ("employee", "monitor")'
+            );
+            
+            const [activeMonitors] = await pool.execute(
+                'SELECT COUNT(*) as count FROM users WHERE role = "monitor"'
+            );
+            
+            const [pendingRegistrations] = await pool.execute(
+                'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
+            );
+            
+            const [totalProducts] = await pool.execute(
+                'SELECT COUNT(*) as count FROM products'
+            );
+            
+            // Fetch recent system activity
+            const [recentActivity] = await pool.execute(`
+                SELECT 'request' as type, pr.requested_at as date, p.product_name, 
+                       u.full_name as employee_name, pr.status, pr.quantity
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                WHERE pr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                UNION ALL
+                SELECT 'assignment' as type, pa.assigned_at as date, p.product_name,
+                       u.full_name as employee_name, 
+                       CASE WHEN pa.is_returned THEN 'returned' ELSE 'assigned' END as status,
+                       pa.quantity
+                FROM product_assignments pa
+                JOIN products p ON pa.product_id = p.product_id
+                JOIN employees e ON pa.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                WHERE pa.assigned_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                UNION ALL
+                SELECT 'registration' as type, rr.requested_at as date, 'User Registration' as product_name,
+                       rr.full_name as employee_name, rr.status, 1 as quantity
+                FROM registration_requests rr
+                WHERE rr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ORDER BY date DESC
+                LIMIT 10
+            `);
+            
+            // Fetch stock analytics
+            const stockStatsQuery = `
+                SELECT 
+                    asset_type,
+                    COUNT(*) as total_items,
+                    SUM(quantity) as total_quantity,
+                    SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) as available_quantity,
+                    SUM(CASE WHEN COALESCE(calibration_required, FALSE) = TRUE THEN 1 ELSE 0 END) as calibration_items,
+                    SUM(CASE WHEN calibration_due_date IS NOT NULL AND calibration_due_date < CURDATE() THEN 1 ELSE 0 END) as overdue_calibrations
+                FROM products
+                GROUP BY asset_type
+            `;
+            
+            const [stockStats] = await pool.execute(stockStatsQuery);
+            
+            const dashboardStats = {
+                totalEmployees: totalEmployees[0].count,
+                activeMonitors: activeMonitors[0].count,
+                pendingRegistrations: pendingRegistrations[0].count,
+                totalProducts: totalProducts[0].count
+            };
+            
+            res.render('admin/dashboard', { 
+                user: req.session.user, 
+                stats: dashboardStats,
+                recentActivity: recentActivity || [],
+                stockStats: stockStats || []
+            });
         }
     } catch (error) {
         console.error('Dashboard error:', error);
@@ -378,7 +490,7 @@ app.get('/employee/requests', requireAuth, requireRole(['employee']), async (req
 });
 
 app.post('/employee/request-product', requireAuth, requireRole(['employee']), async (req, res) => {
-    const { product_id, quantity, purpose, return_date } = req.body;
+    const { product_id, quantity, purpose } = req.body;
 
     // Input validation
     if (!product_id || !quantity || !purpose) {
@@ -421,8 +533,8 @@ app.post('/employee/request-product', requireAuth, requireRole(['employee']), as
         }
 
         await pool.execute(
-            'INSERT INTO product_requests (employee_id, product_id, quantity, purpose, return_date) VALUES (?, ?, ?, ?, ?)',
-            [employee[0].employee_id, product_id, qty, purpose, return_date || null]
+            'INSERT INTO product_requests (employee_id, product_id, quantity, purpose) VALUES (?, ?, ?, ?)',
+            [employee[0].employee_id, product_id, qty, purpose]
         );
 
         req.flash('success', 'Product request submitted successfully');
@@ -434,35 +546,39 @@ app.post('/employee/request-product', requireAuth, requireRole(['employee']), as
     }
 });
 
-app.get('/employee/stock', requireAuth, requireRole(['employee']), async (req, res) => {
+// Fixed Employee Stock Route
+app.get('/employee/stock', requireAuth, requireRole('employee'), async (req, res) => {
     try {
-        const [products] = await pool.execute('SELECT * FROM products WHERE quantity > 0');
-        res.render('employee/stock', { user: req.session.user, products });
+        // Get products with corrected column names
+        const [products] = await pool.execute(`
+            SELECT 
+                product_id,
+                item_number,
+                product_name,
+                asset_type,
+                product_category,
+                model_number,
+                serial_number,
+                is_available,
+                quantity,
+                COALESCE(calibration_required, FALSE) as calibration_required,
+                added_at
+            FROM products 
+            WHERE is_available = TRUE AND quantity > 0
+            ORDER BY asset_type, product_category, product_name
+        `);
+        
+        res.render('employee/stock', { 
+            user: req.session.user,
+            products: products || []
+        });
     } catch (error) {
-        console.error('Stock error:', error);
-        res.render('error', { message: 'Error loading stock' });
-    }
-});
-
-// Add missing route for departments in register
-app.get('/api/departments', async (req, res) => {
-    try {
-        const [departments] = await pool.execute('SELECT * FROM departments ORDER BY department_name');
-        res.json(departments);
-    } catch (error) {
-        console.error('Departments error:', error);
-        res.status(500).json({ error: 'Error loading departments' });
-    }
-});
-
-// Update register route to include departments
-app.get('/register', async (req, res) => {
-    try {
-        const [departments] = await pool.execute('SELECT * FROM departments ORDER BY department_name');
-        res.render('auth/register', { messages: req.flash(), departments });
-    } catch (error) {
-        console.error('Register page error:', error);
-        res.render('error', { message: 'Error loading registration page' });
+        console.error('Employee stock error:', error);
+        res.render('employee/stock', { 
+            user: req.session.user || { full_name: 'Unknown User', role: 'employee' },
+            products: [],
+            error: 'Failed to load stock information'
+        });
     }
 });
 
@@ -558,102 +674,161 @@ app.get('/monitor/inventory', requireAuth, requireRole(['monitor']), async (req,
     }
 });
 
-app.post('/monitor/add-product', requireAuth, requireRole(['monitor']), async (req, res) => {
-    const { product_name, description, quantity } = req.body;
-    
-    try {
-        await pool.execute(
-            'INSERT INTO products (product_name, description, quantity, added_by) VALUES (?, ?, ?, ?)',
-            [product_name, description, quantity, req.session.user.user_id]
-        );
-        
-        // Add to stock history
-        const [productResult] = await pool.execute(
-            'SELECT product_id FROM products WHERE product_name = ? ORDER BY product_id DESC LIMIT 1',
-            [product_name]
-        );
-        
-        await pool.execute(
-            'INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) VALUES (?, ?, ?, ?, ?)',
-            [productResult[0].product_id, 'add', quantity, req.session.user.user_id, 'Initial stock added']
-        );
-        
-        req.flash('success', 'Product added successfully');
-        res.redirect('/monitor/inventory');
-    } catch (error) {
-        console.error('Add product error:', error);
-        req.flash('error', 'Error adding product');
-        res.redirect('/monitor/inventory');
-    }
-});
-
+// Fixed Monitor Stock Route
 app.get('/monitor/stock', requireAuth, requireRole(['monitor']), async (req, res) => {
     try {
-        const [products] = await pool.execute('SELECT * FROM products ORDER BY product_name');
-        res.render('employee/stock', { user: req.session.user, products });
+        const productsQuery = `
+            SELECT 
+                p.*,
+                u.full_name as added_by_name,
+                COALESCE((
+                    SELECT COUNT(*) 
+                    FROM product_assignments pa 
+                    WHERE pa.product_id = p.product_id
+                ), 0) as total_assignments,
+                COALESCE((
+                    SELECT SUM(pa.quantity) 
+                    FROM product_assignments pa 
+                    WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
+                ), 0) as currently_assigned,
+                CASE 
+                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date < CURDATE() THEN 'Overdue'
+                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'Due Soon'
+                    WHEN p.calibration_due_date IS NOT NULL THEN 'Current'
+                    ELSE 'Not Required'
+                END as calibration_status
+            FROM products p
+            LEFT JOIN users u ON p.added_by = u.user_id
+            ORDER BY p.asset_type, p.product_category, p.product_name
+        `;
+        
+        const [products] = await pool.execute(productsQuery);
+        
+        // Stock statistics query
+        const stockStatsQuery = `
+            SELECT 
+                asset_type,
+                COUNT(*) as total_items,
+                SUM(quantity) as total_quantity,
+                SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) as available_quantity,
+                SUM(CASE WHEN COALESCE(calibration_required, FALSE) = TRUE THEN 1 ELSE 0 END) as calibration_items,
+                SUM(CASE WHEN calibration_due_date IS NOT NULL AND calibration_due_date < CURDATE() THEN 1 ELSE 0 END) as overdue_calibrations
+            FROM products
+            GROUP BY asset_type
+        `;
+        
+        const [stockStats] = await pool.execute(stockStatsQuery);
+        
+        res.render('monitor/stock', { 
+            user: req.session.user, 
+            products: products || [],
+            stockStats: stockStats || []
+        });
     } catch (error) {
-        console.error('Stock error:', error);
-        res.render('error', { message: 'Error loading stock' });
+        console.error('Monitor stock error:', error);
+        res.render('monitor/stock', { 
+            user: req.session.user, 
+            products: [],
+            stockStats: [],
+            error: 'Error loading stock data'
+        });
     }
 });
 
-app.get('/monitor/records', requireAuth, requireRole(['monitor']), async (req, res) => {
+// API endpoint for real-time dashboard stats and activity
+app.get('/api/admin/dashboard-stats', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-        const [records] = await pool.execute(`
-            SELECT pa.*, p.product_name, u.full_name as employee_name, d.department_name
+        const [totalEmployees] = await pool.execute(
+            'SELECT COUNT(*) as count FROM users WHERE role IN ("employee", "monitor")'
+        );
+        
+        const [activeMonitors] = await pool.execute(
+            'SELECT COUNT(*) as count FROM users WHERE role = "monitor"'
+        );
+        
+        const [pendingRegistrations] = await pool.execute(
+            'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
+        );
+        
+        const [totalProducts] = await pool.execute(
+            'SELECT COUNT(*) as count FROM products'
+        );
+        
+        // Fetch recent system activity
+        const [recentActivity] = await pool.execute(`
+            SELECT 'request' as type, pr.requested_at as date, p.product_name, 
+                   u.full_name as employee_name, pr.status, pr.quantity
+            FROM product_requests pr
+            JOIN products p ON pr.product_id = p.product_id
+            JOIN employees e ON pr.employee_id = e.employee_id
+            JOIN users u ON e.user_id = u.user_id
+            WHERE pr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            UNION ALL
+            SELECT 'assignment' as type, pa.assigned_at as date, p.product_name,
+                   u.full_name as employee_name, 
+                   CASE WHEN pa.is_returned THEN 'returned' ELSE 'assigned' END as status,
+                   pa.quantity
             FROM product_assignments pa
             JOIN products p ON pa.product_id = p.product_id
             JOIN employees e ON pa.employee_id = e.employee_id
             JOIN users u ON e.user_id = u.user_id
-            JOIN departments d ON e.department_id = d.department_id
-            WHERE pa.monitor_id = ?
-            ORDER BY pa.assigned_at DESC
-        `, [req.session.user.user_id]);
+            WHERE pa.assigned_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            UNION ALL
+            SELECT 'registration' as type, rr.requested_at as date, 'User Registration' as product_name,
+                   rr.full_name as employee_name, rr.status, 1 as quantity
+            FROM registration_requests rr
+            WHERE rr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            ORDER BY date DESC
+            LIMIT 10
+        `);
         
-        res.render('monitor/records', { user: req.session.user, records });
+        // Fetch stock analytics
+        const stockStatsQuery = `
+            SELECT 
+                asset_type,
+                COUNT(*) as total_items,
+                SUM(quantity) as total_quantity,
+                SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) as available_quantity,
+                SUM(CASE WHEN COALESCE(calibration_required, FALSE) = TRUE THEN 1 ELSE 0 END) as calibration_items,
+                SUM(CASE WHEN calibration_due_date IS NOT NULL AND calibration_due_date < CURDATE() THEN 1 ELSE 0 END) as overdue_calibrations
+            FROM products
+            GROUP BY asset_type
+        `;
+        
+        const [stockStats] = await pool.execute(stockStatsQuery);
+        
+        res.json({
+            totalEmployees: totalEmployees[0].count,
+            activeMonitors: activeMonitors[0].count,
+            pendingRegistrations: pendingRegistrations[0].count,
+            totalProducts: totalProducts[0].count,
+            recentActivity: recentActivity || [],
+            stockStats: stockStats || []
+        });
     } catch (error) {
-        console.error('Records error:', error);
-        res.render('error', { message: 'Error loading records' });
+        console.error('Dashboard stats error:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard stats' });
     }
 });
 
-app.post('/admin/create-employee', requireAuth, requireRole(['admin']), async (req, res) => {
-    const { full_name, username, email, password, department_id, role } = req.body;
-    
+// Admin routes
+app.get('/admin/employees', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
+        const [employees] = await pool.execute(`
+            SELECT u.*, e.employee_id, d.department_name, e.is_active as employee_active
+            FROM users u
+            LEFT JOIN employees e ON u.user_id = e.user_id
+            LEFT JOIN departments d ON e.department_id = d.department_id
+            WHERE u.role IN ('employee', 'monitor')
+            ORDER BY u.is_active DESC, u.full_name
+        `);
         
-        try {
-            // Hash password
-            const hashedPassword = await bcrypt.hash(password, 10);
-            
-            // Create user
-            const [userResult] = await connection.execute(
-                'INSERT INTO users (username, full_name, email, password, role) VALUES (?, ?, ?, ?, ?)',
-                [username, full_name, email, hashedPassword, role]
-            );
-            
-            // Create employee record
-            await connection.execute(
-                'INSERT INTO employees (user_id, department_id) VALUES (?, ?)',
-                [userResult.insertId, department_id]
-            );
-            
-            await connection.commit();
-            req.flash('success', 'Employee created successfully');
-        } catch (error) {
-            await connection.rollback();
-            throw error;
-        } finally {
-            connection.release();
-        }
+        const [departments] = await pool.execute('SELECT * FROM departments');
         
-        res.redirect('/admin/employees');
+        res.render('admin/employees', { user: req.session.user, employees, departments });
     } catch (error) {
-        console.error('Create employee error:', error);
-        req.flash('error', 'Error creating employee');
-        res.redirect('/admin/employees');
+        console.error('Employees error:', error);
+        res.render('error', { message: 'Error loading employees' });
     }
 });
 
@@ -683,23 +858,88 @@ app.get('/admin/monitors', requireAuth, requireRole(['admin']), async (req, res)
     }
 });
 
+// Fixed Admin Stock Route
 app.get('/admin/stock', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-        const [products] = await pool.execute(`
-            SELECT p.*, u.full_name as added_by_name,
-                   COUNT(pa.assignment_id) as total_assignments,
-                   COALESCE(SUM(CASE WHEN pa.is_returned = 0 THEN pa.quantity ELSE 0 END), 0) as currently_assigned
+        const productsQuery = `
+            SELECT 
+                p.*,
+                u.full_name as added_by_name,
+                COALESCE((
+                    SELECT COUNT(*) 
+                    FROM product_assignments pa 
+                    WHERE pa.product_id = p.product_id
+                ), 0) as total_assignments,
+                COALESCE((
+                    SELECT SUM(pa.quantity) 
+                    FROM product_assignments pa 
+                    WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
+                ), 0) as currently_assigned,
+                CASE 
+                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date < CURDATE() THEN 'Overdue'
+                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'Due Soon'
+                    WHEN p.calibration_due_date IS NOT NULL THEN 'Current'
+                    ELSE 'Not Required'
+                END as calibration_status
             FROM products p
             LEFT JOIN users u ON p.added_by = u.user_id
-            LEFT JOIN product_assignments pa ON p.product_id = pa.product_id
-            GROUP BY p.product_id
-            ORDER BY p.product_name
-        `);
+            ORDER BY p.asset_type, p.product_category, p.product_name
+        `;
         
-        res.render('admin/stock', { user: req.session.user, products });
+        const [products] = await pool.execute(productsQuery);
+        
+        // Get comprehensive stock analytics
+        const stockStatsQuery = `
+            SELECT 
+                asset_type,
+                COUNT(*) as total_items,
+                SUM(quantity) as total_quantity,
+                SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) as available_quantity,
+                SUM(CASE WHEN COALESCE(calibration_required, FALSE) = TRUE THEN 1 ELSE 0 END) as calibration_items,
+                SUM(CASE WHEN calibration_due_date IS NOT NULL AND calibration_due_date < CURDATE() THEN 1 ELSE 0 END) as overdue_calibrations
+            FROM products
+            GROUP BY asset_type
+        `;
+        
+        const [stockStats] = await pool.execute(stockStatsQuery);
+        
+        // Get recent stock activity (if stock_history table exists)
+        let recentActivity = [];
+        try {
+            const [activity] = await pool.execute(`
+                SELECT 
+                    sh.action,
+                    sh.quantity,
+                    sh.performed_at,
+                    sh.notes,
+                    p.product_name,
+                    u.full_name as performed_by_name
+                FROM stock_history sh
+                JOIN products p ON sh.product_id = p.product_id
+                JOIN users u ON sh.performed_by = u.user_id
+                ORDER BY sh.performed_at DESC
+                LIMIT 20
+            `);
+            recentActivity = activity;
+        } catch (historyError) {
+            console.log('Stock history table not found, skipping recent activity');
+        }
+        
+        res.render('admin/stock', { 
+            user: req.session.user, 
+            products: products || [],
+            stockStats: stockStats || [],
+            recentActivity: recentActivity || []
+        });
     } catch (error) {
-        console.error('Stock error:', error);
-        res.render('error', { message: 'Error loading stock' });
+        console.error('Admin stock error:', error);
+        res.render('admin/stock', { 
+            user: req.session.user, 
+            products: [],
+            stockStats: [],
+            recentActivity: [],
+            error: 'Error loading stock data'
+        });
     }
 });
 
@@ -731,97 +971,6 @@ app.get('/admin/history', requireAuth, requireRole(['admin']), async (req, res) 
     } catch (error) {
         console.error('History error:', error);
         res.render('error', { message: 'Error loading history' });
-    }
-});
-
-// Admin routes
-app.get('/admin/employees', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-        const [employees] = await pool.execute(`
-            SELECT u.*, e.employee_id, d.department_name, e.is_active
-            FROM users u
-            LEFT JOIN employees e ON u.user_id = e.user_id
-            LEFT JOIN departments d ON e.department_id = d.department_id
-            WHERE u.role IN ('employee', 'monitor')
-            ORDER BY u.full_name
-        `);
-        
-        const [departments] = await pool.execute('SELECT * FROM departments');
-        
-        res.render('admin/employees', { user: req.session.user, employees, departments });
-    } catch (error) {
-        console.error('Employees error:', error);
-        res.render('error', { message: 'Error loading employees' });
-    }
-});
-
-app.get('/admin/registration-requests', requireAuth, requireRole(['admin']), async (req, res) => {
-    try {
-        const [requests] = await pool.execute(`
-            SELECT rr.*, d.department_name
-            FROM registration_requests rr
-            JOIN departments d ON rr.department_id = d.department_id
-            WHERE rr.status = 'pending'
-            ORDER BY rr.requested_at ASC
-        `);
-        
-        res.render('admin/registration-requests', { user: req.session.user, requests });
-    } catch (error) {
-        console.error('Registration requests error:', error);
-        res.render('error', { message: 'Error loading registration requests' });
-    }
-});
-
-app.post('/admin/process-registration', requireAuth, requireRole(['admin']), async (req, res) => {
-    const { request_id, action } = req.body;
-    
-    try {
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
-        
-        try {
-            if (action === 'approve') {
-                // Get request details
-                const [requests] = await connection.execute(
-                    'SELECT * FROM registration_requests WHERE request_id = ?',
-                    [request_id]
-                );
-                
-                const request = requests[0];
-                
-                // Create user
-                const [userResult] = await connection.execute(
-                    'INSERT INTO users (username, full_name, email, password, role) VALUES (?, ?, ?, ?, ?)',
-                    [request.username, request.full_name, request.email, request.password, 'employee']
-                );
-                
-                // Create employee record
-                await connection.execute(
-                    'INSERT INTO employees (user_id, department_id) VALUES (?, ?)',
-                    [userResult.insertId, request.department_id]
-                );
-            }
-            
-            // Update request status
-            await connection.execute(
-                'UPDATE registration_requests SET status = ?, processed_by = ?, processed_at = NOW() WHERE request_id = ?',
-                [action === 'approve' ? 'approved' : 'rejected', req.session.user.user_id, request_id]
-            );
-            
-            await connection.commit();
-            req.flash('success', `Registration ${action === 'approve' ? 'approved' : 'rejected'} successfully`);
-        } catch (error) {
-            await connection.rollback();
-            throw error;
-        } finally {
-            connection.release();
-        }
-        
-        res.redirect('/admin/registration-requests');
-    } catch (error) {
-        console.error('Process registration error:', error);
-        req.flash('error', 'Error processing registration');
-        res.redirect('/admin/registration-requests');
     }
 });
 
@@ -934,6 +1083,499 @@ app.post('/admin/unassign-monitor', requireAuth, requireRole(['admin']), async (
         req.flash('error', 'Error unassigning monitor');
         res.redirect('/admin/monitors');
     }
+});
+
+// Enhanced Add Product Route for Monitor/Admin
+app.post('/monitor/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
+    const { 
+        product_name, 
+        description, 
+        category, 
+        sub_category, 
+        model_number, 
+        serial_number,
+        quantity,
+        calibration_required,
+        calibration_frequency,
+        calibration_due_date
+    } = req.body;
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // Insert product with all fields
+            const [productResult] = await connection.execute(`
+                INSERT INTO products (
+                    product_name, description, category, sub_category, 
+                    model_number, serial_number, quantity, added_by,
+                    calibration_required, calibration_frequency, calibration_due_date
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+                product_name, description, category, sub_category,
+                model_number, serial_number, quantity, req.session.user.user_id,
+                calibration_required === 'on', calibration_frequency, 
+                calibration_due_date || null
+            ]);
+            
+            // Add to stock history
+            await connection.execute(`
+                INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) 
+                VALUES (?, 'add', ?, ?, ?)
+            `, [
+                productResult.insertId, 
+                quantity, 
+                req.session.user.user_id, 
+                'Initial stock added'
+            ]);
+            
+            await connection.commit();
+            req.flash('success', 'Product added successfully to main stock');
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+        
+        const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
+        res.redirect(redirectPath);
+    } catch (error) {
+        console.error('Add product error:', error);
+        req.flash('error', 'Error adding product to stock');
+        const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
+        res.redirect(redirectPath);
+    }
+});
+
+// Fixed API endpoint for stock search/filter
+app.get('/api/stock/search', requireAuth, async (req, res) => {
+    try {
+        const { asset_type, search, available_only } = req.query;
+        
+        let query = `
+            SELECT 
+                product_id,
+                item_number,
+                product_name,
+                asset_type,
+                product_category,
+                model_number,
+                serial_number,
+                is_available,
+                quantity,
+                COALESCE(calibration_required, FALSE) as calibration_required
+            FROM products 
+            WHERE 1=1
+        `;
+        
+        const params = [];
+        
+        if (available_only === 'true') {
+            query += ' AND is_available = TRUE AND quantity > 0';
+        }
+        
+        if (asset_type && asset_type !== '') {
+            query += ' AND asset_type = ?';
+            params.push(asset_type);
+        }
+        
+        if (search && search !== '') {
+            query += ' AND (product_name LIKE ? OR product_category LIKE ? OR model_number LIKE ?)';
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm, searchTerm);
+        }
+        
+        query += ' ORDER BY asset_type, product_category, product_name';
+        
+        const [products] = await pool.execute(query, params);
+        res.json(products || []);
+    } catch (error) {
+        console.error('Stock search error:', error);
+        res.status(500).json({ error: 'Failed to search products' });
+    }
+});
+
+// Admin: Registration Requests Route
+app.get('/admin/registration-requests', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+        // Get all pending registration requests with department information
+        const [requests] = await pool.execute(`
+            SELECT 
+                rr.*,
+                d.department_name
+            FROM registration_requests rr
+            LEFT JOIN departments d ON rr.department_id = d.department_id
+            ORDER BY rr.requested_at DESC
+        `);
+
+        // Get departments for the form
+        const [departments] = await pool.execute(
+            'SELECT * FROM departments ORDER BY department_name'
+        );
+
+        res.render('admin/registration-requests', {
+            user: req.session.user,
+            requests: requests || [],
+            departments: departments || [],
+            messages: req.flash()
+        });
+    } catch (error) {
+        console.error('Registration requests error:', error);
+        req.flash('error', 'Error loading registration requests');
+        res.redirect('/admin/dashboard');
+    }
+});
+
+// Admin: Process Registration Request Route
+app.post('/admin/process-registration', requireAuth, requireRole(['admin']), async (req, res) => {
+    const { request_id, action } = req.body;
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // Get the registration request
+            const [requests] = await connection.execute(
+                'SELECT * FROM registration_requests WHERE request_id = ?',
+                [request_id]
+            );
+            
+            if (requests.length === 0) {
+                throw new Error('Registration request not found');
+            }
+            
+            const request = requests[0];
+            
+            if (action === 'approve') {
+                // Create user account
+                const [result] = await connection.execute(`
+                    INSERT INTO users (username, full_name, email, password, role) 
+                    VALUES (?, ?, ?, ?, 'employee')
+                `, [request.username, request.full_name, request.email, request.password]);
+                
+                const userId = result.insertId;
+                
+                // Create employee record
+                await connection.execute(`
+                    INSERT INTO employees (user_id, department_id) 
+                    VALUES (?, ?)
+                `, [userId, request.department_id]);
+                
+                // Update request status
+                await connection.execute(`
+                    UPDATE registration_requests 
+                    SET status = 'approved', processed_by = ?, processed_at = NOW() 
+                    WHERE request_id = ?
+                `, [req.session.user.user_id, request_id]);
+                
+                req.flash('success', `Registration approved for ${request.full_name}`);
+            } else if (action === 'reject') {
+                // Update request status to rejected
+                await connection.execute(`
+                    UPDATE registration_requests 
+                    SET status = 'rejected', processed_by = ?, processed_at = NOW() 
+                    WHERE request_id = ?
+                `, [req.session.user.user_id, request_id]);
+                
+                req.flash('success', `Registration rejected for ${request.full_name}`);
+            }
+            
+            await connection.commit();
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+        
+    } catch (error) {
+        console.error('Process registration error:', error);
+        req.flash('error', 'Error processing registration request');
+    }
+    
+    res.redirect('/admin/registration-requests');
+});
+
+// Admin: Create Employee Route
+app.post('/admin/create-employee', requireAuth, requireRole(['admin']), async (req, res) => {
+    const { full_name, username, email, password, department_id, role } = req.body;
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // Check if username or email already exists
+            const [existingUsers] = await connection.execute(
+                'SELECT * FROM users WHERE username = ? OR email = ?',
+                [username, email]
+            );
+            
+            if (existingUsers.length > 0) {
+                req.flash('error', 'Username or email already exists');
+                res.redirect('/admin/employees');
+                return;
+            }
+            
+            // Hash password
+            const hashedPassword = await bcrypt.hash(password, 10);
+            
+            // Create user account
+            const [userResult] = await connection.execute(`
+                INSERT INTO users (username, full_name, email, password, role) 
+                VALUES (?, ?, ?, ?, ?)
+            `, [username, full_name, email, hashedPassword, role || 'employee']);
+            
+            const userId = userResult.insertId;
+            
+            // Create employee record if role is employee or monitor
+            if (role === 'employee' || role === 'monitor' || !role) {
+                await connection.execute(`
+                    INSERT INTO employees (user_id, department_id) 
+                    VALUES (?, ?)
+                `, [userId, department_id]);
+            }
+            
+            await connection.commit();
+            req.flash('success', `${role || 'Employee'} created successfully: ${full_name}`);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+        
+    } catch (error) {
+        console.error('Create employee error:', error);
+        req.flash('error', 'Error creating employee');
+    }
+    
+    res.redirect('/admin/employees');
+});
+
+// Admin: Update Employee Route
+app.post('/admin/update-employee/:id', requireAuth, requireRole(['admin']), async (req, res) => {
+    const employeeId = req.params.id;
+    const { full_name, email, department_id, is_active, role } = req.body;
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // Update user information
+            await connection.execute(`
+                UPDATE users 
+                SET full_name = ?, email = ?, role = ?
+                WHERE user_id = ?
+            `, [full_name, email, role, employeeId]);
+            
+            // Update employee information if exists
+            await connection.execute(`
+                UPDATE employees 
+                SET department_id = ?, is_active = ?
+                WHERE user_id = ?
+            `, [department_id, is_active === 'on' ? 1 : 0, employeeId]);
+            
+            await connection.commit();
+            req.flash('success', 'Employee updated successfully');
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+        
+    } catch (error) {
+        console.error('Update employee error:', error);
+        req.flash('error', 'Error updating employee');
+    }
+    
+    res.redirect('/admin/employees');
+});
+
+// Admin: Toggle Employee Status Route (Deactivate/Activate)
+app.post('/admin/toggle-employee-status/:id', requireAuth, requireRole(['admin']), async (req, res) => {
+    const employeeId = req.params.id;
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // Get current user status
+            const [users] = await connection.execute(
+                'SELECT full_name, is_active FROM users WHERE user_id = ?',
+                [employeeId]
+            );
+            
+            if (users.length === 0) {
+                req.flash('error', 'Employee not found');
+                res.redirect('/admin/employees');
+                return;
+            }
+            
+            const user = users[0];
+            const newStatus = !user.is_active;
+            const userName = user.full_name;
+            
+            // If deactivating, check for active assignments
+            if (!newStatus) {
+                const [assignments] = await connection.execute(`
+                    SELECT COUNT(*) as count 
+                    FROM product_assignments pa
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    WHERE e.user_id = ? AND pa.is_returned = FALSE
+                `, [employeeId]);
+                
+                if (assignments[0].count > 0) {
+                    req.flash('error', 'Cannot deactivate employee with active product assignments');
+                    res.redirect('/admin/employees');
+                    return;
+                }
+            }
+            
+            // Update user status
+            await connection.execute(
+                'UPDATE users SET is_active = ? WHERE user_id = ?',
+                [newStatus, employeeId]
+            );
+            
+            // Update employee status
+            await connection.execute(
+                'UPDATE employees SET is_active = ? WHERE user_id = ?',
+                [newStatus, employeeId]
+            );
+            
+            await connection.commit();
+            const action = newStatus ? 'activated' : 'deactivated';
+            req.flash('success', `Employee ${userName} ${action} successfully`);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+        
+    } catch (error) {
+        console.error('Toggle employee status error:', error);
+        req.flash('error', 'Error updating employee status');
+    }
+    
+    res.redirect('/admin/employees');
+});
+
+// Admin: Bulk Deactivate Employees Route
+app.post('/admin/bulk-deactivate-employees', requireAuth, requireRole(['admin']), async (req, res) => {
+    const { employee_ids } = req.body;
+    
+    if (!employee_ids || employee_ids.length === 0) {
+        req.flash('error', 'No employees selected');
+        return res.redirect('/admin/employees');
+    }
+    
+    const ids = Array.isArray(employee_ids) ? employee_ids : [employee_ids];
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            let deactivatedCount = 0;
+            let skippedCount = 0;
+            
+            for (const employeeId of ids) {
+                // Check for active assignments
+                const [assignments] = await connection.execute(`
+                    SELECT COUNT(*) as count 
+                    FROM product_assignments pa
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    WHERE e.user_id = ? AND pa.is_returned = FALSE
+                `, [employeeId]);
+                
+                if (assignments[0].count > 0) {
+                    skippedCount++;
+                    continue;
+                }
+                
+                // Deactivate user and employee
+                await connection.execute(
+                    'UPDATE users SET is_active = FALSE WHERE user_id = ?',
+                    [employeeId]
+                );
+                await connection.execute(
+                    'UPDATE employees SET is_active = FALSE WHERE user_id = ?',
+                    [employeeId]
+                );
+                deactivatedCount++;
+            }
+            
+            await connection.commit();
+            
+            let message = `${deactivatedCount} employee(s) deactivated successfully`;
+            if (skippedCount > 0) {
+                message += `. ${skippedCount} employee(s) skipped due to active assignments`;
+            }
+            req.flash('success', message);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Bulk deactivate error:', error);
+        req.flash('error', 'Error deactivating employees');
+    }
+    
+    res.redirect('/admin/employees');
+});
+
+// Admin: Bulk Activate Employees Route
+app.post('/admin/bulk-activate-employees', requireAuth, requireRole(['admin']), async (req, res) => {
+    const { employee_ids } = req.body;
+    
+    if (!employee_ids || employee_ids.length === 0) {
+        req.flash('error', 'No employees selected');
+        return res.redirect('/admin/employees');
+    }
+    
+    const ids = Array.isArray(employee_ids) ? employee_ids : [employee_ids];
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // Activate selected users and employees
+            for (const employeeId of ids) {
+                await connection.execute(
+                    'UPDATE users SET is_active = TRUE WHERE user_id = ?',
+                    [employeeId]
+                );
+                await connection.execute(
+                    'UPDATE employees SET is_active = TRUE WHERE user_id = ?',
+                    [employeeId]
+                );
+            }
+            
+            await connection.commit();
+            req.flash('success', `${ids.length} employee(s) activated successfully`);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Bulk activate error:', error);
+        req.flash('error', 'Error activating employees');
+    }
+    
+    res.redirect('/admin/employees');
 });
 
 app.listen(PORT, () => {

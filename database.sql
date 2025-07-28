@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS product_assignments;
 DROP TABLE IF EXISTS product_requests;
 DROP TABLE IF EXISTS stock_history;
 DROP TABLE IF EXISTS registration_requests;
+DROP TABLE IF EXISTS admin_assignments;
 DROP TABLE IF EXISTS monitor_assignments;
 DROP TABLE IF EXISTS employees;
 DROP TABLE IF EXISTS products;
@@ -23,6 +24,7 @@ CREATE TABLE users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     role ENUM('employee', 'monitor', 'admin') NOT NULL DEFAULT 'employee',
+    is_super_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -46,6 +48,18 @@ CREATE TABLE employees (
 
 -- Create monitor_assignments table
 CREATE TABLE monitor_assignments (
+    assignment_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    assigned_by INT NOT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (assigned_by) REFERENCES users(user_id)
+);
+
+-- Create admin_assignments table (similar to monitor_assignments)
+CREATE TABLE admin_assignments (
     assignment_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     assigned_by INT NOT NULL,
@@ -252,6 +266,16 @@ ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
 
 -- Update existing users to be active
 UPDATE users SET is_active = TRUE;
+ALTER TABLE product_requests ADD COLUMN return_date TIMESTAMP NULL;
 
 -- Display completion message
 SELECT 'Database setup completed successfully!' as message;
+
+-- Remove superadmin user
+DELETE FROM users WHERE username = 'superadmin';
+
+-- Create 3 admin users
+INSERT INTO users (username, full_name, email, password, role, is_super_admin, is_active) VALUES
+('admin1', 'Admin One', 'admin1@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE, TRUE),
+('admin2', 'Admin Two', 'admin2@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE),
+('admin3', 'Admin Three', 'admin3@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE);

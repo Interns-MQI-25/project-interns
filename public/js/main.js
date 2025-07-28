@@ -1,7 +1,9 @@
 // Main JavaScript file for the application
 
 // Initialize the application
+console.log('Main.js loaded successfully');
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing...');
     // Initialize tooltips
     initializeTooltips();
     
@@ -13,6 +15,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Auto-hide flash messages
     autoHideFlashMessages();
+    
+    // Initialize live counts
+    initializeLiveCounts();
+    
+
 });
 
 // Initialize tooltips
@@ -162,6 +169,51 @@ function closeModal(modalId) {
     }
 }
 
+
+
+// Live counts functionality
+function initializeLiveCounts() {
+    console.log('Initializing live counts...');
+    updateLiveCounts();
+    // Update counts every 5 seconds for real-time updates
+    setInterval(updateLiveCounts, 5000);
+}
+
+function updateLiveCounts() {
+    fetch('/api/live-counts')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('API response not ok: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Live counts:', data);
+            alert('Pending requests: ' + data.pendingRequests);
+            // Update pending requests count for monitors
+            const pendingRequestsCount = document.getElementById('pendingRequestsCount');
+            if (pendingRequestsCount) {
+                pendingRequestsCount.textContent = data.pendingRequests;
+                pendingRequestsCount.style.display = 'inline';
+            }
+            
+            // Update pending registrations count for admin
+            const pendingRegistrationsCount = document.getElementById('pendingRegistrationsCount');
+            if (pendingRegistrationsCount) {
+                if (data.pendingRegistrations > 0) {
+                    pendingRegistrationsCount.textContent = data.pendingRegistrations;
+                    pendingRegistrationsCount.style.display = 'inline';
+                } else {
+                    pendingRegistrationsCount.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error updating live counts:', error);
+            alert('API Error: ' + error.message);
+        });
+}
+
 // Export functions for global use
 window.confirmDelete = confirmDelete;
 window.showLoading = showLoading;
@@ -169,3 +221,4 @@ window.formatDate = formatDate;
 window.formatCurrency = formatCurrency;
 window.openModal = openModal;
 window.closeModal = closeModal;
+

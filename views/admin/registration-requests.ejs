@@ -206,5 +206,24 @@
             </div>
         </div>
     </main>
+    
+    <script>
+        function updateLiveCounts() {
+            fetch('/api/live-counts')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('pendingRegistrationsCount');
+                    if (badge) {
+                        badge.textContent = data.pendingRegistrations;
+                        badge.style.display = 'inline';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        // Update on page load and every 5 seconds
+        updateLiveCounts();
+        setInterval(updateLiveCounts, 5000);
+    </script>
 </body>
 </html>

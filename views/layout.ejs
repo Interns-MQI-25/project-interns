@@ -28,11 +28,34 @@
         <%- include('partials/navbar') %>
     <% } %>
     
+
+    
+
+
     <main class="<%= typeof user !== 'undefined' && user ? 'ml-64 p-6' : '' %>">
+        
         <%- include('partials/messages') %>
         <%- body %>
     </main>
 
     <script src="/js/main.js"></script>
+    <script>
+        alert('JavaScript is working!');
+        console.log('Inline script working');
+        // Test live counts directly
+        setTimeout(function() {
+            fetch('/api/live-counts')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Direct API call result:', data);
+                    const badge = document.getElementById('pendingRequestsCount');
+                    if (badge) {
+                        badge.textContent = data.pendingRequests;
+                        console.log('Badge updated to:', data.pendingRequests);
+                    }
+                })
+                .catch(error => console.error('Direct API error:', error));
+        }, 2000);
+    </script>
 </body>
 </html>

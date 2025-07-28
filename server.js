@@ -5,6 +5,7 @@ const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
+const checkExpiredMonitors = require('./check-expired-monitors');
 require('dotenv').config();
 
 const app = express();
@@ -13,9 +14,10 @@ const PORT = process.env.PORT || 3000;
 // Database configuration
 const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
+    user: process.env.DB_USER || 'apnacollege',
+    password: process.env.DB_PASSWORD || 'Neha@012004',
     database: process.env.DB_NAME || 'product_management_system',
+    port: process.env.DB_PORT || 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -77,6 +79,32 @@ const requireRole = (roles) => {
         }
     };
 };
+
+
+
+// API endpoint for live counts
+app.get('/api/live-counts', requireAuth, async (req, res) => {
+    try {
+        const [pendingRequests] = await pool.execute(
+            'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
+        );
+        
+        const [pendingRegistrations] = await pool.execute(
+            'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
+        );
+        
+        console.log('API Debug - Pending requests:', pendingRequests[0].count);
+        console.log('API Debug - Pending registrations:', pendingRegistrations[0].count);
+        
+        res.json({
+            pendingRequests: pendingRequests[0].count,
+            pendingRegistrations: pendingRegistrations[0].count
+        });
+    } catch (error) {
+        console.error('Live counts error:', error);
+        res.status(500).json({ error: 'Failed to fetch counts' });
+    }
+});
 
 // Routes
 app.get('/', (req, res) => {
@@ -272,6 +300,9 @@ app.get('/logout', (req, res) => {
 
 app.get('/dashboard', requireAuth, async (req, res) => {
     try {
+        // Check for expired monitors on each dashboard load
+        await checkExpiredMonitors();
+        
         const role = req.session.user.role;
 
         if (role === 'employee') {
@@ -299,21 +330,53 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 LIMIT 5
             `, [req.session.user.user_id]);
             
-            res.render('employee/dashboard', { user: req.session.user, recentRequests, recentActivity });
+            res.render('employee/dashboard', { title: 'Employee Dashboard', user: req.session.user, recentRequests, recentActivity });
         } else if (role === 'monitor') {
-            // Fetch recent activity for monitor
+            // Fetch monitor dashboard statistics
+            const [pendingRequests] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
+            );
+            
+            const [approvedToday] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "approved" AND DATE(processed_at) = CURDATE()'
+            );
+            
+            const [totalProducts] = await pool.execute(
+                'SELECT COUNT(*) as count FROM products'
+            );
+            
+            // Fetch recent activity including requests and assignments
             const [recentActivity] = await pool.execute(`
+                SELECT 'request' as action, pr.requested_at as performed_at, p.product_name,
+                       u.full_name as performed_by_name, pr.quantity, pr.purpose as notes
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                WHERE pr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                UNION ALL
                 SELECT sh.action, sh.performed_at, p.product_name,
                        u.full_name as performed_by_name, sh.quantity, sh.notes
                 FROM stock_history sh
                 JOIN products p ON sh.product_id = p.product_id
                 JOIN users u ON sh.performed_by = u.user_id
-                WHERE sh.performed_by = ? AND sh.performed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-                ORDER BY sh.performed_at DESC
-                LIMIT 5
+                WHERE sh.performed_by = ? AND sh.performed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                ORDER BY performed_at DESC
+                LIMIT 10
             `, [req.session.user.user_id]);
             
-            res.render('monitor/dashboard', { user: req.session.user, recentActivity });
+            const monitorStats = {
+                pendingRequests: pendingRequests[0].count,
+                approvedToday: approvedToday[0].count,
+                totalProducts: totalProducts[0].count
+            };
+            
+            res.render('monitor/dashboard', { 
+                title: 'Monitor Dashboard', 
+                user: req.session.user, 
+                stats: monitorStats,
+                recentActivity 
+            });
         } else if (role === 'admin') {
             // Fetch dashboard statistics for admin
             const [totalEmployees] = await pool.execute(
@@ -383,6 +446,7 @@ app.get('/dashboard', requireAuth, async (req, res) => {
             };
             
             res.render('admin/dashboard', { 
+                title: 'Admin Dashboard',
                 user: req.session.user, 
                 stats: dashboardStats,
                 recentActivity: recentActivity || [],
@@ -440,7 +504,7 @@ app.get('/employee/records', requireAuth, requireRole(['employee']), async (req,
             ORDER BY pa.assigned_at DESC
         `, [req.session.user.user_id]);
         
-        res.render('employee/records', { user: req.session.user, records });
+        res.render('employee/records', { title: 'Records', user: req.session.user, records });
     } catch (error) {
         console.error('Records error:', error);
         res.render('error', { message: 'Error loading records' });
@@ -462,7 +526,7 @@ app.get('/employee/account', requireAuth, requireRole(['employee']), async (req,
             return res.redirect('/employee/dashboard');
         }
 
-        res.render('employee/account', { user: req.session.user, employee: employeeDetails[0] });
+        res.render('employee/account', { title: 'Account', user: req.session.user, employee: employeeDetails[0] });
     } catch (error) {
         console.error('Account error:', error);
         res.render('error', { message: 'Error loading account details' });
@@ -482,7 +546,7 @@ app.get('/employee/requests', requireAuth, requireRole(['employee']), async (req
             ORDER BY pr.requested_at DESC
         `, [req.session.user.user_id]);
         
-        res.render('employee/requests', { user: req.session.user, products, requests });
+        res.render('employee/requests', { title: 'Requests', user: req.session.user, products, requests });
     } catch (error) {
         console.error('Requests error:', error);
         res.render('error', { message: 'Error loading requests' });
@@ -596,7 +660,7 @@ app.get('/monitor/approvals', requireAuth, requireRole(['monitor']), async (req,
             ORDER BY pr.requested_at ASC
         `);
         
-        res.render('monitor/approvals', { user: req.session.user, requests });
+        res.render('monitor/approvals', { title: 'Approvals', user: req.session.user, requests });
     } catch (error) {
         console.error('Approvals error:', error);
         res.render('error', { message: 'Error loading approvals' });
@@ -667,7 +731,7 @@ app.post('/monitor/process-request', requireAuth, requireRole(['monitor']), asyn
 app.get('/monitor/inventory', requireAuth, requireRole(['monitor']), async (req, res) => {
     try {
         const [products] = await pool.execute('SELECT * FROM products ORDER BY product_name');
-        res.render('monitor/inventory', { user: req.session.user, products });
+        res.render('monitor/inventory', { title: 'Inventory', user: req.session.user, products });
     } catch (error) {
         console.error('Inventory error:', error);
         res.render('error', { message: 'Error loading inventory' });
@@ -834,8 +898,12 @@ app.get('/admin/employees', requireAuth, requireRole(['admin']), async (req, res
 
 app.get('/admin/monitors', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
+        // Check for expired monitors
+        await checkExpiredMonitors();
+        
         const [monitors] = await pool.execute(`
-            SELECT u.*, ma.start_date, ma.end_date, ma.is_active as monitor_active
+            SELECT u.*, ma.start_date, ma.end_date, 
+                   CASE WHEN u.role = 'monitor' THEN 1 ELSE 0 END as monitor_active
             FROM users u
             LEFT JOIN monitor_assignments ma ON u.user_id = ma.user_id AND ma.is_active = 1
             WHERE u.role = 'monitor'

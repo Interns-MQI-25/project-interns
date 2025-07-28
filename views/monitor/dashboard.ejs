@@ -128,7 +128,7 @@
                                 </dt>
                                 <dd>
                                     <div class="text-2xl font-bold text-gray-900">
-                                        0
+                                        <%= stats.pendingRequests %>
                                     </div>
                                 </dd>
                             </dl>
@@ -150,7 +150,7 @@
                                 </dt>
                                 <dd>
                                     <div class="text-2xl font-bold text-gray-900">
-                                        0
+                                        <%= stats.approvedToday %>
                                     </div>
                                 </dd>
                             </dl>
@@ -172,7 +172,7 @@
                                 </dt>
                                 <dd>
                                     <div class="text-2xl font-bold text-gray-900">
-                                        0
+                                        <%= stats.totalProducts %>
                                     </div>
                                 </dd>
                             </dl>
@@ -189,8 +189,8 @@
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
                     Recent Activity
                 </h3>
-                <div class="flow-root">
-                    <ul class="-mb-8">
+                <div class="recent-activity-container" style="max-height: 320px; overflow-y: auto;">
+                    <ul class="recent-activity-list -mb-8">
                         <% recentActivity.slice(0, 5).forEach((activity, index) => { %>
                             <li>
                                 <div class="relative pb-8">
@@ -239,5 +239,78 @@
         </div>
         <% } %>
     </main>
+    
+    <script>
+        function updateLiveCounts() {
+            fetch('/api/live-counts')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('pendingRequestsCount');
+                    if (badge && data.pendingRequests > 0) {
+                        badge.textContent = data.pendingRequests;
+                        badge.style.display = 'inline';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        // Update on page load and every 5 seconds
+        updateLiveCounts();
+        setInterval(updateLiveCounts, 5000);
+        
+        // Update recent activity dynamically
+        function updateRecentActivity() {
+            fetch('/api/monitor/recent-activity')
+                .then(response => response.json())
+                .then(activities => {
+                    const activityContainer = document.querySelector('.recent-activity-list');
+                    if (activityContainer && activities.length > 0) {
+                        // Clear existing content
+                        activityContainer.innerHTML = '';
+                        
+                        activities.forEach((activity, index) => {
+                            const activityItem = document.createElement('li');
+                            activityItem.innerHTML = `
+                                <div class="relative pb-8">
+                                    ${index !== activities.length - 1 ? '<span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"></span>' : ''}
+                                    <div class="relative flex space-x-3">
+                                        <div>
+                                            <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
+                                                <i class="fas fa-box-open text-white text-xs"></i>
+                                            </span>
+                                        </div>
+                                        <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                                            <div>
+                                                <p class="text-sm text-gray-500">
+                                                    <span class="font-medium text-gray-900">${activity.performed_by_name}</span>
+                                                    ${activity.action} ${activity.quantity} units of
+                                                    <span class="font-medium text-gray-900">${activity.product_name}</span>
+                                                </p>
+                                                ${activity.notes ? `<p class="text-xs text-gray-400">${activity.notes}</p>` : ''}
+                                            </div>
+                                            <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                                                ${new Date(activity.performed_at).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            activityContainer.appendChild(activityItem);
+                        });
+                        
+                        // Auto-scroll to top when new activity is added
+                        const activitySection = document.querySelector('.recent-activity-container');
+                        if (activitySection) {
+                            activitySection.scrollTop = 0;
+                        }
+                    }
+                })
+                .catch(error => console.error('Error updating activity:', error));
+        }
+        
+        // Update activity every 10 seconds
+        updateRecentActivity();
+        setInterval(updateRecentActivity, 10000);
+    </script>
 </body>
 </html>

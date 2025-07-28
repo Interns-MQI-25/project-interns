@@ -216,7 +216,7 @@
                             <div><strong>Model:</strong> <%= product.model_number || 'N/A' %></div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <span class="font-semibold"><%= (product.quantity || 0) + (product.currently_assigned || 0) %></span>
+                            <span class="font-semibold"><%= product.total_quantity || product.quantity || 0 %></span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <span class="font-semibold text-yellow-600"><%= product.currently_assigned || 0 %></span>

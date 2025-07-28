@@ -13,7 +13,7 @@ chmod +x setup.sh
 .\setup.sh
 ```
 
-2. For Windows(You doublee-click the files to directly execute)
+2. For Windows(You double-click the files to directly execute)
 ```ps1
 # Make the script executable and run for Windows(PowerShell)
 cd scripts

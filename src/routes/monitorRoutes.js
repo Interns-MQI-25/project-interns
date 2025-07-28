@@ -115,7 +115,22 @@ module.exports = (pool, requireAuth, requireRole) => {
                 ORDER BY pa.assigned_at DESC
             `, [req.session.user.user_id]);
             
-            res.render('monitor/records', { user: req.session.user, records });
+            // Get statistics for the template
+            const [totalProducts] = await pool.execute('SELECT COUNT(*) as count FROM products');
+            const [totalAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ?', [req.session.user.user_id]);
+            const [activeAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = FALSE', [req.session.user.user_id]);
+            const [pendingRequests] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"');
+            const [returnedItems] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = TRUE', [req.session.user.user_id]);
+            
+            res.render('monitor/records', { 
+                user: req.session.user, 
+                assignments: records,
+                totalProducts: totalProducts[0].count,
+                totalAssignments: totalAssignments[0].count,
+                activeAssignments: activeAssignments[0].count,
+                pendingRequests: pendingRequests[0].count,
+                returnedItems: returnedItems[0].count
+            });
         } catch (error) {
             console.error('Monitor records error:', error);
             res.render('error', { message: 'Error loading records' });

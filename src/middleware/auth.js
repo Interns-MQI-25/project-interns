@@ -38,7 +38,39 @@ const requireRole = (roles) => {
     };
 };
 
+// Helper function to check if user has admin privileges (admin role)
+const hasAdminAccess = (userRole) => {
+    return userRole === 'admin';
+};
+
+// Helper function to check if user has super admin privileges
+const hasSuperAdminAccess = (user) => {
+    return user.role === 'admin' && user.is_super_admin === true;
+};
+
+// Middleware specifically for admin access
+const requireAdmin = (req, res, next) => {
+    if (req.session.user && hasAdminAccess(req.session.user.role)) {
+        next();
+    } else {
+        res.status(403).render('error', { message: 'Admin access required' });
+    }
+};
+
+// Middleware specifically for super admin access
+const requireSuperAdmin = (req, res, next) => {
+    if (req.session.user && hasSuperAdminAccess(req.session.user)) {
+        next();
+    } else {
+        res.status(403).render('error', { message: 'Super Admin access required' });
+    }
+};
+
 module.exports = {
     requireAuth,
-    requireRole
+    requireRole,
+    hasAdminAccess,
+    hasSuperAdminAccess,
+    requireAdmin,
+    requireSuperAdmin
 };

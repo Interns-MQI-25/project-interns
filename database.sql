@@ -76,14 +76,14 @@ CREATE TABLE registration_requests (
 CREATE TABLE products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     item_number INT,
-    asset_type VARCHAR(50) NOT NULL,
-    product_category VARCHAR(100) NOT NULL,
-    product_name VARCHAR(500) NOT NULL,
+    asset_type VARCHAR(50) ,
+    product_category VARCHAR(100) ,
+    product_name VARCHAR(500) ,
     model_number VARCHAR(100),
     serial_number VARCHAR(100),
     is_available BOOLEAN DEFAULT TRUE,
-    quantity INT NOT NULL DEFAULT 1,
-    added_by INT NOT NULL,
+    quantity INT DEFAULT 1,
+    added_by INT,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     calibration_required BOOLEAN DEFAULT FALSE,
     calibration_frequency VARCHAR(50),
@@ -246,6 +246,8 @@ CREATE INDEX idx_products_asset_type ON products(asset_type);
 CREATE INDEX idx_products_category ON products(product_category);
 CREATE INDEX idx_product_assignments_employee ON product_assignments(employee_id);
 CREATE INDEX idx_product_assignments_returned ON product_assignments(is_returned);
+CREATE INDEX idx_registration_requests_status ON registration_requests(status);
+CREATE INDEX idx_monitor_assignments_active ON monitor_assignments(is_active);
 
 -- Display completion message
 SELECT 'Database setup completed successfully!' as message;
@@ -255,3 +257,17 @@ ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
 
 -- Update existing users to be active
 UPDATE users SET is_active = TRUE;
+
+alter table products add column pr_no INT;
+alter table products add column po_number VARCHAR(50);
+alter table products add column inward_date DATE;
+alter table products add column inwarded_by INT REFERENCES users(user_id);
+
+ALTER TABLE products
+    ADD COLUMN version_number VARCHAR(50),
+    ADD COLUMN software_license_type VARCHAR(50),
+    ADD COLUMN license_expiry DATE,
+    ADD COLUMN renewal_frequency VARCHAR(50),
+    ADD COLUMN next_renewal_date DATE;
+   
+

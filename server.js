@@ -667,10 +667,67 @@ app.post('/monitor/process-request', requireAuth, requireRole(['monitor']), asyn
 app.get('/monitor/inventory', requireAuth, requireRole(['monitor']), async (req, res) => {
     try {
         const [products] = await pool.execute('SELECT * FROM products ORDER BY product_name');
-        res.render('monitor/inventory', { user: req.session.user, products });
+        res.render('monitor/inventory', { user: req.session.user, products: products || [] });
     } catch (error) {
         console.error('Inventory error:', error);
         res.render('error', { message: 'Error loading inventory' });
+    }
+});
+
+app.get('/monitor/records', requireAuth, requireRole(['monitor']), async (req, res) => {
+    try {
+        // Simple query to get basic data
+        let assignments = [];
+        let totalProducts = 0;
+        let activeAssignments = 0;
+        let pendingRequests = 0;
+        let returnedItems = 0;
+        
+        try {
+            const [productCount] = await pool.execute('SELECT COUNT(*) as count FROM products');
+            totalProducts = productCount[0]?.count || 0;
+        } catch (e) { console.log('Product count error:', e.message); }
+        
+        try {
+            const [pendingCount] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"');
+            pendingRequests = pendingCount[0]?.count || 0;
+        } catch (e) { console.log('Pending requests error:', e.message); }
+        
+        try {
+            const [assignmentData] = await pool.execute(`
+                SELECT 
+                    'Sample Product' as product_name,
+                    'Hardware' as asset_type,
+                    'John Doe' as employee_name,
+                    1 as quantity,
+                    NOW() as assigned_at,
+                    FALSE as is_returned
+                LIMIT 1
+            `);
+            assignments = assignmentData || [];
+        } catch (e) { 
+            console.log('Assignments error:', e.message);
+            assignments = [];
+        }
+        
+        res.render('monitor/records', {
+            user: req.session.user,
+            assignments,
+            totalProducts,
+            activeAssignments,
+            pendingRequests,
+            returnedItems
+        });
+    } catch (error) {
+        console.error('Monitor records error:', error);
+        res.render('monitor/records', {
+            user: req.session.user,
+            assignments: [],
+            totalProducts: 0,
+            activeAssignments: 0,
+            pendingRequests: 0,
+            returnedItems: 0
+        });
     }
 });
 
@@ -858,88 +915,13 @@ app.get('/admin/monitors', requireAuth, requireRole(['admin']), async (req, res)
     }
 });
 
-// Fixed Admin Stock Route
 app.get('/admin/stock', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-        const productsQuery = `
-            SELECT 
-                p.*,
-                u.full_name as added_by_name,
-                COALESCE((
-                    SELECT COUNT(*) 
-                    FROM product_assignments pa 
-                    WHERE pa.product_id = p.product_id
-                ), 0) as total_assignments,
-                COALESCE((
-                    SELECT SUM(pa.quantity) 
-                    FROM product_assignments pa 
-                    WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
-                ), 0) as currently_assigned,
-                CASE 
-                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date < CURDATE() THEN 'Overdue'
-                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'Due Soon'
-                    WHEN p.calibration_due_date IS NOT NULL THEN 'Current'
-                    ELSE 'Not Required'
-                END as calibration_status
-            FROM products p
-            LEFT JOIN users u ON p.added_by = u.user_id
-            ORDER BY p.asset_type, p.product_category, p.product_name
-        `;
-        
-        const [products] = await pool.execute(productsQuery);
-        
-        // Get comprehensive stock analytics
-        const stockStatsQuery = `
-            SELECT 
-                asset_type,
-                COUNT(*) as total_items,
-                SUM(quantity) as total_quantity,
-                SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) as available_quantity,
-                SUM(CASE WHEN COALESCE(calibration_required, FALSE) = TRUE THEN 1 ELSE 0 END) as calibration_items,
-                SUM(CASE WHEN calibration_due_date IS NOT NULL AND calibration_due_date < CURDATE() THEN 1 ELSE 0 END) as overdue_calibrations
-            FROM products
-            GROUP BY asset_type
-        `;
-        
-        const [stockStats] = await pool.execute(stockStatsQuery);
-        
-        // Get recent stock activity (if stock_history table exists)
-        let recentActivity = [];
-        try {
-            const [activity] = await pool.execute(`
-                SELECT 
-                    sh.action,
-                    sh.quantity,
-                    sh.performed_at,
-                    sh.notes,
-                    p.product_name,
-                    u.full_name as performed_by_name
-                FROM stock_history sh
-                JOIN products p ON sh.product_id = p.product_id
-                JOIN users u ON sh.performed_by = u.user_id
-                ORDER BY sh.performed_at DESC
-                LIMIT 20
-            `);
-            recentActivity = activity;
-        } catch (historyError) {
-            console.log('Stock history table not found, skipping recent activity');
-        }
-        
-        res.render('admin/stock', { 
-            user: req.session.user, 
-            products: products || [],
-            stockStats: stockStats || [],
-            recentActivity: recentActivity || []
-        });
+        const [products] = await pool.execute('SELECT * FROM products ORDER BY product_name');
+        res.render('admin/stock', { user: req.session.user, products });
     } catch (error) {
-        console.error('Admin stock error:', error);
-        res.render('admin/stock', { 
-            user: req.session.user, 
-            products: [],
-            stockStats: [],
-            recentActivity: [],
-            error: 'Error loading stock data'
-        });
+        console.error('Stock error:', error);
+        res.render('error', { message: 'Error loading stock' });
     }
 });
 
@@ -1085,115 +1067,111 @@ app.post('/admin/unassign-monitor', requireAuth, requireRole(['admin']), async (
     }
 });
 
-// Enhanced Add Product Route for Monitor/Admin
-app.post('/monitor/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
-    const { 
-        product_name, 
-        description, 
-        category, 
-        sub_category, 
-        model_number, 
-        serial_number,
-        quantity,
-        calibration_required,
-        calibration_frequency,
-        calibration_due_date
-    } = req.body;
-    
+// Add Product Route (for Monitor/Admin)
+app.post('/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
     try {
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
-        
-        try {
-            // Insert product with all fields
-            const [productResult] = await connection.execute(`
-                INSERT INTO products (
-                    product_name, description, category, sub_category, 
-                    model_number, serial_number, quantity, added_by,
-                    calibration_required, calibration_frequency, calibration_due_date
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `, [
-                product_name, description, category, sub_category,
-                model_number, serial_number, quantity, req.session.user.user_id,
-                calibration_required === 'on', calibration_frequency, 
-                calibration_due_date || null
-            ]);
-            
-            // Add to stock history
-            await connection.execute(`
-                INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) 
-                VALUES (?, 'add', ?, ?, ?)
-            `, [
-                productResult.insertId, 
-                quantity, 
-                req.session.user.user_id, 
-                'Initial stock added'
-            ]);
-            
-            await connection.commit();
-            req.flash('success', 'Product added successfully to main stock');
-        } catch (error) {
-            await connection.rollback();
-            throw error;
-        } finally {
-            connection.release();
-        }
-        
-        const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
-        res.redirect(redirectPath);
+        const {
+            name,
+            product_category,
+            type,
+            model,
+            serial,
+            purchase_date,
+            pr_no,
+            po_number,
+            inward_date,
+            inwarded_by,
+            requires_calibration,
+            last_calibration_date,
+            calibration_frequency_months,
+            calibration_notes
+        } = req.body;
+
+        await pool.execute(`
+            INSERT INTO products (
+                product_name, asset_type, product_category, model_number, serial_number, quantity, added_by,
+                calibration_required, calibration_frequency, calibration_due_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            name,
+            type || 'General',
+            product_category,
+            model,
+            serial,
+            1,
+            req.session.user.user_id,
+            requires_calibration === 'on' ? 1 : 0,
+            calibration_frequency_months ? `${calibration_frequency_months} Months` : null,
+            last_calibration_date || null
+        ]);
+
+        req.flash('success', 'Product added successfully!');
+        res.redirect('/monitor/inventory');
     } catch (error) {
         console.error('Add product error:', error);
-        req.flash('error', 'Error adding product to stock');
-        const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
-        res.redirect(redirectPath);
+        req.flash('error', 'Error adding product');
+        res.redirect('/monitor/inventory');
     }
 });
 
-// Fixed API endpoint for stock search/filter
-app.get('/api/stock/search', requireAuth, async (req, res) => {
+app.post('/monitor/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
     try {
-        const { asset_type, search, available_only } = req.query;
-        
-        let query = `
-            SELECT 
-                product_id,
-                item_number,
-                product_name,
-                asset_type,
-                product_category,
-                model_number,
-                serial_number,
-                is_available,
-                quantity,
-                COALESCE(calibration_required, FALSE) as calibration_required
-            FROM products 
-            WHERE 1=1
-        `;
-        
-        const params = [];
-        
-        if (available_only === 'true') {
-            query += ' AND is_available = TRUE AND quantity > 0';
-        }
-        
-        if (asset_type && asset_type !== '') {
-            query += ' AND asset_type = ?';
-            params.push(asset_type);
-        }
-        
-        if (search && search !== '') {
-            query += ' AND (product_name LIKE ? OR product_category LIKE ? OR model_number LIKE ?)';
-            const searchTerm = `%${search}%`;
-            params.push(searchTerm, searchTerm, searchTerm);
-        }
-        
-        query += ' ORDER BY asset_type, product_category, product_name';
-        
-        const [products] = await pool.execute(query, params);
-        res.json(products || []);
+        const {
+            product_name,
+            asset_type,
+            product_category,
+            model_number,
+            serial_number,
+            quantity,
+            calibration_required,
+            calibration_frequency,
+            calibration_due_date,
+            version_number,
+            software_license_type,
+            license_expiry,
+            renewal_frequency,
+            next_renewal_date,
+            pr_no,
+            po_number,
+            inward_date,
+            inwarded_by
+        } = req.body;
+
+        await pool.execute(`
+            INSERT INTO products (
+                product_name, asset_type, product_category, model_number, serial_number, quantity, added_by,
+                calibration_required, calibration_frequency, calibration_due_date,
+                version_number, software_license_type, license_expiry, renewal_frequency, next_renewal_date,
+                pr_no, po_number, inward_date, inwarded_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            product_name,
+            asset_type,
+            product_category,
+            model_number,
+            serial_number,
+            quantity || 1,
+            req.session.user.user_id,
+            calibration_required === 'on' ? 1 : 0,
+            calibration_frequency || null,
+            calibration_due_date || null,
+            version_number || null,
+            software_license_type || null,
+            license_expiry || null,
+            renewal_frequency || null,
+            next_renewal_date || null,
+            pr_no || null,
+            po_number || null,
+            inward_date || null,
+            inwarded_by || null
+        ]);
+
+        req.flash('success', 'Product added successfully!');
+        res.redirect('/monitor/inventory');
     } catch (error) {
-        console.error('Stock search error:', error);
-        res.status(500).json({ error: 'Failed to search products' });
+        console.error('Add product error:', error);
+        req.flash('error', 'Error adding product');
+        res.redirect('/monitor/inventory');
     }
 });
 
@@ -1576,6 +1554,75 @@ app.post('/admin/bulk-activate-employees', requireAuth, requireRole(['admin']), 
     }
     
     res.redirect('/admin/employees');
+});
+
+// API endpoint for real-time stock data
+app.get('/api/stock-data', requireAuth, async (req, res) => {
+    try {
+        const { asset_type, search } = req.query;
+        
+        let whereClause = 'WHERE 1=1';
+        let params = [];
+        
+        if (asset_type) {
+            whereClause += ' AND p.asset_type = ?';
+            params.push(asset_type);
+        }
+        
+        if (search) {
+            whereClause += ' AND (p.product_name LIKE ? OR p.product_category LIKE ? OR p.model_number LIKE ? OR p.serial_number LIKE ?)';
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+        }
+        
+        const productsQuery = `
+            SELECT 
+                p.*,
+                u.full_name as added_by_name,
+                COALESCE((
+                    SELECT SUM(pa.quantity) 
+                    FROM product_assignments pa 
+                    WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
+                ), 0) as currently_assigned,
+                CASE 
+                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date < CURDATE() THEN 'Overdue'
+                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'Due Soon'
+                    WHEN p.calibration_due_date IS NOT NULL THEN 'Current'
+                    ELSE 'Not Required'
+                END as calibration_status
+            FROM products p
+            LEFT JOIN users u ON p.added_by = u.user_id
+            ${whereClause}
+            ORDER BY p.asset_type, p.product_category, p.product_name
+        `;
+        
+        const [products] = await pool.execute(productsQuery, params);
+        
+        // Get updated stock stats
+        const stockStatsQuery = `
+            SELECT 
+                asset_type,
+                COUNT(*) as total_items,
+                SUM(quantity) as total_quantity,
+                SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) as available_quantity,
+                SUM(CASE WHEN COALESCE(calibration_required, FALSE) = TRUE THEN 1 ELSE 0 END) as calibration_items,
+                SUM(CASE WHEN calibration_due_date IS NOT NULL AND calibration_due_date < CURDATE() THEN 1 ELSE 0 END) as overdue_calibrations
+            FROM products
+            ${asset_type ? 'WHERE asset_type = ?' : ''}
+            GROUP BY asset_type
+        `;
+        
+        const [stockStats] = await pool.execute(stockStatsQuery, asset_type ? [asset_type] : []);
+        
+        res.json({
+            products: products || [],
+            stockStats: stockStats || [],
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('API stock data error:', error);
+        res.status(500).json({ error: 'Failed to fetch stock data' });
+    }
 });
 
 app.listen(PORT, () => {

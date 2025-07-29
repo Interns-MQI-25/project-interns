@@ -108,11 +108,11 @@
         </div>
         <% } %>
         
-        <!-- Stock Overview -->
+        <!-- Stock Table -->
         <div class="bg-white shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Complete Product Inventory
+                    Product Inventory
                 </h3>
                 <div class="mb-4">
     <div class="flex flex-col md:flex-row gap-4">
@@ -216,7 +216,7 @@
                             <div><strong>Model:</strong> <%= product.model_number || 'N/A' %></div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <span class="font-semibold"><%= (product.quantity || 0) + (product.currently_assigned || 0) %></span>
+                            <span class="font-semibold"><%= product.total_quantity || product.quantity || 0 %></span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <span class="font-semibold text-yellow-600"><%= product.currently_assigned || 0 %></span>

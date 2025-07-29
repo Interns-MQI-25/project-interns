@@ -2,18 +2,10 @@ const express = require('express');
 const session = require('express-session');
 const flash = require('express-flash');
 const mysql = require('mysql2/promise');
+const bcrypt = require('bcryptjs');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-
-// Import middleware
-const { requireAuth, requireRole } = require('./src/middleware/auth');
-
-// Import route modules
-const commonRoutes = require('./src/routes/commonRoutes');
-const adminRoutes = require('./src/routes/adminRoutes');
-const employeeRoutes = require('./src/routes/employeeRoutes');
-const monitorRoutes = require('./src/routes/monitorRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,10 +13,9 @@ const PORT = process.env.PORT || 3000;
 // Database configuration
 const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'apnacollege',
-    password: process.env.DB_PASSWORD || 'Neha@012004',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'product_management_system',
-    port: process.env.DB_PORT || 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -32,9 +23,6 @@ const dbConfig = {
 
 // Create connection pool
 const pool = mysql.createPool(dbConfig);
-
-// Make pool available to middleware
-app.locals.pool = pool;
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -52,89 +40,43 @@ app.use(flash());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-
-// Use route modules
-app.use('/', commonRoutes(pool, requireAuth, requireRole));
-app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
-app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
-app.use(monitorRoutes(pool, requireAuth, requireRole));
-
 // Middleware to check authentication
-// const { requireAuth, requireRole } = require('./src/middleware/auth'); {
-//     try {
-//         if (req.session.user) {
-//             // Get complete user data from database using pool instead of db
-//             const [users] = await pool.execute(
-//                 'SELECT * FROM users WHERE user_id = ?', 
-//                 [req.session.user.user_id]
-//             );
-
-//             if (users.length === 0) {
-//                 req.session.destroy();
-//                 return res.redirect('/login');
-//             }
-
-//             req.user = users[0];
-//             next();
-//         } else {
-//             res.redirect('/login');
-//         }
-//     } catch (error) {
-//         console.error('Auth error:', error);
-//         req.session.destroy();
-//         res.redirect('/login');
-//     }
-// };
-
-// // Middleware to check role
-// const requireRole = (roles) => {
-//     return (req, res, next) => {
-//         if (req.session.user && roles.includes(req.session.user.role)) {
-//             next();
-//         } else {
-//             res.status(403).render('error', { message: 'Access denied' });
-//         }
-//     };
-// };
-
-
-
-// API endpoint for live counts
-app.get('/api/live-counts', requireAuth, async (req, res) => {
+const requireAuth = async (req, res, next) => {
     try {
-        const [pendingRequests] = await pool.execute(
-            'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
-        );
-        
-        const [pendingRegistrations] = await pool.execute(
-            'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
-        );
-        
-        console.log('API Debug - Pending requests:', pendingRequests[0].count);
-        console.log('API Debug - Pending registrations:', pendingRegistrations[0].count);
-        
-        res.json({
-            pendingRequests: pendingRequests[0].count,
-            pendingRegistrations: pendingRegistrations[0].count
-        });
+        if (req.session.user) {
+            // Get complete user data from database using pool instead of db
+            const [users] = await pool.execute(
+                'SELECT * FROM users WHERE user_id = ?', 
+                [req.session.user.user_id]
+            );
+
+            if (users.length === 0) {
+                req.session.destroy();
+                return res.redirect('/login');
+            }
+
+            req.user = users[0];
+            next();
+        } else {
+            res.redirect('/login');
+        }
     } catch (error) {
-        console.error('Live counts error:', error);
-        res.status(500).json({ error: 'Failed to fetch counts' });
+        console.error('Auth error:', error);
+        req.session.destroy();
+        res.redirect('/login');
     }
-});
+};
 
-// API endpoint for monitor pending approvals count
-app.get('/api/monitor/pending-approvals-count', requireAuth, requireRole(['monitor']), async (req, res) => {
-    try {
-        const [rows] = await pool.execute(
-            'SELECT COUNT(*) AS count FROM product_requests WHERE status = "pending"'
-        );
-        res.json({ count: rows[0].count });
-    } catch (err) {
-        console.error('Pending approvals count error:', err);
-        res.json({ count: 0 });
-    }
-});
+// Middleware to check role
+const requireRole = (roles) => {
+    return (req, res, next) => {
+        if (req.session.user && roles.includes(req.session.user.role)) {
+            next();
+        } else {
+            res.status(403).render('error', { message: 'Access denied' });
+        }
+    };
+};
 
 // Routes
 app.get('/', (req, res) => {
@@ -330,9 +272,6 @@ app.get('/logout', (req, res) => {
 
 app.get('/dashboard', requireAuth, async (req, res) => {
     try {
-        // Check for expired monitors on each dashboard load
-        await checkExpiredMonitors();
-        
         const role = req.session.user.role;
 
         if (role === 'employee') {
@@ -360,53 +299,21 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 LIMIT 5
             `, [req.session.user.user_id]);
             
-            res.render('employee/dashboard', { title: 'Employee Dashboard', user: req.session.user, recentRequests, recentActivity });
+            res.render('employee/dashboard', { user: req.session.user, recentRequests, recentActivity });
         } else if (role === 'monitor') {
-            // Fetch monitor dashboard statistics
-            const [pendingRequests] = await pool.execute(
-                'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
-            );
-            
-            const [approvedToday] = await pool.execute(
-                'SELECT COUNT(*) as count FROM product_requests WHERE status = "approved" AND DATE(processed_at) = CURDATE()'
-            );
-            
-            const [totalProducts] = await pool.execute(
-                'SELECT COUNT(*) as count FROM products'
-            );
-            
-            // Fetch recent activity including requests and assignments
+            // Fetch recent activity for monitor
             const [recentActivity] = await pool.execute(`
-                SELECT 'request' as action, pr.requested_at as performed_at, p.product_name,
-                       u.full_name as performed_by_name, pr.quantity, pr.purpose as notes
-                FROM product_requests pr
-                JOIN products p ON pr.product_id = p.product_id
-                JOIN employees e ON pr.employee_id = e.employee_id
-                JOIN users u ON e.user_id = u.user_id
-                WHERE pr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-                UNION ALL
                 SELECT sh.action, sh.performed_at, p.product_name,
                        u.full_name as performed_by_name, sh.quantity, sh.notes
                 FROM stock_history sh
                 JOIN products p ON sh.product_id = p.product_id
                 JOIN users u ON sh.performed_by = u.user_id
-                WHERE sh.performed_by = ? AND sh.performed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-                ORDER BY performed_at DESC
-                LIMIT 10
+                WHERE sh.performed_by = ? AND sh.performed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                ORDER BY sh.performed_at DESC
+                LIMIT 5
             `, [req.session.user.user_id]);
             
-            const monitorStats = {
-                pendingRequests: pendingRequests[0].count,
-                approvedToday: approvedToday[0].count,
-                totalProducts: totalProducts[0].count
-            };
-            
-            res.render('monitor/dashboard', { 
-                title: 'Monitor Dashboard', 
-                user: req.session.user, 
-                stats: monitorStats,
-                recentActivity 
-            });
+            res.render('monitor/dashboard', { user: req.session.user, recentActivity });
         } else if (role === 'admin') {
             // Fetch dashboard statistics for admin
             const [totalEmployees] = await pool.execute(
@@ -476,7 +383,6 @@ app.get('/dashboard', requireAuth, async (req, res) => {
             };
             
             res.render('admin/dashboard', { 
-                title: 'Admin Dashboard',
                 user: req.session.user, 
                 stats: dashboardStats,
                 recentActivity: recentActivity || [],
@@ -534,7 +440,7 @@ app.get('/employee/records', requireAuth, requireRole(['employee']), async (req,
             ORDER BY pa.assigned_at DESC
         `, [req.session.user.user_id]);
         
-        res.render('employee/records', { title: 'Records', user: req.session.user, records });
+        res.render('employee/records', { user: req.session.user, records });
     } catch (error) {
         console.error('Records error:', error);
         res.render('error', { message: 'Error loading records' });
@@ -556,7 +462,7 @@ app.get('/employee/account', requireAuth, requireRole(['employee']), async (req,
             return res.redirect('/employee/dashboard');
         }
 
-        res.render('employee/account', { title: 'Account', user: req.session.user, employee: employeeDetails[0] });
+        res.render('employee/account', { user: req.session.user, employee: employeeDetails[0] });
     } catch (error) {
         console.error('Account error:', error);
         res.render('error', { message: 'Error loading account details' });
@@ -576,7 +482,7 @@ app.get('/employee/requests', requireAuth, requireRole(['employee']), async (req
             ORDER BY pr.requested_at DESC
         `, [req.session.user.user_id]);
         
-        res.render('employee/requests', { title: 'Requests', user: req.session.user, products, requests });
+        res.render('employee/requests', { user: req.session.user, products, requests });
     } catch (error) {
         console.error('Requests error:', error);
         res.render('error', { message: 'Error loading requests' });
@@ -690,7 +596,7 @@ app.get('/monitor/approvals', requireAuth, requireRole(['monitor']), async (req,
             ORDER BY pr.requested_at ASC
         `);
         
-        res.render('monitor/approvals', { title: 'Approvals', user: req.session.user, requests });
+        res.render('monitor/approvals', { user: req.session.user, requests });
     } catch (error) {
         console.error('Approvals error:', error);
         res.render('error', { message: 'Error loading approvals' });
@@ -765,63 +671,6 @@ app.get('/monitor/inventory', requireAuth, requireRole(['monitor']), async (req,
     } catch (error) {
         console.error('Inventory error:', error);
         res.render('error', { message: 'Error loading inventory' });
-    }
-});
-
-app.get('/monitor/records', requireAuth, requireRole(['monitor']), async (req, res) => {
-    try {
-        // Simple query to get basic data
-        let assignments = [];
-        let totalProducts = 0;
-        let activeAssignments = 0;
-        let pendingRequests = 0;
-        let returnedItems = 0;
-        
-        try {
-            const [productCount] = await pool.execute('SELECT COUNT(*) as count FROM products');
-            totalProducts = productCount[0]?.count || 0;
-        } catch (e) { console.log('Product count error:', e.message); }
-        
-        try {
-            const [pendingCount] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"');
-            pendingRequests = pendingCount[0]?.count || 0;
-        } catch (e) { console.log('Pending requests error:', e.message); }
-        
-        try {
-            const [assignmentData] = await pool.execute(`
-                SELECT 
-                    'Sample Product' as product_name,
-                    'Hardware' as asset_type,
-                    'John Doe' as employee_name,
-                    1 as quantity,
-                    NOW() as assigned_at,
-                    FALSE as is_returned
-                LIMIT 1
-            `);
-            assignments = assignmentData || [];
-        } catch (e) { 
-            console.log('Assignments error:', e.message);
-            assignments = [];
-        }
-        
-        res.render('monitor/records', {
-            user: req.session.user,
-            assignments,
-            totalProducts,
-            activeAssignments,
-            pendingRequests,
-            returnedItems
-        });
-    } catch (error) {
-        console.error('Monitor records error:', error);
-        res.render('monitor/records', {
-            user: req.session.user,
-            assignments: [],
-            totalProducts: 0,
-            activeAssignments: 0,
-            pendingRequests: 0,
-            returnedItems: 0
-        });
     }
 });
 
@@ -974,7 +823,7 @@ app.get('/admin/employees', requireAuth, requireRole(['admin']), async (req, res
             ORDER BY u.is_active DESC, u.full_name
         `);
         
-        const [departments] = await pool.execute('SELECT * FROM departments');
+        const [departments] = await pool.execute('SELECT DISTINCT department_id, department_name FROM departments ORDER BY department_name');
         
         res.render('admin/employees', { user: req.session.user, employees, departments });
     } catch (error) {
@@ -985,12 +834,8 @@ app.get('/admin/employees', requireAuth, requireRole(['admin']), async (req, res
 
 app.get('/admin/monitors', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-        // Check for expired monitors
-        await checkExpiredMonitors();
-        
         const [monitors] = await pool.execute(`
-            SELECT u.*, ma.start_date, ma.end_date, 
-                   CASE WHEN u.role = 'monitor' THEN 1 ELSE 0 END as monitor_active
+            SELECT u.*, ma.start_date, ma.end_date, ma.is_active as monitor_active
             FROM users u
             LEFT JOIN monitor_assignments ma ON u.user_id = ma.user_id AND ma.is_active = 1
             WHERE u.role = 'monitor'
@@ -1013,13 +858,93 @@ app.get('/admin/monitors', requireAuth, requireRole(['admin']), async (req, res)
     }
 });
 
+// Fixed Admin Stock Route
 app.get('/admin/stock', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-        const [products] = await pool.execute('SELECT * FROM products ORDER BY product_name');
-        res.render('admin/stock', { user: req.session.user, products });
+        const productsQuery = `
+            SELECT 
+                p.*,
+                u.full_name as added_by_name,
+                COALESCE((
+                    SELECT COUNT(*) 
+                    FROM product_assignments pa 
+                    WHERE pa.product_id = p.product_id
+                ), 0) as total_assignments,
+                COALESCE((
+                    SELECT SUM(pa.quantity) 
+                    FROM product_assignments pa 
+                    WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
+                ), 0) as currently_assigned,
+                (p.quantity + COALESCE((
+                    SELECT SUM(pa.quantity) 
+                    FROM product_assignments pa 
+                    WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
+                ), 0)) as total_quantity,
+                CASE 
+                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date < CURDATE() THEN 'Overdue'
+                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'Due Soon'
+                    WHEN p.calibration_due_date IS NOT NULL THEN 'Current'
+                    ELSE 'Not Required'
+                END as calibration_status
+            FROM products p
+            LEFT JOIN users u ON p.added_by = u.user_id
+            ORDER BY p.asset_type, p.product_category, p.product_name
+        `;
+        
+        const [products] = await pool.execute(productsQuery);
+        
+        // Get comprehensive stock analytics
+        const stockStatsQuery = `
+            SELECT 
+                asset_type,
+                COUNT(*) as total_items,
+                SUM(quantity) as total_quantity,
+                SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) as available_quantity,
+                SUM(CASE WHEN COALESCE(calibration_required, FALSE) = TRUE THEN 1 ELSE 0 END) as calibration_items,
+                SUM(CASE WHEN calibration_due_date IS NOT NULL AND calibration_due_date < CURDATE() THEN 1 ELSE 0 END) as overdue_calibrations
+            FROM products
+            GROUP BY asset_type
+        `;
+        
+        const [stockStats] = await pool.execute(stockStatsQuery);
+        
+        // Get recent stock activity (if stock_history table exists)
+        let recentActivity = [];
+        try {
+            const [activity] = await pool.execute(`
+                SELECT 
+                    sh.action,
+                    sh.quantity,
+                    sh.performed_at,
+                    sh.notes,
+                    p.product_name,
+                    u.full_name as performed_by_name
+                FROM stock_history sh
+                JOIN products p ON sh.product_id = p.product_id
+                JOIN users u ON sh.performed_by = u.user_id
+                ORDER BY sh.performed_at DESC
+                LIMIT 20
+            `);
+            recentActivity = activity;
+        } catch (historyError) {
+            console.log('Stock history table not found, skipping recent activity');
+        }
+        
+        res.render('admin/stock', { 
+            user: req.session.user, 
+            products: products || [],
+            stockStats: stockStats || [],
+            recentActivity: recentActivity || []
+        });
     } catch (error) {
-        console.error('Stock error:', error);
-        res.render('error', { message: 'Error loading stock' });
+        console.error('Admin stock error:', error);
+        res.render('admin/stock', { 
+            user: req.session.user, 
+            products: [],
+            stockStats: [],
+            recentActivity: [],
+            error: 'Error loading stock data'
+        });
     }
 });
 
@@ -1165,111 +1090,115 @@ app.post('/admin/unassign-monitor', requireAuth, requireRole(['admin']), async (
     }
 });
 
-// Add Product Route (for Monitor/Admin)
-app.post('/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
+// Enhanced Add Product Route for Monitor/Admin
+app.post('/monitor/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
+    const { 
+        product_name, 
+        description, 
+        category, 
+        sub_category, 
+        model_number, 
+        serial_number,
+        quantity,
+        calibration_required,
+        calibration_frequency,
+        calibration_due_date
+    } = req.body;
+    
     try {
-        const {
-            name,
-            product_category,
-            type,
-            model,
-            serial,
-            purchase_date,
-            pr_no,
-            po_number,
-            inward_date,
-            inwarded_by,
-            requires_calibration,
-            last_calibration_date,
-            calibration_frequency_months,
-            calibration_notes
-        } = req.body;
-
-        await pool.execute(`
-            INSERT INTO products (
-                product_name, asset_type, product_category, model_number, serial_number, quantity, added_by,
-                calibration_required, calibration_frequency, calibration_due_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-            name,
-            type || 'General',
-            product_category,
-            model,
-            serial,
-            1,
-            req.session.user.user_id,
-            requires_calibration === 'on' ? 1 : 0,
-            calibration_frequency_months ? `${calibration_frequency_months} Months` : null,
-            last_calibration_date || null
-        ]);
-
-        req.flash('success', 'Product added successfully!');
-        res.redirect('/monitor/inventory');
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // Insert product with all fields
+            const [productResult] = await connection.execute(`
+                INSERT INTO products (
+                    product_name, description, category, sub_category, 
+                    model_number, serial_number, quantity, added_by,
+                    calibration_required, calibration_frequency, calibration_due_date
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+                product_name, description, category, sub_category,
+                model_number, serial_number, quantity, req.session.user.user_id,
+                calibration_required === 'on', calibration_frequency, 
+                calibration_due_date || null
+            ]);
+            
+            // Add to stock history
+            await connection.execute(`
+                INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) 
+                VALUES (?, 'add', ?, ?, ?)
+            `, [
+                productResult.insertId, 
+                quantity, 
+                req.session.user.user_id, 
+                'Initial stock added'
+            ]);
+            
+            await connection.commit();
+            req.flash('success', 'Product added successfully to main stock');
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+        
+        const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
+        res.redirect(redirectPath);
     } catch (error) {
         console.error('Add product error:', error);
-        req.flash('error', 'Error adding product');
-        res.redirect('/monitor/inventory');
+        req.flash('error', 'Error adding product to stock');
+        const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
+        res.redirect(redirectPath);
     }
 });
 
-app.post('/monitor/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
+// Fixed API endpoint for stock search/filter
+app.get('/api/stock/search', requireAuth, async (req, res) => {
     try {
-        const {
-            product_name,
-            asset_type,
-            product_category,
-            model_number,
-            serial_number,
-            quantity,
-            calibration_required,
-            calibration_frequency,
-            calibration_due_date,
-            version_number,
-            software_license_type,
-            license_expiry,
-            renewal_frequency,
-            next_renewal_date,
-            pr_no,
-            po_number,
-            inward_date,
-            inwarded_by
-        } = req.body;
-
-        await pool.execute(`
-            INSERT INTO products (
-                product_name, asset_type, product_category, model_number, serial_number, quantity, added_by,
-                calibration_required, calibration_frequency, calibration_due_date,
-                version_number, software_license_type, license_expiry, renewal_frequency, next_renewal_date,
-                pr_no, po_number, inward_date, inwarded_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-            product_name,
-            asset_type,
-            product_category,
-            model_number,
-            serial_number,
-            quantity || 1,
-            req.session.user.user_id,
-            calibration_required === 'on' ? 1 : 0,
-            calibration_frequency || null,
-            calibration_due_date || null,
-            version_number || null,
-            software_license_type || null,
-            license_expiry || null,
-            renewal_frequency || null,
-            next_renewal_date || null,
-            pr_no || null,
-            po_number || null,
-            inward_date || null,
-            inwarded_by || null
-        ]);
-
-        req.flash('success', 'Product added successfully!');
-        res.redirect('/monitor/inventory');
+        const { asset_type, search, available_only } = req.query;
+        
+        let query = `
+            SELECT 
+                product_id,
+                item_number,
+                product_name,
+                asset_type,
+                product_category,
+                model_number,
+                serial_number,
+                is_available,
+                quantity,
+                COALESCE(calibration_required, FALSE) as calibration_required
+            FROM products 
+            WHERE 1=1
+        `;
+        
+        const params = [];
+        
+        if (available_only === 'true') {
+            query += ' AND is_available = TRUE AND quantity > 0';
+        }
+        
+        if (asset_type && asset_type !== '') {
+            query += ' AND asset_type = ?';
+            params.push(asset_type);
+        }
+        
+        if (search && search !== '') {
+            query += ' AND (product_name LIKE ? OR product_category LIKE ? OR model_number LIKE ?)';
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm, searchTerm);
+        }
+        
+        query += ' ORDER BY asset_type, product_category, product_name';
+        
+        const [products] = await pool.execute(query, params);
+        res.json(products || []);
     } catch (error) {
-        console.error('Add product error:', error);
-        req.flash('error', 'Error adding product');
-        res.redirect('/monitor/inventory');
+        console.error('Stock search error:', error);
+        res.status(500).json({ error: 'Failed to search products' });
     }
 });
 
@@ -1288,7 +1217,7 @@ app.get('/admin/registration-requests', requireAuth, requireRole(['admin']), asy
 
         // Get departments for the form
         const [departments] = await pool.execute(
-            'SELECT * FROM departments ORDER BY department_name'
+            'SELECT DISTINCT department_id, department_name FROM departments ORDER BY department_name'
         );
 
         res.render('admin/registration-requests', {
@@ -1473,103 +1402,189 @@ app.post('/admin/update-employee/:id', requireAuth, requireRole(['admin']), asyn
     res.redirect('/admin/employees');
 });
 
-
-
-// Test route to verify monitor routes are working
-app.get('/test-monitor', (req, res) => {
-    res.json({ message: 'Monitor routes are accessible', timestamp: new Date() });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('Server error:', err);
-    res.status(500).render('error', { 
-        message: 'Internal server error',
-        user: req.session.user || null 
-    });
-});
-
-// 404 handler
-app.use((req, res) => {
-    res.status(404).render('error', { 
-        message: 'Page not found',
-        user: req.session.user || null 
-    });
-});
-
-
-// API endpoint for real-time stock data
-app.get('/api/stock-data', requireAuth, async (req, res) => {
+// Admin: Toggle Employee Status Route (Deactivate/Activate)
+app.post('/admin/toggle-employee-status/:id', requireAuth, requireRole(['admin']), async (req, res) => {
+    const employeeId = req.params.id;
+    
     try {
-        const { asset_type, search } = req.query;
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
         
-        let whereClause = 'WHERE 1=1';
-        let params = [];
-        
-        if (asset_type) {
-            whereClause += ' AND p.asset_type = ?';
-            params.push(asset_type);
+        try {
+            // Get current user status
+            const [users] = await connection.execute(
+                'SELECT full_name, is_active FROM users WHERE user_id = ?',
+                [employeeId]
+            );
+            
+            if (users.length === 0) {
+                req.flash('error', 'Employee not found');
+                res.redirect('/admin/employees');
+                return;
+            }
+            
+            const user = users[0];
+            const newStatus = !user.is_active;
+            const userName = user.full_name;
+            
+            // If deactivating, check for active assignments
+            if (!newStatus) {
+                const [assignments] = await connection.execute(`
+                    SELECT COUNT(*) as count 
+                    FROM product_assignments pa
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    WHERE e.user_id = ? AND pa.is_returned = FALSE
+                `, [employeeId]);
+                
+                if (assignments[0].count > 0) {
+                    req.flash('error', 'Cannot deactivate employee with active product assignments');
+                    res.redirect('/admin/employees');
+                    return;
+                }
+            }
+            
+            // Update user status
+            await connection.execute(
+                'UPDATE users SET is_active = ? WHERE user_id = ?',
+                [newStatus, employeeId]
+            );
+            
+            // Update employee status
+            await connection.execute(
+                'UPDATE employees SET is_active = ? WHERE user_id = ?',
+                [newStatus, employeeId]
+            );
+            
+            await connection.commit();
+            const action = newStatus ? 'activated' : 'deactivated';
+            req.flash('success', `Employee ${userName} ${action} successfully`);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
         }
         
-        if (search) {
-            whereClause += ' AND (p.product_name LIKE ? OR p.product_category LIKE ? OR p.model_number LIKE ? OR p.serial_number LIKE ?)';
-            const searchTerm = `%${search}%`;
-            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-        }
-        
-        const productsQuery = `
-            SELECT 
-                p.*,
-                u.full_name as added_by_name,
-                COALESCE((
-                    SELECT SUM(pa.quantity) 
-                    FROM product_assignments pa 
-                    WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
-                ), 0) as currently_assigned,
-                CASE 
-                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date < CURDATE() THEN 'Overdue'
-                    WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'Due Soon'
-                    WHEN p.calibration_due_date IS NOT NULL THEN 'Current'
-                    ELSE 'Not Required'
-                END as calibration_status
-            FROM products p
-            LEFT JOIN users u ON p.added_by = u.user_id
-            ${whereClause}
-            ORDER BY p.asset_type, p.product_category, p.product_name
-        `;
-        
-        const [products] = await pool.execute(productsQuery, params);
-        
-        // Get updated stock stats
-        const stockStatsQuery = `
-            SELECT 
-                asset_type,
-                COUNT(*) as total_items,
-                SUM(quantity) as total_quantity,
-                SUM(CASE WHEN is_available = TRUE THEN quantity ELSE 0 END) as available_quantity,
-                SUM(CASE WHEN COALESCE(calibration_required, FALSE) = TRUE THEN 1 ELSE 0 END) as calibration_items,
-                SUM(CASE WHEN calibration_due_date IS NOT NULL AND calibration_due_date < CURDATE() THEN 1 ELSE 0 END) as overdue_calibrations
-            FROM products
-            ${asset_type ? 'WHERE asset_type = ?' : ''}
-            GROUP BY asset_type
-        `;
-        
-        const [stockStats] = await pool.execute(stockStatsQuery, asset_type ? [asset_type] : []);
-        
-        res.json({
-            products: products || [],
-            stockStats: stockStats || [],
-            timestamp: new Date().toISOString()
-        });
     } catch (error) {
-        console.error('API stock data error:', error);
-        res.status(500).json({ error: 'Failed to fetch stock data' });
+        console.error('Toggle employee status error:', error);
+        req.flash('error', 'Error updating employee status');
     }
+    
+    res.redirect('/admin/employees');
+});
+
+// Admin: Bulk Deactivate Employees Route
+app.post('/admin/bulk-deactivate-employees', requireAuth, requireRole(['admin']), async (req, res) => {
+    const { employee_ids } = req.body;
+    
+    if (!employee_ids || employee_ids.length === 0) {
+        req.flash('error', 'No employees selected');
+        return res.redirect('/admin/employees');
+    }
+    
+    const ids = Array.isArray(employee_ids) ? employee_ids : [employee_ids];
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            let deactivatedCount = 0;
+            let skippedCount = 0;
+            
+            for (const employeeId of ids) {
+                // Check for active assignments
+                const [assignments] = await connection.execute(`
+                    SELECT COUNT(*) as count 
+                    FROM product_assignments pa
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    WHERE e.user_id = ? AND pa.is_returned = FALSE
+                `, [employeeId]);
+                
+                if (assignments[0].count > 0) {
+                    skippedCount++;
+                    continue;
+                }
+                
+                // Deactivate user and employee
+                await connection.execute(
+                    'UPDATE users SET is_active = FALSE WHERE user_id = ?',
+                    [employeeId]
+                );
+                await connection.execute(
+                    'UPDATE employees SET is_active = FALSE WHERE user_id = ?',
+                    [employeeId]
+                );
+                deactivatedCount++;
+            }
+            
+            await connection.commit();
+            
+            let message = `${deactivatedCount} employee(s) deactivated successfully`;
+            if (skippedCount > 0) {
+                message += `. ${skippedCount} employee(s) skipped due to active assignments`;
+            }
+            req.flash('success', message);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Bulk deactivate error:', error);
+        req.flash('error', 'Error deactivating employees');
+    }
+    
+    res.redirect('/admin/employees');
+});
+
+// Admin: Bulk Activate Employees Route
+app.post('/admin/bulk-activate-employees', requireAuth, requireRole(['admin']), async (req, res) => {
+    const { employee_ids } = req.body;
+    
+    if (!employee_ids || employee_ids.length === 0) {
+        req.flash('error', 'No employees selected');
+        return res.redirect('/admin/employees');
+    }
+    
+    const ids = Array.isArray(employee_ids) ? employee_ids : [employee_ids];
+    
+    try {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // Activate selected users and employees
+            for (const employeeId of ids) {
+                await connection.execute(
+                    'UPDATE users SET is_active = TRUE WHERE user_id = ?',
+                    [employeeId]
+                );
+                await connection.execute(
+                    'UPDATE employees SET is_active = TRUE WHERE user_id = ?',
+                    [employeeId]
+                );
+            }
+            
+            await connection.commit();
+            req.flash('success', `${ids.length} employee(s) activated successfully`);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('Bulk activate error:', error);
+        req.flash('error', 'Error activating employees');
+    }
+    
+    res.redirect('/admin/employees');
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📊 Product Management System started successfully!`);
+    console.log(`Server running on port ${PORT}`);
 });
 
 module.exports = app;

@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS product_assignments;
 DROP TABLE IF EXISTS product_requests;
 DROP TABLE IF EXISTS stock_history;
 DROP TABLE IF EXISTS registration_requests;
+DROP TABLE IF EXISTS admin_assignments;
 DROP TABLE IF EXISTS monitor_assignments;
 DROP TABLE IF EXISTS employees;
 DROP TABLE IF EXISTS products;
@@ -23,6 +24,7 @@ CREATE TABLE users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     role ENUM('employee', 'monitor', 'admin') NOT NULL DEFAULT 'employee',
+    is_super_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -56,6 +58,18 @@ CREATE TABLE monitor_assignments (
     FOREIGN KEY (assigned_by) REFERENCES users(user_id)
 );
 
+-- Create admin_assignments table (similar to monitor_assignments)
+CREATE TABLE admin_assignments (
+    assignment_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    assigned_by INT NOT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (assigned_by) REFERENCES users(user_id)
+);
+
 -- Create registration_requests table
 CREATE TABLE registration_requests (
     request_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -76,14 +90,14 @@ CREATE TABLE registration_requests (
 CREATE TABLE products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     item_number INT,
-    asset_type VARCHAR(50) NOT NULL,
-    product_category VARCHAR(100) NOT NULL,
-    product_name VARCHAR(500) NOT NULL,
+    asset_type VARCHAR(50) ,
+    product_category VARCHAR(100) ,
+    product_name VARCHAR(500) ,
     model_number VARCHAR(100),
     serial_number VARCHAR(100),
     is_available BOOLEAN DEFAULT TRUE,
-    quantity INT NOT NULL DEFAULT 1,
-    added_by INT NOT NULL,
+    quantity INT DEFAULT 1,
+    added_by INT,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     calibration_required BOOLEAN DEFAULT FALSE,
     calibration_frequency VARCHAR(50),
@@ -246,12 +260,37 @@ CREATE INDEX idx_products_asset_type ON products(asset_type);
 CREATE INDEX idx_products_category ON products(product_category);
 CREATE INDEX idx_product_assignments_employee ON product_assignments(employee_id);
 CREATE INDEX idx_product_assignments_returned ON product_assignments(is_returned);
-
--- Display completion message
-SELECT 'Database setup completed successfully!' as message;
+CREATE INDEX idx_registration_requests_status ON registration_requests(status);
+CREATE INDEX idx_monitor_assignments_active ON monitor_assignments(is_active);
 
 -- Add is_active column to users table
 ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
 
 -- Update existing users to be active
 UPDATE users SET is_active = TRUE;
+ALTER TABLE product_requests ADD COLUMN return_date TIMESTAMP NULL;
+
+-- Display completion message
+SELECT 'Database setup completed successfully!' as message;
+
+-- Remove superadmin user
+DELETE FROM users WHERE username = 'superadmin';
+
+-- Create 3 admin users
+INSERT INTO users (username, full_name, email, password, role, is_super_admin, is_active) VALUES
+('admin1', 'Admin One', 'admin1@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE, TRUE),
+('admin2', 'Admin Two', 'admin2@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE),
+('admin3', 'Admin Three', 'admin3@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE);
+
+alter table products add column pr_no INT;
+alter table products add column po_number VARCHAR(50);
+alter table products add column inward_date DATE;
+alter table products add column inwarded_by INT REFERENCES users(user_id);
+
+ALTER TABLE products
+    ADD COLUMN version_number VARCHAR(50),
+    ADD COLUMN software_license_type VARCHAR(50),
+    ADD COLUMN license_expiry DATE,
+    ADD COLUMN renewal_frequency VARCHAR(50),
+    ADD COLUMN next_renewal_date DATE;
+  

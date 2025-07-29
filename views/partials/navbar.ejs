@@ -14,7 +14,9 @@
                 </div>
                 <div>
                     <p class="font-medium text-gray-900"><%= user.full_name %></p>
-                    <p class="text-sm text-gray-500 capitalize"><%= user.role %></p>
+                    <p class="text-sm text-gray-500">
+                        <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
+                    </p>
                 </div>
             </div>
         </div>
@@ -69,13 +71,13 @@
                     <i class="fas fa-user-shield mr-3"></i>
                     Manage Monitors
                 </a>
+                <a href="/admin/history" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-history mr-3"></i>
+                    System History
+                </a>
                 <a href="/admin/stock" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
                     <i class="fas fa-boxes mr-3"></i>
                     Stock Management
-                </a>
-                <a href="/admin/history" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-history mr-3"></i>
-                    History
                 </a>
                 <a href="/admin/registration-requests" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
                     <i class="fas fa-user-plus mr-3"></i>

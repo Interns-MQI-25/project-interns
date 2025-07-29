@@ -13,7 +13,7 @@ chmod +x setup.sh
 .\setup.sh
 ```
 
-2. For Windows(You doublee-click the files to directly execute)
+2. For Windows(You double-click the files to directly execute)
 ```ps1
 # Make the script executable and run for Windows(PowerShell)
 cd scripts
@@ -99,7 +99,7 @@ NODE_ENV=development
 ### 4. Initialize Application
 ```bash
 # Create admin account
-node fix-admin.js
+node create-admin.js
 
 # Setup database connection
 node setup-db.js

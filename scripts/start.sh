@@ -4,7 +4,7 @@
 
 echo "🚀 Starting Product Management System..."
 echo "Create admin username and password"
-    node fix-admin.js   
+    node create-admin.js   
 
 echo "Connect the project with mySQL"
     node setup-db.js

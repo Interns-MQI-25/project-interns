@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Management - Monitor Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <%- include('../partials/navbar') %>
+    
+    <main class="ml-64 p-6">
+        <%- include('../partials/messages') %>
+        
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Stock Management</h1>
+            <p class="text-gray-600">Real-time inventory tracking and management</p>
+        </div>
+
+        <!-- Search and Filter Controls -->
+        <div class="bg-white shadow rounded-lg mb-6 p-4">
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <input type="text" id="searchInput" placeholder="Search products..." 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="flex gap-2">
+                    <select id="assetFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Asset Types</option>
+                        <option value="Hardware">Hardware</option>
+                        <option value="Software">Software</option>
+                        <option value="Equipment">Equipment</option>
+                        <option value="Tool">Tool</option>
+                    </select>
+                    <button onclick="clearFilters()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                        <i class="fas fa-times mr-1"></i>Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Analytics Cards -->
+        <% if (typeof stockStats !== 'undefined' && stockStats && stockStats.length > 0) { %>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8" id="statsCards">
+            <% stockStats.forEach(stat => { %>
+                <div class="bg-white overflow-hidden shadow rounded-lg stat-card" data-asset-type="<%= stat.asset_type %>">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-cube text-2xl text-purple-600"></i>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 truncate">
+                                        <%= stat.asset_type %>
+                                    </dt>
+                                    <dd>
+                                        <div class="text-lg font-medium text-gray-900">
+                                            <%= stat.total_items %> items
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            Available: <%= stat.available_quantity %>
+                                        </div>
+                                        <% if (stat.calibration_items > 0) { %>
+                                            <div class="text-xs text-orange-600">
+                                                Cal Req: <%= stat.calibration_items %>
+                                            </div>
+                                        <% } %>
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+        <% } %>
+        
+        <!-- Stock Table -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    Product Inventory
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model/Serial</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="productTableBody">
+                            <% if (products && products.length > 0) { %>
+                                <% products.forEach(product => { %>
+                                    <tr class="product-row" data-asset-type="<%= product.asset_type %>" data-search-text="<%= (product.product_name + ' ' + product.product_category + ' ' + (product.model_number || '') + ' ' + (product.serial_number || '')).toLowerCase() %>">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900"><%= product.product_name %></div>
+                                            <div class="text-sm text-gray-500"><%= product.product_category %></div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                <%= product.asset_type %>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <div><%= product.model_number || 'N/A' %></div>
+                                            <div class="text-xs"><%= product.serial_number || 'N/A' %></div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <div class="font-semibold">Total: <%= (product.quantity || 0) + (product.currently_assigned || 0) %></div>
+                                            <div class="text-green-600">Available: <%= product.quantity || 0 %></div>
+                                            <div class="text-yellow-600">Assigned: <%= product.currently_assigned || 0 %></div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <% if (product.quantity > 0) { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">In Stock</span>
+                                            <% } else { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Out of Stock</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr id="noResultsRow">
+                                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                        No products found
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const assetFilter = document.getElementById('assetFilter');
+        const productRows = document.querySelectorAll('.product-row');
+        const statsCards = document.querySelectorAll('.stat-card');
+        const noResultsRow = document.getElementById('noResultsRow');
+
+        function filterProducts() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const assetType = assetFilter.value;
+            let visibleCount = 0;
+
+            productRows.forEach(row => {
+                const searchText = row.dataset.searchText;
+                const rowAssetType = row.dataset.assetType;
+                
+                const matchesSearch = searchText.includes(searchTerm);
+                const matchesAsset = !assetType || rowAssetType === assetType;
+                
+                if (matchesSearch && matchesAsset) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Show/hide no results message
+            if (noResultsRow) {
+                noResultsRow.style.display = visibleCount === 0 ? '' : 'none';
+            }
+
+            // Highlight active stats cards
+            statsCards.forEach(card => {
+                const cardAssetType = card.dataset.assetType;
+                if (assetType && cardAssetType === assetType) {
+                    card.classList.add('ring-2', 'ring-blue-500');
+                } else {
+                    card.classList.remove('ring-2', 'ring-blue-500');
+                }
+            });
+        }
+
+        function clearFilters() {
+            searchInput.value = '';
+            assetFilter.value = '';
+            filterProducts();
+        }
+
+        function filterByAssetType(assetType) {
+            assetFilter.value = assetType;
+            filterProducts();
+        }
+
+        // Add click functionality to stats cards
+        statsCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const assetType = card.dataset.assetType;
+                filterByAssetType(assetType);
+            });
+            card.style.cursor = 'pointer';
+        });
+
+        searchInput.addEventListener('input', filterProducts);
+        assetFilter.addEventListener('change', filterProducts);
+
+        // Auto-refresh every 30 seconds for real-time data
+        setInterval(() => {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>ment.getElementById('noResultsRow');
+
+        function filterProducts() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const assetType = assetFilter.value;
+            let visibleCount = 0;
+
+            productRows.forEach(row => {
+                const searchText = row.dataset.searchText;
+                const rowAssetType = row.dataset.assetType;
+                
+                const matchesSearch = searchText.includes(searchTerm);
+                const matchesAsset = !assetType || rowAssetType === assetType;
+                
+                if (matchesSearch && matchesAsset) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Show/hide no results message
+            if (noResultsRow) {
+                noResultsRow.style.display = visibleCount === 0 ? '' : 'none';
+            }
+
+            // Filter stats cards
+            statsCards.forEach(card => {
+                const cardAssetType = card.dataset.assetType;
+                if (!assetType || cardAssetType === assetType) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function clearFilters() {
+            searchInput.value = '';
+            assetFilter.value = '';
+            filterProducts();
+        }
+
+        searchInput.addEventListener('input', filterProducts);
+        assetFilter.addEventListener('change', filterProducts);
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

@@ -255,7 +255,7 @@
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
                     Recent System Activity
                 </h3>
-                <div id="recentActivity" class="max-h-96 overflow-y-auto">
+                <div id="recentActivity" class="max-h-96 overflow-y-auto scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
                     <% if (recentActivity && recentActivity.length > 0) { %>
                         <div class="space-y-3">
                             <% recentActivity.forEach(function(activity) { %>
@@ -319,7 +319,7 @@
         // Function to update dashboard stats and activity
         async function updateDashboardStats() {
             try {
-                const response = await fetch('/api/admin/dashboard-stats');
+                const response = await fetch('/admin/dashboard-stats');
                 if (response.ok) {
                     const data = await response.json();
                     

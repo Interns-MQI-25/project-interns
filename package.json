@@ -1,22 +1,35 @@
 {
-  "name": "product-management-system", 
+  "name": "product-management-system",
   "version": "1.0.0",
   "description": "Employee Product Management System with role-based access",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "test": "echo \"Running basic tests...\" && node test/basic.test.js",
+    "test:db": "echo \"Running database tests...\" && node test/db.test.js",
+    "lint": "echo \"Linting code...\" && echo \"No linting configured yet\"",
+    "build": "echo \"Building project...\" && echo \"No build step required\"",
+    "deploy": "gcloud app deploy",
+    "deploy:fresh": "./deploy-appengine.sh",
+    "logs": "gcloud app logs tail -s default",
+    "browse": "gcloud app browse",
+    "setup-gcp": "gcloud config set project mqi-interns-467405",
+    "docker:build": "docker build -t product-management-system .",
+    "docker:run": "docker run -p 3000:3000 product-management-system"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
+    "express-mysql-session": "^3.0.0",
     "dotenv": "^16.3.1",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
     "express-flash": "^0.0.2",
     "express-session": "^1.17.3",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1", 
+    "multer": "^1.4.5-lts.1",
     "mysql2": "^3.6.0",
     "nodemailer": "^6.9.4"
   },
@@ -24,9 +37,12 @@
     "nodemon": "^3.0.1",
     "tailwindcss": "^4.1.11"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "keywords": [
     "nodejs",
-    "express", 
+    "express",
     "mysql",
     "ejs",
     "product-management"

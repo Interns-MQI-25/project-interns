@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    1`1<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -59,17 +59,13 @@
                         <select id="department_id" name="department_id" required 
                                 class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             <option value="">Select Department</option>
-                            <% if (typeof departments !== 'undefined' && departments) { %>
-                                <% departments.forEach(dept => { %>
-                                    <option value="<%= dept.department_id %>"><%= dept.department_name %></option>
-                                <% }); %>
-                            <% } else { %>
+                            
                                 <option value="1">IT</option>
                                 <option value="2">HR</option>
                                 <option value="3">Finance</option>
                                 <option value="4">Marketing</option>
                                 <option value="5">Operations</option>
-                            <% } %>
+                            
                         </select>
                     </div>
                 </div>

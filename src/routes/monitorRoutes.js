@@ -199,6 +199,34 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // API endpoint to get live active assignments count
+    router.get('/api/monitor/active-assignments-count', requireAuth, requireRole(['monitor']), async (req, res) => {
+        try {
+            const [activeAssignments] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = FALSE',
+                [req.session.user.user_id]
+            );
+            res.json({ count: activeAssignments[0].count });
+        } catch (error) {
+            console.error('Error fetching active assignments count:', error);
+            res.status(500).json({ count: 0 });
+        }
+    });
+
+    // API endpoint to get live total assignments count
+    router.get('/api/monitor/total-assignments-count', requireAuth, requireRole(['monitor']), async (req, res) => {
+        try {
+            const [totalAssignments] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ?',
+                [req.session.user.user_id]
+            );
+            res.json({ count: totalAssignments[0].count });
+        } catch (error) {
+            console.error('Error fetching total assignments count:', error);
+            res.status(500).json({ count: 0 });
+        }
+    });
+
     // Monitor: Add Product Route
     router.post('/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
         const { 
@@ -260,6 +288,18 @@ module.exports = (pool, requireAuth, requireRole) => {
             req.flash('error', 'Error adding product to stock');
             const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
             res.redirect(redirectPath);
+        }
+    });
+
+    // API Route: Pending Approvals Count
+    router.get('/api/monitor/pending-approvals-count', async (req, res) => {
+        try {
+            const [rows] = await req.app.locals.pool.execute(
+                'SELECT COUNT(*) AS count FROM approvals WHERE status = "pending"'
+            );
+            res.json({ count: rows[0].count });
+        } catch (err) {
+            res.json({ count: 0 });
         }
     });
 

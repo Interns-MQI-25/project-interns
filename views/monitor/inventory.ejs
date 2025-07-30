@@ -126,7 +126,6 @@
                                 <input type="date" id="last_calibration_date" name="last_calibration_date" 
                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
-                            
                             <div>
                                 <label for="calibration_frequency_months" class="block text-sm font-medium text-gray-700">Calibration Frequency (Months)</label>
                                 <select name="calibration_frequency_months" id="calibration_frequency_months" 
@@ -137,6 +136,11 @@
                                     <option value="24">24 Months</option>
                                     <option value="36">36 Months</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label for="next_calibration_date" class="block text-sm font-medium text-gray-700">Next Calibration Date</label>
+                                <input type="date" id="next_calibration_date" name="next_calibration_date" readonly
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
                             <div class="md:col-span-2">
                                 <label for="calibration_notes" class="block text-sm font-medium text-gray-700">Calibration Notes</label>
@@ -382,13 +386,49 @@
         }
     }
 
-    // Initially hide the form
+    // --- Calibration: Auto-calculate next calibration date ---
+    function calculateNextCalibrationDate() {
+        const lastDateInput = document.getElementById('last_calibration_date');
+        const freqInput = document.getElementById('calibration_frequency_months');
+        const nextDateInput = document.getElementById('next_calibration_date');
+        if (!lastDateInput || !freqInput || !nextDateInput) return;
+
+        const lastDate = lastDateInput.value;
+        const freqMonths = parseInt(freqInput.value, 10);
+
+        if (lastDate && freqMonths) {
+            const date = new Date(lastDate);
+            date.setMonth(date.getMonth() + freqMonths);
+            // Format as yyyy-mm-dd
+            const nextDate = date.toISOString().split('T')[0];
+            nextDateInput.value = nextDate;
+        } else {
+            nextDateInput.value = '';
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        // Initially hide the form
         document.getElementById('productForm').style.display = 'none';
         document.getElementById('productCategory').addEventListener('change', function() {
             toggleCalibrationFields();
             toggleSoftwareFields();
         });
+
+        // Set max date for all date inputs in the form
+        const today = new Date().toISOString().split('T')[0];
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(input => {
+            input.setAttribute('max', today);
+        });
+
+        // Calibration auto-calc
+        const lastCalInput = document.getElementById('last_calibration_date');
+        const freqInput = document.getElementById('calibration_frequency_months');
+        if (lastCalInput && freqInput) {
+            lastCalInput.addEventListener('change', calculateNextCalibrationDate);
+            freqInput.addEventListener('change', calculateNextCalibrationDate);
+        }
     });
     </script>
 </body>

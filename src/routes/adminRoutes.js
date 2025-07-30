@@ -13,7 +13,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 LEFT JOIN employees e ON u.user_id = e.user_id
                 LEFT JOIN departments d ON e.department_id = d.department_id
                 WHERE u.role IN ('employee', 'monitor')
-                ORDER BY u.is_active DESC, u.full_name
+                ORDER BY e.is_active DESC, u.full_name
             `);
             
             const [departments] = await pool.execute('SELECT DISTINCT department_id, department_name FROM departments ORDER BY department_name');
@@ -174,7 +174,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN users u1 ON e.user_id = u1.user_id
                 LEFT JOIN users u2 ON pr.processed_by = u2.user_id
                 ORDER BY date DESC
-                LIMIT 100
             `);
             
             res.render('admin/history', { user: req.session.user, history });
@@ -242,7 +241,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN products p ON pr.product_id = p.product_id
                 JOIN employees e ON pr.employee_id = e.employee_id
                 JOIN users u ON e.user_id = u.user_id
-                WHERE pr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
                 UNION ALL
                 SELECT 'assignment' as type, pa.assigned_at as date, p.product_name,
                        u.full_name as employee_name, 
@@ -252,14 +250,12 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN products p ON pa.product_id = p.product_id
                 JOIN employees e ON pa.employee_id = e.employee_id
                 JOIN users u ON e.user_id = u.user_id
-                WHERE pa.assigned_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
                 UNION ALL
                 SELECT 'registration' as type, rr.requested_at as date, 'User Registration' as product_name,
                        rr.full_name as employee_name, rr.status, 1 as quantity
                 FROM registration_requests rr
-                WHERE rr.requested_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
                 ORDER BY date DESC
-                LIMIT 10
+                LIMIT 50
             `);
             
             // Fetch stock analytics
@@ -529,7 +525,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             try {
                 // Get current status
                 const [employees] = await connection.execute(
-                    'SELECT u.is_active FROM users u WHERE u.user_id = ?',
+                    'SELECT is_active FROM users WHERE user_id = ?',
                     [employeeId]
                 );
                 

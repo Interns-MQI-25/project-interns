@@ -3,7 +3,12 @@ const mysql = require('mysql2/promise');
 // Middleware to check authentication
 const requireAuth = async (req, res, next) => {
     try {
+        console.log('🔍 Auth middleware - checking session...');
+        console.log('📋 Session user:', req.session.user ? 'EXISTS' : 'NOT FOUND');
+        console.log('📋 Session ID:', req.sessionID);
+        
         if (req.session.user) {
+            console.log('✅ Session user found:', req.session.user.username);
             // Get complete user data from database using pool instead of db
             const [users] = await req.app.locals.pool.execute(
                 'SELECT * FROM users WHERE user_id = ?', 
@@ -11,6 +16,7 @@ const requireAuth = async (req, res, next) => {
             );
 
             if (users.length === 0) {
+                console.log('❌ User not found in database, destroying session');
                 req.session.destroy();
                 return res.redirect('/login');
             }

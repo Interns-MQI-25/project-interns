@@ -35,6 +35,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 app.use(flash());
+app.use('/images', express.static('images'));
 
 // Set view engine
 app.set('view engine', 'ejs');
@@ -313,7 +314,30 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 LIMIT 5
             `, [req.session.user.user_id]);
             
-            res.render('monitor/dashboard', { user: req.session.user, recentActivity });
+            // Fetch dashboard statistics for monitor
+            const [pendingRequests] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
+            );
+            
+            const [approvedToday] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "approved" AND DATE(processed_at) = CURDATE()'
+            );
+            
+            const [totalProducts] = await pool.execute(
+                'SELECT COUNT(*) as count FROM products'
+            );
+            
+            const monitorStats = {
+                pendingRequests: pendingRequests[0].count,
+                approvedToday: approvedToday[0].count,
+                totalProducts: totalProducts[0].count
+            };
+            
+            res.render('monitor/dashboard', { 
+                user: req.session.user, 
+                recentActivity,
+                stats: monitorStats
+            });
         } else if (role === 'admin') {
             // Fetch dashboard statistics for admin
             const [totalEmployees] = await pool.execute(

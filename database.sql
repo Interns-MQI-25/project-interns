@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS product_requests;
 DROP TABLE IF EXISTS stock_history;
 DROP TABLE IF EXISTS registration_requests;
 DROP TABLE IF EXISTS admin_assignments;
+DROP TABLE IF EXISTS admin_assignments;
 DROP TABLE IF EXISTS monitor_assignments;
 DROP TABLE IF EXISTS employees;
 DROP TABLE IF EXISTS products;
@@ -293,4 +294,5 @@ ALTER TABLE products
     ADD COLUMN license_expiry DATE,
     ADD COLUMN renewal_frequency VARCHAR(50),
     ADD COLUMN next_renewal_date DATE;
-  
+   
+

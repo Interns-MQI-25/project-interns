@@ -15,6 +15,7 @@
         
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900">Stock Management</h1>
+            <p class="text-gray-600">Manage and track inventory</p>
             <p class="text-gray-600">Complete oversight of inventory and analytics</p>
         </div>
 
@@ -62,14 +63,17 @@
         </div>
         <% } %>
 
-        <!-- Recent Activity -->
+        <!-- Recent Activity Dropdown -->
         <% if (typeof recentActivity !== 'undefined' && recentActivity && recentActivity.length > 0) { %>
         <div class="bg-white shadow rounded-lg mb-8">
             <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Recent Stock Activity
-                </h3>
-                <div class="flow-root max-h-[400px] overflow-y-auto">
+                <button id="toggleRecentActivity" type="button" class="w-full flex justify-between items-center text-lg leading-6 font-medium text-gray-900 mb-4 focus:outline-none">
+                    <span>Recent Stock Activity</span>
+                    <svg id="recentActivityChevron" class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="recentActivityPanel" class="flow-root max-h-[400px] overflow-y-auto">
                     <ul class="-mb-8">
                         <% recentActivity.slice(0, 5).forEach((activity, index) => { %>
                             <li>
@@ -106,14 +110,26 @@
                 </div>
             </div>
         </div>
+        <script>
+        const toggleRecentActivity = document.getElementById('toggleRecentActivity');
+        const recentActivityPanel = document.getElementById('recentActivityPanel');
+        const recentActivityChevron = document.getElementById('recentActivityChevron');
+        if (toggleRecentActivity && recentActivityPanel && recentActivityChevron) {
+            recentActivityPanel.style.display = '';
+            toggleRecentActivity.addEventListener('click', function() {
+                if (recentActivityPanel.style.display === '' || recentActivityPanel.style.display === 'block') {
+                    recentActivityPanel.style.display = 'none';
+                    recentActivityChevron.style.transform = 'rotate(-90deg)';
+                } else {
+                    recentActivityPanel.style.display = 'block';
+                    recentActivityChevron.style.transform = 'rotate(0deg)';
+                }
+            });
+        }
+        </script>
         <% } %>
         
-        <!-- Stock Table -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Product Inventory
-                </h3>
+        <!-- ...existing code... -->
                 <div class="mb-4">
     <div class="flex flex-col md:flex-row gap-4">
         <div class="flex-1">
@@ -193,16 +209,16 @@
                         data-product-name="<%= product.product_name.toLowerCase() %>"
                         data-asset-type="<%= product.asset_type %>"
                         data-calibration-status="<%= product.calibration_required ? product.calibration_status : 'Not Required' %>">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">
+                        <td class="px-6 py-4 align-top" style="white-space:normal; word-break:break-word;">
+                            <div class="text-sm font-medium text-gray-900 break-words whitespace-normal">
                                 <%= product.product_name %>
                             </div>
-                            <div class="text-sm text-gray-500">
+                            <div class="text-sm text-gray-500 break-words whitespace-normal">
                                 <%= product.product_category %>
                             </div>
                             <% if (product.description) { %>
-                                <div class="text-xs text-gray-400 truncate max-w-xs">
-                                    <%= product.description.substring(0, 50) %>...
+                                <div class="text-xs text-gray-400 break-words whitespace-normal">
+                                    <%= product.description %>
                                 </div>
                             <% } %>
                         </td>

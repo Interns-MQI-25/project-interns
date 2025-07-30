@@ -1,7 +1,20 @@
 // Main JavaScript file for the application
 
 // Initialize the application
+console.log('Main.js loaded successfully');
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing...');
+    
+    // Set active page for sidebar
+    const currentPath = window.location.pathname;
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    
+    sidebarLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath || 
+            (currentPath.includes('dashboard') && link.getAttribute('data-page') === 'dashboard')) {
+            link.classList.add('bg-primary-100', 'text-primary-700', 'border-r-4', 'border-primary-600');
+        }
+    });
     // Initialize tooltips
     initializeTooltips();
     
@@ -13,6 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Auto-hide flash messages
     autoHideFlashMessages();
+    
+    // Initialize live counts
+    initializeLiveCounts();
 });
 
 // Initialize tooltips
@@ -160,6 +176,49 @@ function closeModal(modalId) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }
+}
+
+
+
+// Live counts functionality
+function initializeLiveCounts() {
+    console.log('Initializing live counts...');
+    updateLiveCounts();
+    // Update counts every 5 seconds for real-time updates
+    setInterval(updateLiveCounts, 5000);
+}
+
+function updateLiveCounts() {
+    fetch('/api/live-counts')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('API response not ok: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Live counts:', data);
+            // Update pending requests count for monitors
+            const pendingRequestsCount = document.getElementById('pendingRequestsCount');
+            if (pendingRequestsCount) {
+                pendingRequestsCount.textContent = data.pendingRequests;
+                pendingRequestsCount.style.display = 'inline';
+            }
+            
+            // Update pending registrations count for admin
+            const pendingRegistrationsCount = document.getElementById('pendingRegistrationsCount');
+            if (pendingRegistrationsCount) {
+                if (data.pendingRegistrations > 0) {
+                    pendingRegistrationsCount.textContent = data.pendingRegistrations;
+                    pendingRegistrationsCount.style.display = 'inline';
+                } else {
+                    pendingRegistrationsCount.style.display = 'none';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error updating live counts:', error);
+        });
 }
 
 // Export functions for global use

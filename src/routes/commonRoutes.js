@@ -399,5 +399,37 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // API endpoint for live counts for sidebar notifications
+    router.get('/api/live-counts', requireAuth, async (req, res) => {
+        try {
+            let pendingRequests = 0;
+            let pendingRegistrations = 0;
+
+            // For monitors and admins, get pending product requests
+            if (req.session.user.role === 'monitor' || req.session.user.role === 'admin') {
+                const [requests] = await pool.execute(
+                    'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
+                );
+                pendingRequests = requests[0].count;
+            }
+
+            // For admins, get pending registration requests
+            if (req.session.user.role === 'admin') {
+                const [registrations] = await pool.execute(
+                    'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
+                );
+                pendingRegistrations = registrations[0].count;
+            }
+
+            res.json({
+                pendingRequests,
+                pendingRegistrations
+            });
+        } catch (error) {
+            console.error('Error fetching live counts:', error);
+            res.status(500).json({ error: 'Failed to fetch live counts' });
+        }
+    });
+
     return router;
 };

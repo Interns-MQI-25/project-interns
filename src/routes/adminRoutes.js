@@ -529,7 +529,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             try {
                 // Get current status
                 const [employees] = await connection.execute(
-                    'SELECT u.is_active FROM users u WHERE u.user_id = ?',
+                    'SELECT is_active FROM users WHERE user_id = ?',
                     [employeeId]
                 );
                 

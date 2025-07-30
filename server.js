@@ -3,6 +3,7 @@ const session = require('express-session');
 const flash = require('express-flash');
 const MySQLStore = require('express-mysql-session')(session);
 const mysql = require('mysql2/promise');
+const bcrypt = require('bcryptjs');
 const path = require('path');
 require('dotenv').config();
 
@@ -319,7 +320,6 @@ app.get('/setup-database', async (req, res) => {
         );
         
         if (adminUsers[0].count === 0) {
-            const bcrypt = require('bcryptjs');
             // Password is 'password' - matches the hash in your database.sql
             const hashedPassword = '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
             

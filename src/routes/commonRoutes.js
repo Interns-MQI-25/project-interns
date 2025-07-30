@@ -123,7 +123,7 @@ module.exports = (pool, requireAuth, requireRole) => {
         
         try {
             const [users] = await pool.execute(
-                'SELECT u.*, e.department_id FROM users u LEFT JOIN employees e ON u.user_id = e.user_id WHERE username = ? AND is_active = TRUE',
+                'SELECT u.*, e.department_id FROM users u LEFT JOIN employees e ON u.user_id = e.user_id WHERE username = ? AND (e.is_active IS NULL OR e.is_active = TRUE)',
                 [username]
             );
             

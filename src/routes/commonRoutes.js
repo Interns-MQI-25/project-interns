@@ -119,36 +119,28 @@ module.exports = (pool, requireAuth, requireRole) => {
     router.post('/login', async (req, res) => {
         const { username, password } = req.body;
         
-        console.log('🔐 Login attempt for username:', username);
-        
         try {
             const [users] = await pool.execute(
-                'SELECT u.*, e.department_id FROM users u LEFT JOIN employees e ON u.user_id = e.user_id WHERE username = ? AND (e.is_active IS NULL OR e.is_active = TRUE)',
+                'SELECT u.*, e.department_id FROM users u LEFT JOIN employees e ON u.user_id = e.user_id WHERE username = ?',
                 [username]
             );
             
-            console.log('👤 Users found:', users.length);
-            
             if (users.length === 0) {
-                console.log('❌ No user found or user inactive');
                 req.flash('error', 'Invalid username or password');
                 return res.redirect('/login');
             }
             
             const user = users[0];
-            console.log('🔐 Starting password verification for user:', user.user_id);
+            console.log('🔐 Starting password verification...');
             const startTime = Date.now();
             const isValid = await bcrypt.compare(password, user.password);
             const endTime = Date.now();
-            console.log(`⏱️ Password verification took: ${endTime - startTime}ms, Result: ${isValid}`);
+            console.log(`⏱️ Password verification took: ${endTime - startTime}ms`);
             
             if (!isValid) {
-                console.log('❌ Password verification failed');
                 req.flash('error', 'Invalid username or password');
                 return res.redirect('/login');
             }
-            
-            console.log('✅ Login successful, creating session...');
             
             req.session.user = {
                 user_id: user.user_id,
@@ -160,23 +152,9 @@ module.exports = (pool, requireAuth, requireRole) => {
                 department_id: user.department_id
             };
             
-            console.log('📝 Session user object created:', req.session.user);
-            
-            // Save session explicitly
-            req.session.save((err) => {
-                if (err) {
-                    console.error('❌ Session save error:', err);
-                    req.flash('error', 'Login failed. Please try again.');
-                    return res.redirect('/login');
-                }
-                
-                console.log('✅ Session saved successfully, redirecting to dashboard...');
-                console.log('📋 Final session ID:', req.sessionID);
-                res.redirect('/dashboard');
-            });
-            
+            res.redirect('/dashboard');
         } catch (error) {
-            console.error('❌ Login error:', error);
+            console.error('Login error:', error);
             req.flash('error', 'An error occurred during login');
             res.redirect('/login');
         }
@@ -418,6 +396,38 @@ module.exports = (pool, requireAuth, requireRole) => {
         } catch (error) {
             console.error('Stock search error:', error);
             res.status(500).json({ error: 'Failed to search products' });
+        }
+    });
+
+    // API endpoint for live counts for sidebar notifications
+    router.get('/api/live-counts', requireAuth, async (req, res) => {
+        try {
+            let pendingRequests = 0;
+            let pendingRegistrations = 0;
+
+            // For monitors and admins, get pending product requests
+            if (req.session.user.role === 'monitor' || req.session.user.role === 'admin') {
+                const [requests] = await pool.execute(
+                    'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
+                );
+                pendingRequests = requests[0].count;
+            }
+
+            // For admins, get pending registration requests
+            if (req.session.user.role === 'admin') {
+                const [registrations] = await pool.execute(
+                    'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
+                );
+                pendingRegistrations = registrations[0].count;
+            }
+
+            res.json({
+                pendingRequests,
+                pendingRegistrations
+            });
+        } catch (error) {
+            console.error('Error fetching live counts:', error);
+            res.status(500).json({ error: 'Failed to fetch live counts' });
         }
     });
 

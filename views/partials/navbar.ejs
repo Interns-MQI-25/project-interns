@@ -51,6 +51,10 @@
                 <a href="/monitor/approvals" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="approvals">
                     <i class="fas fa-check-circle mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
                     <span class="font-medium text-sm sm:text-base">Approvals</span>
+                <a href="/monitor/approvals" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-check-circle mr-3"></i>
+                    Approvals
+                    <span id="pendingRequestsCount" class="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">0</span>
                 </a>
                 <a href="/monitor/records" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="records">
                     <i class="fas fa-history mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
@@ -85,9 +89,14 @@
                     <i class="fas fa-boxes mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
                     <span class="font-medium text-sm sm:text-base">Stock Management</span>
                 </a>
-                <a href="/admin/registration-requests" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="registration">
-                    <i class="fas fa-user-plus mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
-                    <span class="font-medium text-sm sm:text-base">Registration Requests</span>
+                <a href="/admin/registration-requests" class="sidebar-link group block px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="registration">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-user-plus mr-2 text-sm text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">        <span class="text-sm">Registration Requests</span></span>
+                        </div>
+                        <span id="pendingRegistrationsCount" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 font-bold min-w-[20px] text-center">0</span>
+                    </div>
                 </a>
             <% } %>
         </nav>
@@ -101,3 +110,22 @@
         </div>
     </div>
 </div>
+
+<script>
+function updatePendingRequestsCount() {
+    fetch('/api/monitor/pending-approvals-count')
+        .then(res => res.json())
+        .then(data => {
+            const badge = document.getElementById('pendingRequestsCount');
+            if (badge) {
+                badge.textContent = data.count ?? 0;
+                badge.style.display = 'inline-block';
+            }
+        })
+        .catch(() => {});
+}
+if (document.getElementById('pendingRequestsCount')) {
+    updatePendingRequestsCount();
+    setInterval(updatePendingRequestsCount, 5000);
+}
+</script>

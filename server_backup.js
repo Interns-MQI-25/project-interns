@@ -320,7 +320,7 @@ app.get('/dashboard', requireAuth, async (req, res) => {
             );
             
             const [approvedToday] = await pool.execute(
-                'SELECT COUNT(*) as count FROM product_requests WHERE status = "approved" AND DATE(approved_at) = CURDATE()'
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "approved" AND DATE(processed_at) = CURDATE()'
             );
             
             const [totalProducts] = await pool.execute(

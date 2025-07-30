@@ -103,7 +103,7 @@
                                 </dt>
                                 <dd>
                                     <div class="text-lg font-medium text-gray-900">
-                                        Pending Approvals
+                                        <span id="dashboardPendingRegistrations"><%= stats ? stats.pendingRegistrations : 0 %></span> Pending
                                     </div>
                                 </dd>
                             </dl>
@@ -282,7 +282,7 @@
                                                 <% } %>
                                             </p>
                                             <p class="text-xs text-gray-500">
-                                                <%= new Date(activity.date).toLocaleString() %>
+                                                <%= new Date(activity.date).toLocaleDateString() %> at <%= new Date(activity.date).toLocaleTimeString() %>
                                             </p>
                                         </div>
                                     </div>
@@ -329,6 +329,12 @@
                     document.getElementById('pendingRegistrations').textContent = data.pendingRegistrations;
                     document.getElementById('totalProducts').textContent = data.totalProducts;
                     
+                    // Update dashboard card
+                    const dashboardPendingRegistrations = document.getElementById('dashboardPendingRegistrations');
+                    if (dashboardPendingRegistrations) {
+                        dashboardPendingRegistrations.textContent = data.pendingRegistrations;
+                    }
+                    
                     // Update recent activity
                     updateRecentActivity(data.recentActivity);
                     
@@ -350,7 +356,7 @@
             }
             
             const activityHTML = activities.map(activity => {
-                const date = new Date(activity.date).toLocaleString();
+                const date = new Date(activity.date).toLocaleDateString() + ' at ' + new Date(activity.date).toLocaleTimeString();
                 let icon, statusClass, actionText;
                 
                 if (activity.type === 'request') {
@@ -415,4 +421,21 @@
         
         // Update stats and activity when page loads
         document.addEventListener('DOMContentLoaded', updateDashboardStats);
+        
+        // Update navbar counts
+        function updateNavbarCounts() {
+            fetch('/api/live-counts')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('pendingRegistrationsCount');
+                    if (badge) {
+                        badge.textContent = data.pendingRegistrations;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        
+        // Update navbar counts every 5 seconds
+        updateNavbarCounts();
+        setInterval(updateNavbarCounts, 5000);
     </script>

@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS product_requests;
 DROP TABLE IF EXISTS stock_history;
 DROP TABLE IF EXISTS registration_requests;
 DROP TABLE IF EXISTS admin_assignments;
+DROP TABLE IF EXISTS admin_assignments;
 DROP TABLE IF EXISTS monitor_assignments;
 DROP TABLE IF EXISTS employees;
 DROP TABLE IF EXISTS products;
@@ -263,8 +264,24 @@ CREATE INDEX idx_product_assignments_returned ON product_assignments(is_returned
 CREATE INDEX idx_registration_requests_status ON registration_requests(status);
 CREATE INDEX idx_monitor_assignments_active ON monitor_assignments(is_active);
 
+-- Add is_active column to users table
+ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+
+-- Update existing users to be active
+UPDATE users SET is_active = TRUE;
+ALTER TABLE product_requests ADD COLUMN return_date TIMESTAMP NULL;
+
 -- Display completion message
 SELECT 'Database setup completed successfully!' as message;
+
+-- Remove superadmin user
+DELETE FROM users WHERE username = 'superadmin';
+
+-- Create 3 admin users
+INSERT INTO users (username, full_name, email, password, role, is_super_admin, is_active) VALUES
+('admin1', 'Admin One', 'admin1@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE, TRUE),
+('admin2', 'Admin Two', 'admin2@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE),
+('admin3', 'Admin Three', 'admin3@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE);
 
 alter table products add column pr_no INT;
 alter table products add column po_number VARCHAR(50);

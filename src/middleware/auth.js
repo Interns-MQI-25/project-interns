@@ -21,15 +21,13 @@ const requireAuth = async (req, res, next) => {
                 return res.redirect('/login');
             }
 
-            console.log('✅ User verified from database');
             req.user = users[0];
             next();
         } else {
-            console.log('❌ No session user, redirecting to login');
             res.redirect('/login');
         }
     } catch (error) {
-        console.error('❌ Auth error:', error);
+        console.error('Auth error:', error);
         req.session.destroy();
         res.redirect('/login');
     }

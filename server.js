@@ -10,6 +10,7 @@ require('dotenv').config();
 // Import middleware
 const { requireAuth, requireRole } = require('./src/middleware/auth');
 
+
 // Import route modules
 const commonRoutes = require('./src/routes/commonRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
@@ -25,6 +26,7 @@ const dbConfig = {
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'product_management_system',
+    port: process.env.DB_PORT || 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -83,6 +85,8 @@ app.use(flash());
 // Set view engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+
 
 // Use route modules
 app.use('/', commonRoutes(pool, requireAuth, requireRole));

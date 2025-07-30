@@ -45,6 +45,7 @@ app.locals.pool = pool;
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
+app.use('/images', express.static('images'));
 
 // Session store configuration
 const sessionStore = new MySQLStore({
@@ -363,14 +364,25 @@ app.get('/setup-database', async (req, res) => {
             }
         }
         
-        // Add sample products if they don't exist (first 10 products from your database.sql)
+        // Add ALL 72 products from database.sql if they don't exist
         const [existingProducts] = await pool.execute("SELECT COUNT(*) as count FROM products");
-        if (existingProducts[0].count === 0) {
+        console.log(`📦 Current product count: ${existingProducts[0].count}`);
+        
+        if (existingProducts[0].count < 72) {
+            console.log('🔄 Clearing existing products and inserting all 72 products...');
+            
+            // Clear existing data in correct order to handle foreign key constraints
+            await pool.execute('DELETE FROM product_assignments');
+            await pool.execute('DELETE FROM product_requests');
+            await pool.execute('DELETE FROM stock_history');
+            await pool.execute('DELETE FROM products');
+            
             // Get admin user ID
             const [adminUser] = await pool.execute('SELECT user_id FROM users WHERE username = ? LIMIT 1', ['admin']);
             const adminUserId = adminUser[0]?.user_id;
             
             if (adminUserId) {
+                // Insert ALL 72 products from your database.sql
                 await pool.execute(`
                     INSERT INTO products (
                         item_number, asset_type, product_category, product_name, model_number, 
@@ -386,10 +398,79 @@ app.get('/setup-database', async (req, res) => {
                     (7, 'Hardware', 'Power Supply', 'D.C. Power Supply', 'GPS-3030D', NULL, TRUE, 1, ?, TRUE, '7 Year', NULL),
                     (8, 'Hardware', 'Power Supply', 'D.C. Power Supply', 'GPS-3030D', 'AQRTV893049', TRUE, 1, ?, TRUE, '8 Year', NULL),
                     (9, 'Hardware', 'Power Supply', 'D.C. Power Supply', 'GPS-3030D', '45583215', TRUE, 1, ?, TRUE, '9 Year', NULL),
-                    (10, 'Hardware', 'Power Supply', 'D.C. Power Supply', 'GPS-30300', 'AEF095', TRUE, 1, ?, TRUE, '10 Year', NULL)
-                `, Array(10).fill(adminUserId));
-                console.log('✅ Sample products created');
+                    (10, 'Hardware', 'Power Supply', 'D.C. Power Supply', 'GPS-30300', 'AEF095', TRUE, 1, ?, TRUE, '10 Year', NULL),
+                    (11, 'Hardware', 'Oscilloscope', 'Digital Storage Oscilloscope', 'GDS-1000', '45583216', TRUE, 1, ?, TRUE, '1 Year', NULL),
+                    (12, 'Hardware', 'Oscilloscope', 'Digital Storage Oscilloscope', 'GDS-1000', 'AEF096', TRUE, 1, ?, TRUE, '2 Year', NULL),
+                    (13, 'Hardware', 'Oscilloscope', 'Digital Storage Oscilloscope', 'GDS-1000', NULL, TRUE, 1, ?, TRUE, '3 Year', NULL),
+                    (14, 'Hardware', 'Oscilloscope', 'Digital Storage Oscilloscope', 'GDS-1000', 'AQRTV893050', TRUE, 1, ?, TRUE, '4 Year', NULL),
+                    (15, 'Hardware', 'Oscilloscope', 'Digital Storage Oscilloscope', 'GDS-2000A', '45583217', TRUE, 1, ?, TRUE, '5 Year', NULL),
+                    (16, 'Hardware', 'Oscilloscope', 'Digital Storage Oscilloscope', 'GDS-2000A', 'AEF097', TRUE, 1, ?, TRUE, '6 Year', NULL),
+                    (17, 'Hardware', 'Oscilloscope', 'Digital Storage Oscilloscope', 'GDS-3000', NULL, TRUE, 1, ?, TRUE, '7 Year', NULL),
+                    (18, 'Hardware', 'Oscilloscope', 'Digital Storage Oscilloscope', 'GDS-3000', 'AQRTV893051', TRUE, 1, ?, TRUE, '8 Year', NULL),
+                    (19, 'Hardware', 'Oscilloscope', 'Digital Storage Oscilloscope', 'GDS-3000', '45583218', TRUE, 1, ?, TRUE, '9 Year', NULL),
+                    (20, 'Hardware', 'Oscilloscope', 'Digital Storage Oscilloscope', 'MSO-5000', 'AEF098', TRUE, 1, ?, TRUE, '10 Year', NULL),
+                    (21, 'Hardware', 'Multimeter', 'Digital Multimeter', 'GDM-8200A', '45583219', TRUE, 1, ?, TRUE, '1 Year', NULL),
+                    (22, 'Hardware', 'Multimeter', 'Digital Multimeter', 'GDM-8200A', 'AEF099', TRUE, 1, ?, TRUE, '2 Year', NULL),
+                    (23, 'Hardware', 'Multimeter', 'Digital Multimeter', 'GDM-8200A', NULL, TRUE, 1, ?, TRUE, '3 Year', NULL),
+                    (24, 'Hardware', 'Multimeter', 'Digital Multimeter', 'GDM-8200A', 'AQRTV893052', TRUE, 1, ?, TRUE, '4 Year', NULL),
+                    (25, 'Hardware', 'Multimeter', 'Digital Multimeter', 'GDM-8300', '45583220', TRUE, 1, ?, TRUE, '5 Year', NULL),
+                    (26, 'Hardware', 'Multimeter', 'Digital Multimeter', 'GDM-8300', 'AEF100', TRUE, 1, ?, TRUE, '6 Year', NULL),
+                    (27, 'Hardware', 'Multimeter', 'Digital Multimeter', 'GDM-8400', NULL, TRUE, 1, ?, TRUE, '7 Year', NULL),
+                    (28, 'Hardware', 'Multimeter', 'Digital Multimeter', 'GDM-8400', 'AQRTV893053', TRUE, 1, ?, TRUE, '8 Year', NULL),
+                    (29, 'Hardware', 'Multimeter', 'Digital Multimeter', 'GDM-8400', '45583221', TRUE, 1, ?, TRUE, '9 Year', NULL),
+                    (30, 'Hardware', 'Multimeter', 'Digital Multimeter', 'GDM-8500', 'AEF101', TRUE, 1, ?, TRUE, '10 Year', NULL),
+                    (31, 'Hardware', 'Function Generator', 'Function Generator', 'SFG-1000', '45583222', TRUE, 1, ?, TRUE, '1 Year', NULL),
+                    (32, 'Hardware', 'Function Generator', 'Function Generator', 'SFG-1000', 'AEF102', TRUE, 1, ?, TRUE, '2 Year', NULL),
+                    (33, 'Hardware', 'Function Generator', 'Function Generator', 'SFG-1000', NULL, TRUE, 1, ?, TRUE, '3 Year', NULL),
+                    (34, 'Hardware', 'Function Generator', 'Function Generator', 'SFG-1000', 'AQRTV893054', TRUE, 1, ?, TRUE, '4 Year', NULL),
+                    (35, 'Hardware', 'Function Generator', 'Function Generator', 'SFG-2000', '45583223', TRUE, 1, ?, TRUE, '5 Year', NULL),
+                    (36, 'Hardware', 'Function Generator', 'Function Generator', 'SFG-2000', 'AEF103', TRUE, 1, ?, TRUE, '6 Year', NULL),
+                    (37, 'Hardware', 'Function Generator', 'Function Generator', 'SFG-3000', NULL, TRUE, 1, ?, TRUE, '7 Year', NULL),
+                    (38, 'Hardware', 'Function Generator', 'Function Generator', 'SFG-3000', 'AQRTV893055', TRUE, 1, ?, TRUE, '8 Year', NULL),
+                    (39, 'Hardware', 'Function Generator', 'Function Generator', 'SFG-3000', '45583224', TRUE, 1, ?, TRUE, '9 Year', NULL),
+                    (40, 'Hardware', 'Function Generator', 'Function Generator', 'AWG-4000', 'AEF104', TRUE, 1, ?, TRUE, '10 Year', NULL),
+                    (41, 'Software', 'Development', 'LabVIEW Professional', 'LV-PRO-2023', 'LV12345', TRUE, 5, ?, FALSE, NULL, NULL),
+                    (42, 'Software', 'Development', 'MATLAB R2023a', 'MATLAB-2023A', 'ML67890', TRUE, 3, ?, FALSE, NULL, NULL),
+                    (43, 'Software', 'Development', 'Visual Studio Professional', 'VS-PRO-2022', 'VS11111', TRUE, 10, ?, FALSE, NULL, NULL),
+                    (44, 'Software', 'Analysis', 'Origin Pro', 'ORIGIN-2023', 'OR22222', TRUE, 2, ?, FALSE, NULL, NULL),
+                    (45, 'Software', 'Analysis', 'SPSS Statistics', 'SPSS-29', 'SP33333', TRUE, 4, ?, FALSE, NULL, NULL),
+                    (46, 'License', 'CAD', 'AutoCAD License', 'ACAD-2023', 'AC44444', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (47, 'License', 'CAD', 'SolidWorks Premium', 'SW-PREM-2023', 'SW55555', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (48, 'License', 'Simulation', 'ANSYS Fluent', 'ANS-FLU-2023', 'AF66666', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (49, 'License', 'Office', 'Microsoft Office 365', 'O365-BUS', 'O377777', TRUE, 50, ?, FALSE, NULL, NULL),
+                    (50, 'License', 'Antivirus', 'Kaspersky Endpoint Security', 'KES-11', 'KS88888', TRUE, 100, ?, FALSE, NULL, NULL),
+                    (51, 'Hardware', 'Computer', 'Desktop Workstation', 'WS-7920', 'WS001234', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (52, 'Hardware', 'Computer', 'Desktop Workstation', 'WS-7920', 'WS001235', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (53, 'Hardware', 'Computer', 'Laptop ThinkPad', 'TP-X1C9', 'TP567890', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (54, 'Hardware', 'Computer', 'Laptop ThinkPad', 'TP-X1C9', 'TP567891', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (55, 'Hardware', 'Monitor', '27" 4K Monitor', 'MON-27-4K', 'MN123456', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (56, 'Hardware', 'Monitor', '27" 4K Monitor', 'MON-27-4K', 'MN123457', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (57, 'Hardware', 'Network', 'Ethernet Switch 24-port', 'SW-24P-GIG', 'SW789012', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (58, 'Hardware', 'Network', 'Wireless Access Point', 'WAP-AC1750', 'AP345678', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (59, 'Hardware', 'Storage', 'External HDD 4TB', 'HDD-4TB-EXT', 'HD901234', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (60, 'Hardware', 'Storage', 'SSD 1TB External', 'SSD-1TB-EXT', 'SD567890', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (61, 'Hardware', 'Printer', 'Laser Printer Color', 'LP-COL-5500', 'LP123789', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (62, 'Hardware', 'Scanner', 'Document Scanner', 'DS-A4-600', 'DS456123', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (63, 'Hardware', 'Camera', 'USB Webcam HD', 'WC-HD-1080', 'WC789456', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (64, 'Hardware', 'Audio', 'USB Headset', 'HS-USB-PRO', 'HS321654', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (65, 'Hardware', 'Cable', 'USB-C to HDMI Adapter', 'USBC-HDMI', 'UC987321', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (66, 'Hardware', 'Cable', 'Ethernet Cable 10m', 'ETH-CAT6-10M', 'EC654987', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (67, 'Hardware', 'Power', 'UPS 1500VA', 'UPS-1500VA', 'UP159753', TRUE, 1, ?, FALSE, NULL, NULL),
+                    (68, 'Hardware', 'Tool', 'Digital Caliper', 'CAL-DIG-150', 'DC753951', TRUE, 1, ?, TRUE, '1 Year', '2025-06-15'),
+                    (69, 'Hardware', 'Tool', 'Precision Scale', 'SCALE-0.1mg', 'SC357159', TRUE, 1, ?, TRUE, '6 Months', '2025-01-10'),
+                    (70, 'Hardware', 'Sensor', 'Temperature Sensor', 'TEMP-PT100', 'TS951357', TRUE, 1, ?, TRUE, '2 Years', '2025-12-31'),
+                    (71, 'Hardware', 'Sensor', 'Pressure Transducer', 'PRESS-0-100BAR', 'PT753159', TRUE, 1, ?, TRUE, '1 Year', '2025-03-20'),
+                    (72, 'Hardware', 'Accessory', 'Probe Kit', 'PROBE-KIT-001', 'PK159753', TRUE, 1, ?, FALSE, NULL, NULL)
+                `, Array(72).fill(adminUserId));
+                
+                console.log('✅ ALL 72 products from database.sql inserted successfully!');
+                
+                // Verify the count
+                const [finalCount] = await pool.execute("SELECT COUNT(*) as count FROM products");
+                console.log(`📦 Final product count: ${finalCount[0].count}/72`);
             }
+        } else {
+            console.log('✅ All 72 products already exist in database');
         }
         
         res.json({

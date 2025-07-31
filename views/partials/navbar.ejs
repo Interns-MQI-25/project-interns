@@ -1,13 +1,16 @@
-<!-- Sidebar Toggle Button -->
-<button id="openSidebarBtn" class="fixed top-4 left-4 z-60 bg-primary-600 text-black px-3 py-2 rounded-lg shadow-lg hover:bg-primary-700 transition-all duration-200" style="display: none;">
+<!-- Mobile Menu Button -->
+<button id="openSidebarBtn" class="lg:hidden fixed top-4 left-4 z-60 bg-white text-gray-800 px-3 py-2 rounded-lg shadow-lg hover:bg-gray-50 transition-all duration-200">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
     </svg>
-    Menu
+    <!-- Menu -->
 </button>
 
-<!-- Always Visible Sidebar -->
-<div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-2xl border-r border-gray-200 transition-transform duration-300">
+<!-- Mobile Overlay -->
+<div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden"></div>
+
+<!-- Responsive Sidebar -->
+<div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-2xl border-r border-gray-200 transition-transform duration-300 transform -translate-x-full lg:translate-x-0">
     <div class="flex flex-col h-full">
         <!-- Logo Header + Close Button -->
         <div class="flex items-center justify-between h-14 sm:h-16 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 sm:px-6 flex-shrink-0">
@@ -16,7 +19,7 @@
                 <div class="flex flex-col">
                 </div>
             </div>
-            <button id="closeSidebarBtn" class="ml-2 text-black hover:text-gray-300 focus:outline-none" title="Close Sidebar">
+            <button id="closeSidebarBtn" class="lg:hidden ml-2 text-black hover:text-gray-300 focus:outline-none" title="Close Sidebar">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -161,22 +164,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const openSidebarBtn = document.getElementById('openSidebarBtn');
     const sidebar = document.getElementById('sidebar');
 
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    
     if (closeSidebarBtn && sidebar && openSidebarBtn) {
         closeSidebarBtn.addEventListener('click', function() {
-            sidebar.style.transform = 'translateX(-100%)';
-            setTimeout(() => {
-                sidebar.style.display = 'none';
-                openSidebarBtn.style.display = 'block';
-            }, 300);
+            sidebar.classList.add('-translate-x-full');
+            if (mobileOverlay) mobileOverlay.classList.add('hidden');
         });
 
         openSidebarBtn.addEventListener('click', function() {
-            sidebar.style.display = 'block';
-            setTimeout(() => {
-                sidebar.style.transform = 'translateX(0)';
-            }, 10);
-            openSidebarBtn.style.display = 'none';
+            sidebar.classList.remove('-translate-x-full');
+            if (mobileOverlay) mobileOverlay.classList.remove('hidden');
         });
+        
+        if (mobileOverlay) {
+            mobileOverlay.addEventListener('click', function() {
+                sidebar.classList.add('-translate-x-full');
+                mobileOverlay.classList.add('hidden');
+            });
+        }
     }
 });
 </script>

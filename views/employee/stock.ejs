@@ -6,11 +6,12 @@
     <title>Stock - Product Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-64 p-6">
+<main class="ml-0 md:ml-64 p-4 sm:p-6">
         <%- include('../partials/messages') %>
         
         <% if (typeof error !== 'undefined' && error) { %>
@@ -19,34 +20,34 @@
             </div>
         <% } %>
         
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Available Stock</h1>
-            <p class="text-gray-600">View available products in inventory</p>
-        </div>
+    <div class="mb-8">
+        <h1 class="text-2xl sm:text-2xl sm:text-3xl font-bold text-gray-900">Product Stock</h1>
+        <p class="text-gray-600 text-base sm:text-lg">Browse available products and request assignments.</p>
+    </div>
 
-        <!-- Search and Filter -->
-        <div class="bg-white shadow rounded-lg mb-6">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label for="asset-type-filter" class="block text-sm font-medium text-gray-700">Asset Type</label>
-                        <select id="asset-type-filter" class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="">All Types</option>
-                            <option value="Hardware">Hardware</option>
-                            <option value="Software">Software</option>
-                            <option value="License">License</option>
-                            <option value="Laptop">Laptop</option>
-                            <option value="Misc">Miscellaneous</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="search-input" class="block text-sm font-medium text-gray-700">Search</label>
-                        <input type="text" id="search-input" placeholder="Search products..." 
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    </div>
-                    <div class="flex items-end">
-                        <button id="search-btn" class="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            <i class="fas fa-search mr-2"></i>Search
+    <!-- Product Table Responsive -->
+    <div class="overflow-x-auto w-full">
+        <table class="min-w-full bg-white rounded-lg shadow-md text-xs sm:text-sm">
+            <thead>
+                <tr>
+                    <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">Product Name</th>
+                    <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">Category</th>
+                    <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">Available</th>
+                    <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">Assigned</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% products.forEach(function(p) { %>
+                <tr>
+                    <td class="px-2 sm:px-4 py-2 text-gray-800"><%= p.product_name %></td>
+                    <td class="px-2 sm:px-4 py-2 text-gray-800"><%= p.product_category %></td>
+                    <td class="px-2 sm:px-4 py-2 text-gray-800"><%= p.quantity %></td>
+                    <td class="px-2 sm:px-4 py-2 text-gray-800"><%= p.assigned_quantity %></td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
                         </button>
                     </div>
                 </div>

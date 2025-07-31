@@ -208,5 +208,14 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    router.get('/employee/records', async (req, res) => {
+        // Fetch requests for the employee
+        const requests = await getEmployeeRequests(req.user.id); // Replace with your actual data fetch logic
+        res.render('employee/records', {
+            user: req.user,
+            requests // <-- Make sure this is defined and passed
+        });
+    });
+
     return router;
 };

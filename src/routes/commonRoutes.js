@@ -119,28 +119,36 @@ module.exports = (pool, requireAuth, requireRole) => {
     router.post('/login', async (req, res) => {
         const { username, password } = req.body;
         
+        console.log('🔐 Login attempt for username:', username);
+        
         try {
             const [users] = await pool.execute(
-                'SELECT u.*, e.department_id FROM users u LEFT JOIN employees e ON u.user_id = e.user_id WHERE username = ?',
+                'SELECT u.*, e.department_id FROM users u LEFT JOIN employees e ON u.user_id = e.user_id WHERE username = ? AND u.is_active = TRUE',
                 [username]
             );
             
+            console.log('👤 Users found:', users.length);
+            
             if (users.length === 0) {
+                console.log('❌ No user found or user inactive');
                 req.flash('error', 'Invalid username or password');
                 return res.redirect('/login');
             }
             
             const user = users[0];
-            console.log('🔐 Starting password verification...');
+            console.log('🔐 Starting password verification for user:', user.user_id);
             const startTime = Date.now();
             const isValid = await bcrypt.compare(password, user.password);
             const endTime = Date.now();
-            console.log(`⏱️ Password verification took: ${endTime - startTime}ms`);
+            console.log(`⏱️ Password verification took: ${endTime - startTime}ms, Result: ${isValid}`);
             
             if (!isValid) {
+                console.log('❌ Password verification failed');
                 req.flash('error', 'Invalid username or password');
                 return res.redirect('/login');
             }
+            
+            console.log('✅ Login successful, creating session...');
             
             req.session.user = {
                 user_id: user.user_id,
@@ -152,9 +160,22 @@ module.exports = (pool, requireAuth, requireRole) => {
                 department_id: user.department_id
             };
             
-            res.redirect('/dashboard');
+            console.log('📝 Session user object created:', req.session.user);
+            
+            // Save session explicitly
+            req.session.save((err) => {
+                if (err) {
+                    console.error('❌ Session save error:', err);
+                    req.flash('error', 'Login failed. Please try again.');
+                    return res.redirect('/login');
+                }
+                
+                console.log('✅ Session saved successfully, redirecting to dashboard...');
+                res.redirect('/dashboard');
+            });
+            
         } catch (error) {
-            console.error('Login error:', error);
+            console.error('❌ Login error:', error);
             req.flash('error', 'An error occurred during login');
             res.redirect('/login');
         }

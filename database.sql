@@ -5,17 +5,17 @@ CREATE DATABASE IF NOT EXISTS product_management_system;
 USE product_management_system;
 
 -- Drop existing tables in correct order to handle foreign key constraints
-DROP TABLE IF EXISTS product_assignments;
-DROP TABLE IF EXISTS product_requests;
-DROP TABLE IF EXISTS stock_history;
-DROP TABLE IF EXISTS registration_requests;
-DROP TABLE IF EXISTS admin_assignments;
-DROP TABLE IF EXISTS admin_assignments;
-DROP TABLE IF EXISTS monitor_assignments;
-DROP TABLE IF EXISTS employees;
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS departments;
-DROP TABLE IF EXISTS users;
+-- DROP TABLE IF EXISTS product_assignments;
+-- DROP TABLE IF EXISTS product_requests;
+-- DROP TABLE IF EXISTS stock_history;
+-- DROP TABLE IF EXISTS registration_requests;
+-- DROP TABLE IF EXISTS admin_assignments;
+-- DROP TABLE IF EXISTS admin_assignments;
+-- DROP TABLE IF EXISTS monitor_assignments;
+-- DROP TABLE IF EXISTS employees;
+-- DROP TABLE IF EXISTS products;
+-- DROP TABLE IF EXISTS departments;
+-- DROP TABLE IF EXISTS users;
 
 -- Create users table
 CREATE TABLE users (
@@ -27,7 +27,8 @@ CREATE TABLE users (
     role ENUM('employee', 'monitor', 'admin') NOT NULL DEFAULT 'employee',
     is_super_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE
 );
 
 -- Create departments table
@@ -130,6 +131,7 @@ CREATE TABLE product_requests (
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     processed_by INT,
     processed_at TIMESTAMP NULL,
+    return_date TIMESTAMP NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (processed_by) REFERENCES users(user_id)
@@ -153,9 +155,11 @@ CREATE TABLE product_assignments (
     FOREIGN KEY (returned_to) REFERENCES users(user_id)
 );
 
--- Insert admin user
-INSERT INTO users (username, full_name, email, password, role) 
-VALUES ('admin', 'System Administrator', 'admin@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+-- Insert admin users with correct password hashes
+INSERT INTO users (username, full_name, email, password, role, is_active) VALUES
+('admin', 'System Administrator', 'admin@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE),
+('test', 'Test User', 'test@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE),
+('GuddiS', 'Somling Guddi', 'guddi.somling@marquardt.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE);
 
 -- Insert departments
 INSERT INTO departments (department_name, description) VALUES 
@@ -296,3 +300,11 @@ ALTER TABLE products
     ADD COLUMN next_renewal_date DATE;
    
 
+-- Add return_status column to product_assignments table
+ALTER TABLE product_assignments 
+ADD COLUMN return_status ENUM('none', 'requested', 'approved') DEFAULT 'none';
+
+-- Update existing returned items to 'approved' status
+UPDATE product_assignments 
+SET return_status = 'approved' 
+WHERE is_returned = 1;

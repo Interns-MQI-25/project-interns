@@ -1,3 +1,11 @@
+<!-- Sidebar Toggle Button -->
+<button id="openSidebarBtn" class="fixed top-4 left-4 z-60 bg-primary-600 text-black px-3 py-2 rounded-lg shadow-lg hover:bg-primary-700 transition-all duration-200" style="display: none;">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+    Menu
+</button>
+
 <!-- Always Visible Sidebar -->
 <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-2xl border-r border-gray-200 transition-transform duration-300">
     <div class="flex flex-col h-full">
@@ -6,11 +14,9 @@
             <div class="flex items-center space-x-2">
                 <img class="h-8 sm:h-10 w-auto" src="/images/Marquardt_Logo.png" alt="Marquardt Logo" onerror="this.style.display='none'">
                 <div class="flex flex-col">
-                    <!-- <span class="text-xs sm:text-sm font-semibold opacity-90">Product</span>
-                    <span class="text-xs sm:text-sm font-semibold opacity-90">Management</span> -->
                 </div>
             </div>
-            <button id="closeSidebarBtn" class="ml-2 text-white hover:text-gray-300 focus:outline-none" title="Close Sidebar">
+            <button id="closeSidebarBtn" class="ml-2 text-black hover:text-gray-300 focus:outline-none" title="Close Sidebar">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -40,17 +46,13 @@
             </a>
             
             <% if (user.role === 'employee') { %>
-                <a href="/employee/records" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="records">
-                    <i class="fas fa-history mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
-                    <span class="font-medium text-sm sm:text-base">Records</span>
+                <a href="/employee/records" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-history mr-3"></i>
+                    Records
                 </a>
-                <a href="/employee/requests" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="requests">
-                    <i class="fas fa-plus-circle mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
-                    <span class="font-medium text-sm sm:text-base">Requests</span>
-                </a>
-                <a href="/employee/stock" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="stock">
-                    <i class="fas fa-boxes mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
-                    <span class="font-medium text-sm sm:text-base">Stock</span>
+                <a href="/employee/stock" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-boxes mr-3"></i>
+                    Stock
                 </a>
             <% } else if (user.role === 'monitor') { %>
                 <a href="/monitor/approvals" class="sidebar-link group flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="approvals">
@@ -150,17 +152,30 @@ function updateLiveCounts() {
         });
 }
 
-// Initialize and update counts every 5 seconds
+// Sidebar open/close logic
 document.addEventListener('DOMContentLoaded', function() {
     updateLiveCounts();
     setInterval(updateLiveCounts, 5000);
 
-    // Sidebar close button logic
     const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+    const openSidebarBtn = document.getElementById('openSidebarBtn');
     const sidebar = document.getElementById('sidebar');
-    if (closeSidebarBtn && sidebar) {
+
+    if (closeSidebarBtn && sidebar && openSidebarBtn) {
         closeSidebarBtn.addEventListener('click', function() {
             sidebar.style.transform = 'translateX(-100%)';
+            setTimeout(() => {
+                sidebar.style.display = 'none';
+                openSidebarBtn.style.display = 'block';
+            }, 300);
+        });
+
+        openSidebarBtn.addEventListener('click', function() {
+            sidebar.style.display = 'block';
+            setTimeout(() => {
+                sidebar.style.transform = 'translateX(0)';
+            }, 10);
+            openSidebarBtn.style.display = 'none';
         });
     }
 });

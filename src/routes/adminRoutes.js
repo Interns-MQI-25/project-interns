@@ -659,5 +659,66 @@ module.exports = (pool, requireAuth, requireRole) => {
         res.redirect('/admin/employees');
     });
 
+    // Admin: Process Return Request Route (same as monitor)
+    router.post('/process-return', requireAuth, requireRole(['admin']), async (req, res) => {
+        const { assignment_id, action } = req.body;
+        
+        try {
+            const connection = await pool.getConnection();
+            await connection.beginTransaction();
+            
+            try {
+                if (action === 'approve') {
+                    // Get assignment details
+                    const [assignments] = await connection.execute(
+                        'SELECT * FROM product_assignments WHERE assignment_id = ? AND return_status = "requested"',
+                        [assignment_id]
+                    );
+                    
+                    if (assignments.length === 0) {
+                        throw new Error('Assignment not found or not in requested status');
+                    }
+                    
+                    const assignment = assignments[0];
+                    
+                    // Update assignment as returned and approved
+                    await connection.execute(
+                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", return_date = NOW() WHERE assignment_id = ?',
+                        [assignment_id]
+                    );
+                    
+                    // Restore product quantity
+                    await connection.execute(
+                        'UPDATE products SET quantity = quantity + ? WHERE product_id = ?',
+                        [assignment.quantity, assignment.product_id]
+                    );
+                    
+                    req.flash('success', 'Return approved successfully. Product is now available for request.');
+                } else if (action === 'reject') {
+                    // Reset return status to none
+                    await connection.execute(
+                        'UPDATE product_assignments SET return_status = "none" WHERE assignment_id = ?',
+                        [assignment_id]
+                    );
+                    
+                    req.flash('success', 'Return request rejected.');
+                }
+                
+                await connection.commit();
+            } catch (error) {
+                await connection.rollback();
+                throw error;
+            } finally {
+                connection.release();
+            }
+            
+            res.redirect('/monitor/approvals'); // Redirect to monitor approvals since admin uses same page
+        } catch (error) {
+            console.error('Admin process return error:', error);
+            req.flash('error', 'Error processing return request');
+            res.redirect('/monitor/approvals');
+        }
+    });
+
     return router;
 };

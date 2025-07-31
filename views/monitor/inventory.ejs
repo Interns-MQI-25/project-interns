@@ -6,16 +6,17 @@
     <title>Inventory Management - Product Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
 
     <%- include('../partials/navbar') %>
     
-    <main class="ml-64 p-6">
+    <main class="ml-0 lg:ml-64 p-4 sm:p-6">
         <%- include('../partials/messages') %>
         
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Inventory Management</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Inventory Management</h1>
             <p class="text-gray-600">Add and manage products in inventory</p>
         </div>
         
@@ -33,7 +34,7 @@
 
                 <form action="/add-product" method="POST" class="space-y-6" id="productForm">
                     <!-- Basic Information -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700">Product Name *</label>
                             <input type="text" id="name" name="name" required 
@@ -120,7 +121,7 @@
                             </label>
                         </div>
                         
-                        <div id="calibrationDetails" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div id="calibrationDetails" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label for="last_calibration_date" class="block text-sm font-medium text-gray-700">Last Calibration Date</label>
                                 <input type="date" id="last_calibration_date" name="last_calibration_date" 
@@ -154,7 +155,7 @@
                     <!-- Software Section -->
                     <div id="softwareSection" class="hidden">
                         <h4 class="text-md font-medium text-gray-800 mb-3">💻 Software Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label for="version_number" class="block text-sm font-medium text-gray-700">Version Number</label>
                                 <input type="text" id="version_number" name="version_number"
@@ -172,7 +173,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div id="licenseDetails" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div id="licenseDetails" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                             <div>
                                 <label for="license_expiry" class="block text-sm font-medium text-gray-700">License Expiry Date</label>
                                 <input type="date" id="license_expiry" name="license_expiry"
@@ -212,7 +213,7 @@
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
                     Complete Product Inventory
                 </h3>
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto w-full">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>

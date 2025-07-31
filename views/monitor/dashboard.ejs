@@ -7,20 +7,21 @@
     <title>Monitor Dashboard - Product Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <!-- <%- include('../partials/navbar') %> -->
     
-    <main class="ml-64 p-6">
+    <main class="ml-0 lg:ml-64 p-4 sm:p-6">
         <%- include('../partials/messages') %>
         
         <div class="mb-8"><%- include('../partials/navbar') %>
-            <h1 class="text-3xl font-bold text-gray-900">Monitor Dashboard</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Monitor Dashboard</h1>
             <p class="text-gray-600">Welcome back, <%= user.full_name %>!</p>
         </div>
         
         <!-- Dashboard Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Approvals Card -->
             <a href="/monitor/approvals" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
                 <div class="p-5">

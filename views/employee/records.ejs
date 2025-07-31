@@ -6,22 +6,98 @@
     <title>Employee Records - Product Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-64 p-6">
+    <main class="ml-0 lg:ml-64 p-4 sm:p-6">
         <%- include('../partials/messages') %>
         
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Product Assignment Records</h1>
-            <p class="text-gray-600">View your product assignment history</p>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Records</h1>
+            <p class="text-gray-600">View your requests and product assignments</p>
         </div>
         
-        <!-- Records Table -->
-        <div class="bg-white shadow rounded-lg overflow-hidden">
+        <!-- Request Status -->
+        <div class="bg-white shadow rounded-lg mb-8">
             <div class="px-4 py-5 sm:p-6">
-                <div class="overflow-x-auto">
+                <div class="flex items-center justify-between mb-4 cursor-pointer" onclick="toggleRequests()">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Request Status
+                    </h3>
+                    <i id="requests-icon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
+                </div>
+                <div id="requests-content" class="overflow-x-auto hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Product
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Purpose
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Requested Date
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Processed By
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% if (requests && requests.length > 0) { %>
+                                <% requests.forEach(request => { %>
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            <%= request.product_name %>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                            <%= request.purpose || '-' %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                <%= request.status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                                    request.status === 'rejected' ? 'bg-red-100 text-red-800' : 
+                                                    'bg-yellow-100 text-yellow-800' %>">
+                                                <%= request.status.charAt(0).toUpperCase() + request.status.slice(1) %>
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <%= new Date(request.requested_at).toLocaleDateString() %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <%= request.processed_by_name || '-' %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                        No requests found
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Assignments -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center justify-between mb-4 cursor-pointer" onclick="toggleAssignments()">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Product Assignments
+                    </h3>
+                    <i id="assignments-icon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
+                </div>
+                <div id="assignments-content" class="overflow-x-auto w-full hidden">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -41,41 +117,53 @@
                                     Status
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Return Date
+                                    Action
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <% if (records && records.length > 0) { %>
-                                <% records.forEach(record => { %>
+                            <% if (assignments && assignments.length > 0) { %>
+                                <% assignments.forEach(assignment => { %>
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <%= record.product_name %>
+                                            <%= assignment.product_name %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= record.quantity %>
+                                            <%= assignment.quantity %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= record.monitor_name %>
+                                            <%= assignment.monitor_name %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= new Date(record.assigned_at).toLocaleDateString() %>
+                                            <%= new Date(assignment.assigned_at).toLocaleDateString() %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= record.is_returned ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' %>">
-                                                <%= record.is_returned ? 'Returned' : 'Assigned' %>
-                                            </span>
+                                            <% if (assignment.is_returned) { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                    Returned
+                                                </span>
+                                            <% } else if (assignment.return_status === 'requested') { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                                                    Return Pending
+                                                </span>
+                                            <% } else { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                    Assigned
+                                                </span>
+                                            <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <% if (!record.is_returned) { %>
-                                                <form action="/employee/return-product" method="POST" onsubmit="return confirm('Are you sure you want to return this product?');">
-                                                    <input type="hidden" name="assignment_id" value="<%= record.assignment_id %>" />
-                                                    <button type="submit" title="Return Product" class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                                        <i class="fas fa-box-open mr-1"></i> Return
+                                            <% if (assignment.is_returned) { %>
+                                                <span class="text-gray-400">Returned on <%= assignment.return_date ? new Date(assignment.return_date).toLocaleDateString() : '-' %></span>
+                                            <% } else if (assignment.return_status === 'requested') { %>
+                                                <span class="text-orange-600">Waiting for approval</span>
+                                            <% } else { %>
+                                                <form action="/employee/return-product" method="POST" onsubmit="return confirm('Are you sure you want to request return of this product?');">
+                                                    <input type="hidden" name="assignment_id" value="<%= assignment.assignment_id %>" />
+                                                    <button type="submit" title="Request Return" class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                                        <i class="fas fa-box-open mr-1"></i> Request Return
                                                     </button>
                                                 </form>
-                                            <% } else { %>
-                                                <%= record.return_date ? new Date(record.return_date).toLocaleDateString() : '-' %>
                                             <% } %>
                                         </td>
                                     </tr>
@@ -83,7 +171,7 @@
                             <% } else { %>
                                 <tr>
                                     <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                        No records found
+                                        No assignments found
                                     </td>
                                 </tr>
                             <% } %>
@@ -93,5 +181,32 @@
             </div>
         </div>
     </main>
+    <script>
+        function toggleRequests() {
+            const content = document.getElementById('requests-content');
+            const icon = document.getElementById('requests-icon');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+            }
+        }
+        
+        function toggleAssignments() {
+            const content = document.getElementById('assignments-content');
+            const icon = document.getElementById('assignments-icon');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+            }
+        }
+    </script>
 </body>
 </html>

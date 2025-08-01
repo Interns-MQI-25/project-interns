@@ -25,34 +25,7 @@
         <p class="text-gray-600 text-base sm:text-lg">Browse available products and request assignments.</p>
     </div>
 
-    <!-- Product Table Responsive -->
-    <div class="overflow-x-auto w-full">
-        <table class="min-w-full bg-white rounded-lg shadow-md text-xs sm:text-sm">
-            <thead>
-                <tr>
-                    <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">Product Name</th>
-                    <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">Category</th>
-                    <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">Available</th>
-                    <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">Assigned</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% products.forEach(function(p) { %>
-                <tr>
-                    <td class="px-2 sm:px-4 py-2 text-gray-800"><%= p.product_name %></td>
-                    <td class="px-2 sm:px-4 py-2 text-gray-800"><%= p.product_category %></td>
-                    <td class="px-2 sm:px-4 py-2 text-gray-800"><%= p.quantity %></td>
-                    <td class="px-2 sm:px-4 py-2 text-gray-800"><%= p.assigned_quantity %></td>
-                </tr>
-                <% }) %>
-            </tbody>
-        </table>
-    </div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    
         
         <!-- Stock Table -->
         <div class="bg-white shadow rounded-lg">

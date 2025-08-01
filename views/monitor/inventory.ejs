@@ -46,32 +46,31 @@
                                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 <option value="">Select Category</option>
                                 <option value="hardware">Hardware</option>
-                                <option value="software">Test Equipment</option>
+                                <option value="test_equipment">Test Equipment</option>
                                 <option value="software">Software</option>
-                                <option value="furniture">Tooling</option>
-                                <option value="electronics">Consumables</option>
-                                <option value="vehicle">Measuring Instrument</option>
-                                <option value="general"> Devices</option>
-                                 <option value="general">Embedded devices</option>
-                                 <option value="general">Lab Equipment</option>
-                                 <option value="general">Prototypes</option>
-                                 <option value="general">Accessories</option>
-                                 <option value="general">Network Equipment</option>
-                                 <option value="general">Miscelleneous </option>
+                                <option value="tooling">Tooling</option>
+                                <option value="consumables">Consumables</option>
+                                <option value="measuring_instrument">Measuring Instrument</option>
+                                <option value="embedded_devices">Embedded devices</option>
+                                <option value="lab_equipment">Lab Equipment</option>
+                                <option value="prototypes">Prototypes</option>
+                                <option value="accessories">Accessories</option>
+                                <option value="network_equipment">Network Equipment</option>
+                                <option value="miscellaneous">Miscellaneous</option>
                             
 
                </select>
                         </div>
                         
-                        <div>
+                        <div id="typeDiv">
                             <label for="type" class="block text-sm font-medium text-gray-700">Type *</label>
                             <input type="text" id="type" name="type" required placeholder="Enter type (e.g., Laptop, Desktop)" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                         
-                        <div>
+                        <div id="modelDiv">
                             <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
-                            <input type="text" id="model" name="model" placeholder="Enter Model no mentioned on the product e.g., Dell Inspiron 15" 
+                            <input type="text" id="model" name="model" placeholder="Enter Model no. mentioned on the product e.g., Dell Inspiron 15" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                     </div>
@@ -385,23 +384,16 @@
     // --- Software Section ---
     function toggleSoftwareFields() {
         const category = document.getElementById('productCategory').value;
-        const softwareSection = document.getElementById('softwareSection');
-        const typeInput = document.getElementById('type');
-        const modelInput = document.getElementById('model');
+        const typeDiv = document.getElementById('typeDiv');
+        const modelDiv = document.getElementById('modelDiv');
         if (category === 'software') {
-            softwareSection.classList.remove('hidden');
-            // Disable and gray out Type and Model
-            typeInput.disabled = true;
-            typeInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-            modelInput.disabled = true;
-            modelInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+            // Hide Type and Model fields
+            typeDiv.classList.add('hidden');
+            modelDiv.classList.add('hidden');
         } else {
-            softwareSection.classList.add('hidden');
-            // Enable Type and Model
-            typeInput.disabled = false;
-            typeInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
-            modelInput.disabled = false;
-            modelInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+            // Show Type and Model fields
+            typeDiv.classList.remove('hidden');
+            modelDiv.classList.remove('hidden');
         }
     }
 
@@ -501,7 +493,9 @@
         document.getElementById('productCategory').addEventListener('change', function() {
             toggleCalibrationFields();
             toggleSoftwareFields();
+            updateTypePlaceholder(); // Add this line
         });
+        updateTypePlaceholder(); // Set initial placeholder
 
         // Set max date for all date inputs in the form
         const today = new Date().toISOString().split('T')[0];
@@ -531,6 +525,7 @@
         }
     });
 
+    // --- License Type Description (already present) ---
     function showLicenseTypeDetails() {
         const descriptions = {
             licensed: "A license purchased for a specific user or device.",
@@ -561,6 +556,42 @@
             licenseDetails.classList.add('hidden');
         }
     }
+
+    // --- Product Type Placeholder ---
+const typePlaceholders = {
+    hardware: "Enter (e.g., Laptop, Desktop, Printer etc)",
+    software: "Enter (e.g., Antivirus, Office Suite, IDE etc)",
+    test_equipment: "Enter (e.g.,multimeter, HIL)",
+    tooling: "Enter (e.g., fixers, jigs , hand tools etc)",
+    consumables: "Enter (e.g., fuses, cables, small components regurlarly replaced etc)",
+    measuring_instrument: "Enter (e.g., Calibrated euipment like temparature or voltage sensors etc)",
+    embedded_devices: "Enter (e.g., Controllers, microcontrollers, ECUs etc)",
+    lab_equipment: "Enter (e.g.,Environmental Chambers, load banks,soldering stations etc)",
+    prototypes: "Enter (e.g., Custom-built experimental devices)",
+    accessories: "Enter (e.g., Add-ons like connectors, probes, adaptors etc)",
+    network_equipment: "Enter (e.g., Routers, Switches, Access Points etc)",
+    miscellaneous: "Enter (e.g., Other, Custom Item)"
+};
+
+    // Add more as needed
+
+
+function updateTypePlaceholder() {
+    const category = document.getElementById('productCategory').value.trim().toLowerCase();
+    const typeInput = document.getElementById('type');
+    typeInput.placeholder = typePlaceholders[category] || "Enter type";
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // ...existing code...
+    document.getElementById('productCategory').addEventListener('change', function() {
+        toggleCalibrationFields();
+        toggleSoftwareFields();
+        updateTypePlaceholder(); // Add this line
+    });
+    updateTypePlaceholder(); // Set initial placeholder
+    // ...existing code...
+});
     </script>
 </body>
 </html>

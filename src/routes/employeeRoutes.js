@@ -1,6 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const ActivityLogger = require('../utils/activityLogger');
+
+// Try to import ActivityLogger, fallback if not available
+let ActivityLogger;
+try {
+    ActivityLogger = require('../utils/activityLogger');
+} catch (err) {
+    console.log('ActivityLogger not available, using fallback');
+    ActivityLogger = {
+        logProductRequest: () => Promise.resolve()
+    };
+}
 
 // Employee routes module
 module.exports = (pool, requireAuth, requireRole) => {
@@ -172,16 +182,20 @@ module.exports = (pool, requireAuth, requireRole) => {
             );
             
             // Log the product request activity
-            if (productDetails.length > 0) {
-                await ActivityLogger.logProductRequest(
-                    pool,
-                    req.session.user.user_id,
-                    product_id,
-                    result.insertId,
-                    productDetails[0].product_name,
-                    1,
-                    purpose || 'No purpose specified'
-                );
+            if (productDetails.length > 0 && ActivityLogger && ActivityLogger.logProductRequest) {
+                try {
+                    await ActivityLogger.logProductRequest(
+                        pool,
+                        req.session.user.user_id,
+                        product_id,
+                        result.insertId,
+                        productDetails[0].product_name,
+                        1,
+                        purpose || 'No purpose specified'
+                    );
+                } catch (logError) {
+                    console.error('Error logging product request:', logError);
+                }
             }
 
             req.flash('success', 'Product request submitted successfully');

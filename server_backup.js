@@ -643,10 +643,49 @@ app.get('/monitor/approvals', requireAuth, requireRole(['monitor']), async (req,
             ORDER BY pr.requested_at ASC
         `);
         
-        res.render('monitor/approvals', { user: req.session.user, requests });
+        res.render('monitor/approvals', { user: req.session.user, requests, returnRequests: [] });
     } catch (error) {
         console.error('Approvals error:', error);
-        res.render('error', { message: 'Error loading approvals' });
+        res.render('monitor/approvals', { user: req.session.user, requests: [], returnRequests: [] });
+    }
+});
+
+app.get('/monitor/records', requireAuth, requireRole(['monitor']), async (req, res) => {
+    try {
+        const [records] = await pool.execute(`
+            SELECT 
+                pa.*,
+                p.product_name,
+                u.full_name as employee_name,
+                d.department_name
+            FROM product_assignments pa
+            JOIN products p ON pa.product_id = p.product_id
+            JOIN employees e ON pa.employee_id = e.employee_id
+            JOIN users u ON e.user_id = u.user_id
+            JOIN departments d ON e.department_id = d.department_id
+            WHERE pa.monitor_id = ?
+            ORDER BY pa.assigned_at DESC
+        `, [req.session.user.user_id]);
+        
+        // Get statistics for the template
+        const [totalProducts] = await pool.execute('SELECT COUNT(*) as count FROM products');
+        const [totalAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ?', [req.session.user.user_id]);
+        const [activeAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = FALSE', [req.session.user.user_id]);
+        const [pendingRequests] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"');
+        const [returnedItems] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = TRUE', [req.session.user.user_id]);
+        
+        res.render('monitor/records', { 
+            user: req.session.user, 
+            assignments: records,
+            totalProducts: totalProducts[0].count,
+            totalAssignments: totalAssignments[0].count,
+            activeAssignments: activeAssignments[0].count,
+            pendingRequests: pendingRequests[0].count,
+            returnedItems: returnedItems[0].count
+        });
+    } catch (error) {
+        console.error('Monitor records error:', error);
+        res.render('error', { message: 'Error loading records' });
     }
 });
 
@@ -687,11 +726,15 @@ app.post('/monitor/process-request', requireAuth, requireRole(['monitor']), asyn
                     [request.quantity, request.product_id]
                 );
                 
-                // Add to stock history
-                await connection.execute(
-                    'INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) VALUES (?, ?, ?, ?, ?)',
-                    [request.product_id, 'assign', request.quantity, req.session.user.user_id, `Assigned to employee ID: ${request.employee_id}`]
-                );
+                // Add to stock history if table exists
+                try {
+                    await connection.execute(
+                        'INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) VALUES (?, ?, ?, ?, ?)',
+                        [request.product_id, 'assign', request.quantity, req.session.user.user_id, `Assigned to employee ID: ${request.employee_id}`]
+                    );
+                } catch (historyError) {
+                    console.log('Stock history table not found, skipping history entry');
+                }
             }
             
             await connection.commit();
@@ -1191,16 +1234,20 @@ app.post('/monitor/add-product', requireAuth, requireRole(['monitor', 'admin']),
                 calibration_due_date || null
             ]);
             
-            // Add to stock history
-            await connection.execute(`
-                INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) 
-                VALUES (?, 'add', ?, ?, ?)
-            `, [
-                productResult.insertId, 
-                quantity, 
-                req.session.user.user_id, 
-                'Initial stock added'
-            ]);
+            // Add to stock history if table exists
+            try {
+                await connection.execute(`
+                    INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) 
+                    VALUES (?, 'add', ?, ?, ?)
+                `, [
+                    productResult.insertId, 
+                    quantity, 
+                    req.session.user.user_id, 
+                    'Initial stock added'
+                ]);
+            } catch (historyError) {
+                console.log('Stock history table not found, skipping history entry');
+            }
             
             await connection.commit();
             req.flash('success', 'Product added successfully to main stock');

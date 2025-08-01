@@ -295,7 +295,7 @@ alter table products add column inwarded_by INT REFERENCES users(user_id);
 ALTER TABLE products
     ADD COLUMN version_number VARCHAR(50),
     ADD COLUMN software_license_type VARCHAR(50),
-    ADD COLUMN license_expiry DATE,
+    ADD COLUMN license_start DATE,
     ADD COLUMN renewal_frequency VARCHAR(50),
     ADD COLUMN next_renewal_date DATE;
    

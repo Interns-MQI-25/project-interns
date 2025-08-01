@@ -152,53 +152,68 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
-    // Admin: History Route with Pagination
+    // Admin: History Route with Fallback
     router.get('/history', requireAuth, requireRole(['admin']), async (req, res) => {
         try {
-            const page = parseInt(req.query.page) || 1;
-            const limit = 15;
-            const offset = (page - 1) * limit;
+            // Check if system_activity_log table exists
+            const [tableExists] = await pool.execute(`
+                SELECT COUNT(*) as count FROM information_schema.tables 
+                WHERE table_schema = DATABASE() AND table_name = 'system_activity_log'
+            `);
             
-            // Get total count for pagination
-            const [countResult] = await pool.execute(`
-                SELECT COUNT(*) as total FROM (
-                    SELECT pa.assigned_at as date FROM product_assignments pa
+            if (tableExists[0].count === 0) {
+                // Fallback to old history system
+                const [history] = await pool.execute(`
+                    SELECT 'assignment' as activity_type, pa.assigned_at as created_at, p.product_name, 
+                           u1.full_name as performed_by, u2.full_name as monitor_name, pa.quantity,
+                           CONCAT('Assigned ', p.product_name, ' to ', u1.full_name) as description,
+                           u2.role as performer_role, NULL as target_user
+                    FROM product_assignments pa
                     JOIN products p ON pa.product_id = p.product_id
                     JOIN employees e ON pa.employee_id = e.employee_id
                     JOIN users u1 ON e.user_id = u1.user_id
                     JOIN users u2 ON pa.monitor_id = u2.user_id
-                    UNION ALL
-                    SELECT pr.requested_at as date FROM product_requests pr
-                    JOIN products p ON pr.product_id = p.product_id
-                    JOIN employees e ON pr.employee_id = e.employee_id
-                    JOIN users u1 ON e.user_id = u1.user_id
-                    LEFT JOIN users u2 ON pr.processed_by = u2.user_id
-                ) as combined_history
+                    ORDER BY pa.assigned_at DESC
+                    LIMIT 50
+                `);
+                
+                return res.render('admin/history', { 
+                    user: req.session.user, 
+                    history,
+                    currentPage: 1,
+                    totalPages: 1,
+                    totalRecords: history.length
+                });
+            }
+            
+            // Use unified system if table exists
+            const page = parseInt(req.query.page) || 1;
+            const limit = 50;
+            const offset = (page - 1) * limit;
+            
+            const [countResult] = await pool.execute(`
+                SELECT COUNT(*) as total FROM system_activity_log
+                WHERE activity_type IS NOT NULL AND description IS NOT NULL
             `);
             
             const totalRecords = countResult[0].total;
             const totalPages = Math.ceil(totalRecords / limit);
             
-            // Get paginated history
             const [history] = await pool.execute(`
-                SELECT 'assignment' as type, pa.assigned_at as date, p.product_name, 
-                       u1.full_name as employee_name, u2.full_name as monitor_name, pa.quantity,
-                       CASE WHEN pa.is_returned THEN 'Returned' ELSE 'Assigned' END as status
-                FROM product_assignments pa
-                JOIN products p ON pa.product_id = p.product_id
-                JOIN employees e ON pa.employee_id = e.employee_id
-                JOIN users u1 ON e.user_id = u1.user_id
-                JOIN users u2 ON pa.monitor_id = u2.user_id
-                UNION ALL
-                SELECT 'request' as type, pr.requested_at as date, p.product_name,
-                       u1.full_name as employee_name, COALESCE(u2.full_name, 'Pending') as monitor_name, pr.quantity,
-                       pr.status
-                FROM product_requests pr
-                JOIN products p ON pr.product_id = p.product_id
-                JOIN employees e ON pr.employee_id = e.employee_id
-                JOIN users u1 ON e.user_id = u1.user_id
-                LEFT JOIN users u2 ON pr.processed_by = u2.user_id
-                ORDER BY date DESC
+                SELECT 
+                    sal.activity_type,
+                    sal.description,
+                    sal.created_at,
+                    u1.full_name as performed_by,
+                    u1.role as performer_role,
+                    u2.full_name as target_user,
+                    p.product_name
+                FROM system_activity_log sal
+                JOIN users u1 ON sal.user_id = u1.user_id
+                LEFT JOIN users u2 ON sal.target_user_id = u2.user_id
+                LEFT JOIN products p ON sal.product_id = p.product_id
+                WHERE sal.activity_type IS NOT NULL AND sal.description IS NOT NULL
+                ORDER BY sal.created_at DESC
                 LIMIT ? OFFSET ?
             `, [limit, offset]);
             

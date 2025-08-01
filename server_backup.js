@@ -1093,64 +1093,55 @@ app.post('/admin/unassign-monitor', requireAuth, requireRole(['admin']), async (
 // Enhanced Add Product Route for Monitor/Admin
 app.post('/monitor/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
     const { 
-        product_name, 
-        description, 
-        category, 
-        sub_category, 
-        model_number, 
-        serial_number,
-        quantity,
-        calibration_required,
-        calibration_frequency,
-        calibration_due_date
+        name,
+        product_category,
+        type,
+        model,
+        serial,
+        purchase_date,
+        pr_no,
+        po_number,
+        inward_date,
+        inwarded_by,
+        requires_calibration,
+        last_calibration_date,
+        calibration_frequency_years,
+        calibration_frequency_months,
+        next_calibration_date,
+        calibration_notes,
+        version_number,
+        software_license_type,
+        license_start_date,
+        renewal_frequency_years,
+        renewal_frequency_months,
+        next_renewal_date
     } = req.body;
     
     try {
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
+        // Insert product with proper null handling
+        await pool.execute(`
+            INSERT INTO products (
+                product_name, product_category, asset_type, model_number, serial_number, 
+                quantity, added_by, calibration_required, calibration_due_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            name || null,
+            product_category || null,
+            type || null,
+            model || null,
+            serial || null,
+            1,
+            req.session.user.user_id,
+            requires_calibration === 'on' ? 1 : 0,
+            next_calibration_date || null
+        ]);
         
-        try {
-            // Insert product with all fields
-            const [productResult] = await connection.execute(`
-                INSERT INTO products (
-                    product_name, description, category, sub_category, 
-                    model_number, serial_number, quantity, added_by,
-                    calibration_required, calibration_frequency, calibration_due_date
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `, [
-                product_name, description, category, sub_category,
-                model_number, serial_number, quantity, req.session.user.user_id,
-                calibration_required === 'on', calibration_frequency, 
-                calibration_due_date || null
-            ]);
-            
-            // Add to stock history
-            await connection.execute(`
-                INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) 
-                VALUES (?, 'add', ?, ?, ?)
-            `, [
-                productResult.insertId, 
-                quantity, 
-                req.session.user.user_id, 
-                'Initial stock added'
-            ]);
-            
-            await connection.commit();
-            req.flash('success', 'Product added successfully to main stock');
-        } catch (error) {
-            await connection.rollback();
-            throw error;
-        } finally {
-            connection.release();
-        }
-        
-        const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
-        res.redirect(redirectPath);
+        req.flash('success', 'Product added successfully!');
+        res.redirect('/monitor/inventory');
     } catch (error) {
         console.error('Add product error:', error);
-        req.flash('error', 'Error adding product to stock');
-        const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
-        res.redirect(redirectPath);
+        req.flash('error', 'Error adding product');
+        res.redirect('/monitor/inventory');
     }
 });
 

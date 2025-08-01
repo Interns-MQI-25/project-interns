@@ -38,65 +38,87 @@
                     </div>
                 <% } else { %>
                     <div>
-                        <table class="w-full divide-y divide-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/5">
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 35%">
                                         Product Name
                                     </th>
-                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                        Asset Type
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%">
+                                        Issued On
                                     </th>
-                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                        Model
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%">
+                                        Expected Return
                                     </th>
-                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                        Assigned Date
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%">
+                                        Days Left
                                     </th>
-                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                        Assigned By
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%">
+                                        Overdue
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                        Status
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 18%">
+                                        Action
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <% myProducts.forEach(product => { %>
+                                    <% 
+                                        const returnDate = new Date(product.return_date);
+                                        const today = new Date();
+                                        const daysLeft = Math.ceil((returnDate - today) / (1000 * 60 * 60 * 24));
+                                    %>
                                     <tr>
-                                        <td class="px-4 py-4">
-                                            <div class="text-sm font-medium text-gray-900 break-words leading-tight"><%= product.product_name %></div>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm font-medium text-gray-900"><%= product.product_name %></div>
                                             <% if (product.serial_number) { %>
-                                                <div class="text-xs text-gray-400 mt-1">S/N: <%= product.serial_number %></div>
+                                                <div class="text-xs text-gray-500">S/N: <%= product.serial_number %></div>
                                             <% } %>
                                         </td>
-                                        <td class="px-2 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                <%= product.asset_type %>
-                                            </span>
-                                        </td>
-                                        <td class="px-2 py-4 text-sm text-gray-500">
-                                            <div class="break-words"><%= product.model_number || 'N/A' %></div>
-                                        </td>
-                                        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= new Date(product.assigned_at).toLocaleDateString() %>
                                         </td>
-                                        <td class="px-2 py-4 text-sm text-gray-500">
-                                            <div class="break-words"><%= product.monitor_name %></div>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <%= returnDate.toLocaleDateString() %>
                                         </td>
-                                        <td class="px-4 py-4 whitespace-nowrap">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
                                             <% if (product.is_returned) { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                <span class="text-gray-500">Returned</span>
+                                            <% } else if (daysLeft < 0) { %>
+                                                <span class="text-red-600 font-medium">Overdue by <%= Math.abs(daysLeft) %> days</span>
+                                            <% } else if (daysLeft === 0) { %>
+                                                <span class="text-orange-600 font-medium">Due today</span>
+                                            <% } else if (daysLeft <= 3) { %>
+                                                <span class="text-yellow-600 font-medium"><%= daysLeft %> days left</span>
+                                            <% } else { %>
+                                                <span class="text-green-600"><%= daysLeft %> days left</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <% if (!product.is_returned && daysLeft < 0) { %>
+                                                <span class="px-2 py-1 text-xs font-bold bg-red-100 text-red-800 rounded-full">
+                                                    <%= Math.abs(daysLeft) %>
+                                                </span>
+                                            <% } else { %>
+                                                <span class="text-gray-400">-</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <% if (product.is_returned) { %>
+                                                <span class="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
                                                     Returned
                                                 </span>
                                             <% } else if (product.return_status === 'requested') { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                <span class="px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
                                                     Return Requested
                                                 </span>
                                             <% } else { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    Currently Using
-                                                </span>
+                                                <form action="/employee/return-product" method="POST" style="display: inline;">
+                                                    <input type="hidden" name="assignment_id" value="<%= product.assignment_id %>">
+                                                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                                        Request Return
+                                                    </button>
+                                                </form>
                                             <% } %>
                                         </td>
                                     </tr>

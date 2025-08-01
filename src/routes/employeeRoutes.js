@@ -88,19 +88,16 @@ module.exports = (pool, requireAuth, requireRole) => {
                     p.product_category,
                     p.model_number,
                     p.serial_number,
-                    p.is_available,
                     p.quantity,
-                    COALESCE(p.calibration_required, FALSE) as calibration_required,
                     p.added_at,
-                    COALESCE((
-                        SELECT SUM(pa.quantity) 
-                        FROM product_assignments pa 
+                    CASE WHEN EXISTS(
+                        SELECT 1 FROM product_assignments pa 
                         WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE AND pa.return_status != 'approved'
-                    ), 0) as assigned_quantity,
+                    ) THEN 1 ELSE 0 END as is_assigned,
                     (
                         SELECT GROUP_CONCAT(
-                            CONCAT(u.full_name, ' (Return by: ', 
-                                COALESCE(DATE_FORMAT(pa.return_date, '%d-%m-%Y'), 'Not specified'), ')')
+                            CONCAT(u.full_name, ' (Return: ', 
+                                DATE_FORMAT(pa.return_date, '%d/%m/%Y'), ')')
                             SEPARATOR ', '
                         )
                         FROM product_assignments pa
@@ -113,9 +110,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                 WHERE p.is_available = 1
                 ORDER BY p.asset_type, p.product_category, p.product_name
             `);
-            
-            console.log('Products found for employee stock:', products.length);
-            console.log('First few products:', products.slice(0, 3));
             
             res.render('employee/stock', { 
                 user: req.session.user,
@@ -216,7 +210,8 @@ module.exports = (pool, requireAuth, requireRole) => {
     router.get('/my-products', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
             const [myProducts] = await pool.execute(`
-                SELECT pa.*, p.product_name, p.asset_type, p.model_number, p.serial_number,
+                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status,
+                       p.product_name, p.asset_type, p.model_number, p.serial_number,
                        u.full_name as monitor_name
                 FROM product_assignments pa
                 JOIN products p ON pa.product_id = p.product_id

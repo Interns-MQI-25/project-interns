@@ -212,12 +212,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                         'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity, return_date) VALUES (?, ?, ?, ?, ?)',
                         [request.product_id, request.employee_id, req.session.user.user_id, request.quantity, request.return_date]
                     );
-                    
-                    // Update product quantity
-                    await pool.execute(
-                        'UPDATE products SET quantity = quantity - ? WHERE product_id = ?',
-                        [request.quantity, request.product_id]
-                    );
                 }
             }
             
@@ -256,12 +250,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                     await connection.execute(
                         'UPDATE product_assignments SET is_returned = 1, return_status = "approved", returned_at = NOW() WHERE assignment_id = ?',
                         [assignment_id]
-                    );
-                    
-                    // Restore product quantity
-                    await connection.execute(
-                        'UPDATE products SET quantity = quantity + ? WHERE product_id = ?',
-                        [assignment.quantity, assignment.product_id]
                     );
                     
                     console.log(`Return approved: Assignment ${assignment_id}, Product ${assignment.product_id}, Quantity restored: ${assignment.quantity}`);

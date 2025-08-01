@@ -7,9 +7,12 @@ const path = require('path');
 
 // Import middleware
 const requireAuth = (req, res, next) => {
+    console.log('requireAuth check - session user:', req.session.user);
+    console.log('requireAuth check - session ID:', req.sessionID);
     if (req.session.user) {
         next();
     } else {
+        console.log('No session user found, redirecting to login');
         res.redirect('/login');
     }
 };
@@ -29,18 +32,42 @@ const commonRoutes = require('./src/routes/commonRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const employeeRoutes = require('./src/routes/employeeRoutes');
 const monitorRoutes = require('./src/routes/monitorRoutes');
-const ActivityLogger = require('./src/utils/activityLogger');
+
+// Try to import ActivityLogger, fallback if not available
+let ActivityLogger;
+try {
+    ActivityLogger = require('./src/utils/activityLogger');
+} catch (err) {
+    console.log('ActivityLogger not available, using fallback');
+    ActivityLogger = {
+        logLogin: () => Promise.resolve()
+    };
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Process error handlers
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+});
+
 const pool = mysql.createPool({
-    host: process.env.NODE_ENV === 'production' ? undefined : 'localhost',
-    socketPath: process.env.NODE_ENV === 'production' ? '/cloudsql/mqi-interns-467405:us-central1:product-management-db' : undefined,
-    user: process.env.NODE_ENV === 'production' ? 'sigma' : 'root',
-    password: process.env.NODE_ENV === 'production' ? 'sigma' : '',
-    database: 'product_management_system',
-    connectionLimit: 5
+    host: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : 'localhost',
+    socketPath: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : undefined,
+    user: process.env.NODE_ENV === 'production' ? process.env.DB_USER : 'root',
+    password: process.env.NODE_ENV === 'production' ? process.env.DB_PASSWORD : '',
+    database: process.env.NODE_ENV === 'production' ? process.env.DB_NAME : 'product_management_system',
+    connectionLimit: 5,
+    acquireTimeout: 60000,
+    timeout: 60000,
+    reconnect: true
 });
 app.locals.pool = pool;
 
@@ -50,10 +77,14 @@ app.use(express.static('public'));
 app.use('/images', express.static('images'));
 
 app.use(session({
-    secret: 'secret-key',
+    secret: process.env.SESSION_SECRET || 'secret-key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 86400000 }
+    cookie: { 
+        secure: false, // Set to false for App Engine since it handles HTTPS termination
+        maxAge: 86400000,
+        httpOnly: true
+    }
 }));
 app.use(flash());
 
@@ -72,6 +103,9 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
     try {
+        // Test database connection first
+        await pool.getConnection().then(conn => conn.release());
+        
         const testHash = await bcrypt.hash('password', 10);
         const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
 
@@ -101,17 +135,22 @@ app.post('/login', async (req, res) => {
             role: user.role
         };
         
-        // Log login activity
-        try {
-            await ActivityLogger.logLogin(
-                pool, 
-                user.user_id, 
-                user.full_name, 
-                req.ip || req.connection.remoteAddress,
-                req.get('User-Agent')
-            );
-        } catch (logError) {
-            console.error('Error logging login activity:', logError);
+        console.log('Session created:', req.session.user);
+        console.log('Session ID:', req.sessionID);
+        
+        // Log login activity if available
+        if (ActivityLogger && ActivityLogger.logLogin) {
+            try {
+                await ActivityLogger.logLogin(
+                    pool, 
+                    user.user_id, 
+                    user.full_name, 
+                    req.ip || req.connection.remoteAddress,
+                    req.get('User-Agent')
+                );
+            } catch (logError) {
+                console.error('Error logging login activity:', logError);
+            }
         }
         
         if (user.role === 'admin') {
@@ -205,21 +244,7 @@ app.get('/employee/dashboard', (req, res) => {
     }
 });
 
-app.get('/logout', async (req, res) => {
-    if (req.session.user) {
-        // Log logout activity
-        try {
-            await ActivityLogger.logLogin(
-                pool, 
-                req.session.user.user_id, 
-                req.session.user.full_name + ' logged out', 
-                req.ip || req.connection.remoteAddress,
-                req.get('User-Agent')
-            );
-        } catch (logError) {
-            console.error('Error logging logout activity:', logError);
-        }
-    }
+app.get('/logout', (req, res) => {
     req.session.destroy();
     res.redirect('/login');
 });
@@ -244,8 +269,23 @@ app.get('/health', (req, res) => {
 
 
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`DB Host: ${process.env.DB_HOST}`);
+}).on('error', (err) => {
+    console.error('Server failed to start:', err);
+    process.exit(1);
 });
+
+// Test database connection
+pool.getConnection()
+    .then(connection => {
+        console.log('Database connected successfully');
+        connection.release();
+    })
+    .catch(err => {
+        console.error('Database connection failed:', err);
+    });
 
 module.exports = app;

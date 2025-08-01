@@ -12,11 +12,11 @@ beta_settings:
   cloud_sql_instances: mqi-interns-467405:us-central1:product-management-db
 
 automatic_scaling:
-  min_instances: 0
+  min_instances: 1
   max_instances: 2
   target_cpu_utilization: 0.65
 
 handlers:
 - url: /.*
   script: auto
-  secure: always # Redirects all HTTP traffic to HTTPS
+  secure: always

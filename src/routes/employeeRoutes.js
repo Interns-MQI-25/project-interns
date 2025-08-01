@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const ActivityLogger = require('../utils/activityLogger');
 
 // Employee routes module
 module.exports = (pool, requireAuth, requireRole) => {
@@ -159,10 +160,29 @@ module.exports = (pool, requireAuth, requireRole) => {
                 return res.redirect('/employee/stock');
             }
 
-            await pool.execute(
+            // Get product details for logging
+            const [productDetails] = await pool.execute(
+                'SELECT product_name FROM products WHERE product_id = ?',
+                [product_id]
+            );
+            
+            const [result] = await pool.execute(
                 'INSERT INTO product_requests (employee_id, product_id, quantity, purpose, return_date) VALUES (?, ?, ?, ?, ?)',
                 [employee[0].employee_id, product_id, 1, purpose || null, return_date]
             );
+            
+            // Log the product request activity
+            if (productDetails.length > 0) {
+                await ActivityLogger.logProductRequest(
+                    pool,
+                    req.session.user.user_id,
+                    product_id,
+                    result.insertId,
+                    productDetails[0].product_name,
+                    1,
+                    purpose || 'No purpose specified'
+                );
+            }
 
             req.flash('success', 'Product request submitted successfully');
             res.redirect('/employee/records');
@@ -208,14 +228,7 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
-    router.get('/employee/records', async (req, res) => {
-        // Fetch requests for the employee
-        const requests = await getEmployeeRequests(req.user.id); // Replace with your actual data fetch logic
-        res.render('employee/records', {
-            user: req.user,
-            requests // <-- Make sure this is defined and passed
-        });
-    });
+
 
     return router;
 };

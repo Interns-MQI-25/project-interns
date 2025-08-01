@@ -29,6 +29,7 @@ const commonRoutes = require('./src/routes/commonRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const employeeRoutes = require('./src/routes/employeeRoutes');
 const monitorRoutes = require('./src/routes/monitorRoutes');
+const ActivityLogger = require('./src/utils/activityLogger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -99,6 +100,19 @@ app.post('/login', async (req, res) => {
             full_name: user.full_name,
             role: user.role
         };
+        
+        // Log login activity
+        try {
+            await ActivityLogger.logLogin(
+                pool, 
+                user.user_id, 
+                user.full_name, 
+                req.ip || req.connection.remoteAddress,
+                req.get('User-Agent')
+            );
+        } catch (logError) {
+            console.error('Error logging login activity:', logError);
+        }
         
         if (user.role === 'admin') {
             res.redirect('/admin/dashboard');
@@ -191,7 +205,21 @@ app.get('/employee/dashboard', (req, res) => {
     }
 });
 
-app.get('/logout', (req, res) => {
+app.get('/logout', async (req, res) => {
+    if (req.session.user) {
+        // Log logout activity
+        try {
+            await ActivityLogger.logLogin(
+                pool, 
+                req.session.user.user_id, 
+                req.session.user.full_name + ' logged out', 
+                req.ip || req.connection.remoteAddress,
+                req.get('User-Agent')
+            );
+        } catch (logError) {
+            console.error('Error logging logout activity:', logError);
+        }
+    }
     req.session.destroy();
     res.redirect('/login');
 });
@@ -205,6 +233,8 @@ app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
 app.get('/health', (req, res) => {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
+
+
 
 
 

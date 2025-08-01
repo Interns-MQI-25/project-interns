@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,305 +12,71 @@
     
     <main class="ml-64 p-6">
         <%- include('../partials/messages') %>
-        
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900">Monitor Dashboard</h1>
             <p class="text-gray-600">Welcome back, <%= user.full_name %>!</p>
         </div>
-        
+
         <!-- Dashboard Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Approvals Card -->
-            <a href="/monitor/approvals" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-check-circle text-2xl text-green-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Approvals
-                                </dt>
-                                <dd>
-                                    <div class="text-lg font-medium text-gray-900">
-                                        Pending Requests
-                                    </div>
-                                </dd>
-                            </dl>
+        <div class="flex flex-col items-center mt-16 space-y-8">
+            <!-- Top Two Cards -->
+            <div class="flex gap-8 justify-center">
+                <!-- Approvals Card -->
+                <a href="/monitor/approvals" class="group">
+                    <div class="bg-white hover:bg-green-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-green-200 w-96 h-72">
+                        <div class="p-8 text-center">
+                            <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-check-circle text-xl text-green-600"></i>
+                            </div>
+                            <h3 class="text-xl font-medium text-gray-800 mb-2">Approvals</h3>
+                            <p class="text-sm text-gray-500">Pending Requests</p>
                         </div>
                     </div>
-                </div>
-            </a>
-            
-            <!-- Records Card -->
-            <a href="/monitor/records" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-history text-2xl text-blue-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Records
-                                </dt>
-                                <dd>
-                                    <div class="text-lg font-medium text-gray-900">
-                                        Assignment History
-                                    </div>
-                                </dd>
-                            </dl>
+                </a>
+                <!-- Records Card -->
+                <a href="/monitor/records" class="group">
+                    <div class="bg-white hover:bg-blue-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-blue-200 w-96 h-72">
+                        <div class="p-8 text-center">
+                            <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-history text-xl text-blue-600"></i>
+                            </div>
+                            <h3 class="text-xl font-medium text-gray-800 mb-2">Records</h3>
+                            <p class="text-sm text-gray-500">Assignment History</p>
                         </div>
                     </div>
-                </div>
-            </a>
-            
-            <!-- Stock Card -->
-            <a href="/monitor/stock" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-boxes text-2xl text-purple-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Stock
-                                </dt>
-                                <dd>
-                                    <div class="text-lg font-medium text-gray-900">
-                                        View Inventory
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </a>
-            
-            <!-- Inventory Card -->
-            <a href="/monitor/inventory" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-warehouse text-2xl text-orange-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Inventory
-                                </dt>
-                                <dd>
-                                    <div class="text-lg font-medium text-gray-900">
-                                        Manage Products
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        
-        <!-- Quick Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-clock text-2xl text-yellow-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Pending Requests
-                                </dt>
-                                <dd>
-                                    <div class="text-2xl font-bold text-gray-900">
-                                        <%= stats.pendingRequests %>
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
+                </a>
             </div>
-            
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-check text-2xl text-green-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Approved Today
-                                </dt>
-                                <dd>
-                                    <div class="text-2xl font-bold text-gray-900">
-                                        <%= stats.approvedToday %>
-                                    </div>
-                                </dd>
-                            </dl>
+            <!-- Bottom Two Cards -->
+            <div class="flex gap-8 justify-center">
+                <!-- Stock Card -->
+                <a href="/monitor/stock" class="group">
+                    <div class="bg-white hover:bg-purple-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-purple-200 w-96 h-72">
+                        <div class="p-8 text-center">
+                            <div class="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-boxes text-xl text-purple-600"></i>
+                            </div>
+                            <h3 class="text-xl font-medium text-gray-800 mb-2">Stock</h3>
+                            <p class="text-sm text-gray-500">View Inventory</p>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-cube text-2xl text-blue-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Total Products
-                                </dt>
-                                <dd>
-                                    <div class="text-2xl font-bold text-gray-900">
-                                        <%= stats.totalProducts %>
-                                    </div>
-                                </dd>
-                            </dl>
+                </a>
+                <!-- Inventory Card -->
+                <a href="/monitor/inventory" class="group">
+                    <div class="bg-white hover:bg-orange-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-orange-200 w-96 h-72">
+                        <div class="p-8 text-center">
+                            <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-warehouse text-xl text-orange-600"></i>
+                            </div>
+                            <h3 class="text-xl font-medium text-gray-800 mb-2">Inventory</h3>
+                            <p class="text-sm text-gray-500">Manage Products</p>
                         </div>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
         
-        <!-- Recent Activity -->
-        <% if (typeof recentActivity !== 'undefined' && recentActivity && recentActivity.length > 0) { %>
-        <div class="bg-white shadow rounded-lg mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Recent Activity
-                </h3>
-                <div class="recent-activity-container" style="max-height: 320px; overflow-y: auto;">
-                    <ul class="recent-activity-list -mb-8">
-                        <% recentActivity.slice(0, 5).forEach((activity, index) => { %>
-                            <li>
-                                <div class="relative pb-8">
-                                    <% if (index !== recentActivity.slice(0, 5).length - 1) { %>
-                                        <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"></span>
-                                    <% } %>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                                                <i class="fas fa-box-open text-white text-xs"></i>
-                                            </span>
-                                        </div>
-                                        <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                                            <div>
-                                                <p class="text-sm text-gray-500">
-                                                    <span class="font-medium text-gray-900"><%= activity.performed_by_name %></span>
-                                                    <%= activity.action %> <%= activity.quantity %> units of
-                                                    <span class="font-medium text-gray-900"><%= activity.product_name %></span>
-                                                </p>
-                                                <% if (activity.notes) { %>
-                                                    <p class="text-xs text-gray-400"><%= activity.notes %></p>
-                                                <% } %>
-                                            </div>
-                                            <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                                                <%= new Date(activity.performed_at).toLocaleDateString() %>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                        <% }); %>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <% } else { %>
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Recent Activity
-                </h3>
-                <div class="text-gray-500">
-                    <p>No recent activity to display.</p>
-                </div>
-            </div>
-        </div>
-        <% } %>
+       
+       
     </main>
-    
-    <script>
-        function updateLiveCounts() {
-            fetch('/api/live-counts')
-                .then(response => response.json())
-                .then(data => {
-                    const badge = document.getElementById('pendingRequestsCount');
-                    if (badge && data.pendingRequests > 0) {
-                        badge.textContent = data.pendingRequests;
-                        badge.style.display = 'inline';
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        }
-        
-        // Update on page load and every 5 seconds
-        updateLiveCounts();
-        setInterval(updateLiveCounts, 5000);
-        
-        // Update recent activity dynamically
-        function updateRecentActivity() {
-            fetch('/api/monitor/recent-activity')
-                .then(response => response.json())
-                .then(activities => {
-                    const activityContainer = document.querySelector('.recent-activity-list');
-                    if (activityContainer && activities.length > 0) {
-                        // Clear existing content
-                        activityContainer.innerHTML = '';
-                        
-                        activities.forEach((activity, index) => {
-                            const activityItem = document.createElement('li');
-                            activityItem.innerHTML = `
-                                <div class="relative pb-8">
-                                    ${index !== activities.length - 1 ? '<span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"></span>' : ''}
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                                                <i class="fas fa-box-open text-white text-xs"></i>
-                                            </span>
-                                        </div>
-                                        <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                                            <div>
-                                                <p class="text-sm text-gray-500">
-                                                    <span class="font-medium text-gray-900">${activity.performed_by_name}</span>
-                                                    ${activity.action} ${activity.quantity} units of
-                                                    <span class="font-medium text-gray-900">${activity.product_name}</span>
-                                                </p>
-                                                ${activity.notes ? `<p class="text-xs text-gray-400">${activity.notes}</p>` : ''}
-                                            </div>
-                                            <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                                                ${new Date(activity.performed_at).toLocaleDateString()}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                            activityContainer.appendChild(activityItem);
-                        });
-                        
-                        // Auto-scroll to top when new activity is added
-                        const activitySection = document.querySelector('.recent-activity-container');
-                        if (activitySection) {
-                            activitySection.scrollTop = 0;
-                        }
-                    }
-                })
-                .catch(error => console.error('Error updating activity:', error));
-        }
-        
-        // Update activity every 10 seconds
-        updateRecentActivity();
-        setInterval(updateRecentActivity, 10000);
-    </script>
 </body>
 </html>

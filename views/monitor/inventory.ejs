@@ -52,18 +52,26 @@
                                 <option value="electronics">Consumables</option>
                                 <option value="vehicle">Measuring Instrument</option>
                                 <option value="general"> Devices</option>
-                            </select>
+                                 <option value="general">Embedded devices</option>
+                                 <option value="general">Lab Equipment</option>
+                                 <option value="general">Prototypes</option>
+                                 <option value="general">Accessories</option>
+                                 <option value="general">Network Equipment</option>
+                                 <option value="general">Miscelleneous </option>
+                            
+
+               </select>
                         </div>
                         
                         <div>
                             <label for="type" class="block text-sm font-medium text-gray-700">Type *</label>
-                            <input type="text" id="type" name="type" required placeholder="e.g., Laptop, Printer, Chair" 
+                            <input type="text" id="type" name="type" required placeholder="Enter type (e.g., Laptop, Desktop)" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                         
                         <div>
                             <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
-                            <input type="text" id="model" name="model" placeholder="e.g., Dell Inspiron 15" 
+                            <input type="text" id="model" name="model" placeholder="Enter Model no mentioned on the product e.g., Dell Inspiron 15" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                     </div>
@@ -71,7 +79,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label for="serial" class="block text-sm font-medium text-gray-700">Product Serial Number</label>
-                            <input type="text" id="serial" name="serial" placeholder="Unique identifier" 
+                            <input type="text" id="serial" name="serial" placeholder="Enter Unique Serial no mentioned on the product" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
 
@@ -83,7 +91,7 @@
 
                         <div>
                             <label for="pr_no" class="block text-sm font-medium text-gray-700">PR No</label>
-                            <input type="text" id="pr_no" name="pr_no" placeholder="Purchase Request Number"
+                            <input type="text" id="pr_no" name="pr_no" placeholder="Enter SAP Purchase Request Number"
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                     </div>
@@ -91,7 +99,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label for="po_number" class="block text-sm font-medium text-gray-700">PO Number</label>
-                            <input type="text" id="po_number" name="po_number" placeholder="Purchase Order Number"
+                            <input type="text" id="po_number" name="po_number" placeholder="Enter SAP Purchase Order Number"
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
 
@@ -104,6 +112,8 @@
                         <div>
                             <label for="inwarded_by" class="block text-sm font-medium text-gray-700">Inwarded By</label>
                             <input type="text" id="inwarded_by" name="inwarded_by" placeholder="Name of person"
+                                   value="<%= user && user.name ? user.name : '' %>"
+                                   
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                     </div>
@@ -127,15 +137,19 @@
                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
                             <div>
-                                <label for="calibration_frequency_months" class="block text-sm font-medium text-gray-700">Calibration Frequency (Months)</label>
-                                <select name="calibration_frequency_months" id="calibration_frequency_months" 
-                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <option value="3">3 Months</option>
-                                    <option value="6">6 Months</option>
-                                    <option value="12" selected>12 Months</option>
-                                    <option value="24">24 Months</option>
-                                    <option value="36">36 Months</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700">Calibration Frequency</label>
+                                <div class="flex space-x-2">
+                                    <select name="calibration_frequency_months" id="calibration_frequency_months" class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <% for(let i=0; i<12; i++) { %>
+                                            <option value="<%= i %>"><%= i %> Month<%= i !== 1 ? 's' : '' %></option>
+                                        <% } %>
+                                    </select>
+                                    <select name="calibration_frequency_years" id="calibration_frequency_years" class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <% for(let i=0; i<=10; i++) { %>
+                                            <option value="<%= i %>"><%= i %> Year<%= i !== 1 ? 's' : '' %></option>
+                                        <% } %>
+                                    </select>
+                                </div>
                             </div>
                             <div>
                                 <label for="next_calibration_date" class="block text-sm font-medium text-gray-700">Next Calibration Date</label>
@@ -153,49 +167,64 @@
 
                     <!-- Software Section -->
                     <div id="softwareSection" class="hidden">
-                        <h4 class="text-md font-medium text-gray-800 mb-3">💻 Software Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="version_number" class="block text-sm font-medium text-gray-700">Version Number</label>
-                                <input type="text" id="version_number" name="version_number"
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            <div>
-                                <label for="software_license_type" class="block text-sm font-medium text-gray-700">License Type</label>
-                                <select name="software_license_type" id="software_license_type"
-                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                        onchange="toggleLicenseDetails()">
-                                    <option value="">Select Type</option>
-                                    <option value="licensed">Licensed</option>
-                                    <option value="free">Free</option>
-                                    <option value="open_source">Open Source</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div id="licenseDetails" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <label for="license_expiry" class="block text-sm font-medium text-gray-700">License Expiry Date</label>
-                                <input type="date" id="license_expiry" name="license_expiry"
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            <div>
-                                <label for="renewal_frequency" class="block text-sm font-medium text-gray-700">Renewal Frequency</label>
-                                <select name="renewal_frequency" id="renewal_frequency"
-                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <option value="">Select Frequency</option>
-                                    <option value="monthly">Monthly</option>
-                                    <option value="quarterly">Quarterly</option>
-                                    <option value="yearly">Yearly</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="next_renewal_date" class="block text-sm font-medium text-gray-700">Next Renewal Date</label>
-                                <input type="date" id="next_renewal_date" name="next_renewal_date"
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                        </div>
-                    </div>
+    <h4 class="text-md font-medium text-gray-800 mb-3">💻 Software Information</h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+            <label for="version_number" class="block text-sm font-medium text-gray-700">Version Number</label>
+            <input type="text" id="version_number" name="version_number"
+                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+        <div>
+            <label for="software_license_type" class="block text-sm font-medium text-gray-700">License Type</label>
+            <select name="software_license_type" id="software_license_type"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    onchange="showLicenseTypeDetails()">
+                <option value="">Select Type</option>
+                <option value="free">Free</option>
+                <option value="perpetual">Perpetual License</option>
+                <option value="subscription">Subscription License</option>
+                <option value="concurrent">Concurrent License</option>
+                <option value="floating">Floating/Network License</option>
+                <option value="node_locked">Node-Locked License</option>
+                <option value="trial_educational">Trial/Educational License</option>
+            </select>
+            <div id="licenseTypeDetails" class="mt-2 hidden">
+                <div id="licenseTypeDescription" class="text-xs text-gray-700 bg-gray-100 rounded p-2 mb-2"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- License Details: Only for Licensed -->
+    <div id="licenseDetails" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div>
+            <label for="license_start_date" class="block text-sm font-medium text-gray-700">License Start Date</label>
+            <input type="date" id="license_start_date" name="license_start_date"
+                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Renewal Frequency</label>
+            <div class="flex space-x-2">
+                <select name="renewal_frequency_months" id="renewal_frequency_months"
+                        class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <% for(let i=0; i<12; i++) { %>
+                        <option value="<%= i %>"><%= i %> Month<%= i !== 1 ? 's' : '' %></option>
+                    <% } %>
+                </select>
+                <select name="renewal_frequency_years" id="renewal_frequency_years"
+                        class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <% for(let i=0; i<=10; i++) { %>
+                        <option value="<%= i %>"><%= i %> Year<%= i !== 1 ? 's' : '' %></option>
+                    <% } %>
+                </select>
+            </div>
+        </div>
+        <div>
+            <label for="next_renewal_date" class="block text-sm font-medium text-gray-700">Next Renewal Date</label>
+            <input type="date" id="next_renewal_date" name="next_renewal_date" readonly
+                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+    </div>
+</div>
 
                     <div class="flex justify-end">
                         <button type="submit" class="px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -357,12 +386,22 @@
     function toggleSoftwareFields() {
         const category = document.getElementById('productCategory').value;
         const softwareSection = document.getElementById('softwareSection');
+        const typeInput = document.getElementById('type');
+        const modelInput = document.getElementById('model');
         if (category === 'software') {
             softwareSection.classList.remove('hidden');
+            // Disable and gray out Type and Model
+            typeInput.disabled = true;
+            typeInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+            modelInput.disabled = true;
+            modelInput.classList.add('bg-gray-100', 'cursor-not-allowed');
         } else {
             softwareSection.classList.add('hidden');
-            document.getElementById('requiresLicense').checked = false;
-            document.getElementById('softwareDetails').classList.add('hidden');
+            // Enable Type and Model
+            typeInput.disabled = false;
+            typeInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+            modelInput.disabled = false;
+            modelInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
         }
     }
 
@@ -384,26 +423,75 @@
         } else {
             licenseDetails.classList.add('hidden');
         }
+        showLicenseDescription(); // Update description when license type changes
+    }
+
+    function showLicenseDescription() {
+        const descriptions = {
+            licensed: "A license purchased for a specific user or device.",
+            free: "No license required; software is free to use.",
+            perpetual: "A one-time purchase license that does not expire.",
+            subscription: "A license that is valid for a set period and requires renewal.",
+            concurrent: "Allows a set number of users to use the software at the same time.",
+            floating: "A license shared across a network, available to any device but limited by the number of licenses.",
+            node_locked: "Tied to a specific device or hardware.",
+            trial_educational: "A temporary or educational-use license, often with restrictions."
+        };
+        const select = document.getElementById('software_license_type');
+        const descBox = document.getElementById('licenseTypeDescription');
+        const detailsBox = document.getElementById('licenseTypeDetails');
+        const value = select.value;
+        if (descriptions[value]) {
+            descBox.textContent = descriptions[value];
+            detailsBox.classList.remove('hidden');
+        } else {
+            descBox.textContent = '';
+            detailsBox.classList.add('hidden');
+        }
     }
 
     // --- Calibration: Auto-calculate next calibration date ---
     function calculateNextCalibrationDate() {
         const lastDateInput = document.getElementById('last_calibration_date');
-        const freqInput = document.getElementById('calibration_frequency_months');
+        const monthsInput = document.getElementById('calibration_frequency_months');
+        const yearsInput = document.getElementById('calibration_frequency_years');
         const nextDateInput = document.getElementById('next_calibration_date');
-        if (!lastDateInput || !freqInput || !nextDateInput) return;
+        if (!lastDateInput || !monthsInput || !yearsInput || !nextDateInput) return;
 
         const lastDate = lastDateInput.value;
-        const freqMonths = parseInt(freqInput.value, 10);
+        const months = parseInt(monthsInput.value, 10) || 0;
+        const years = parseInt(yearsInput.value, 10) || 0;
+        const totalMonths = months + (years * 12);
 
-        if (lastDate && freqMonths) {
+        if (lastDate && totalMonths > 0) {
             const date = new Date(lastDate);
-            date.setMonth(date.getMonth() + freqMonths);
-            // Format as yyyy-mm-dd
+            date.setMonth(date.getMonth() + totalMonths);
             const nextDate = date.toISOString().split('T')[0];
             nextDateInput.value = nextDate;
         } else {
             nextDateInput.value = '';
+        }
+    }
+
+    // Auto-calculate next renewal date
+    function calculateNextRenewalDate() {
+        const startInput = document.getElementById('license_start_date');
+        const monthsInputRenewal = document.getElementById('renewal_frequency_months');
+        const yearsInputRenewal = document.getElementById('renewal_frequency_years');
+        const nextInput = document.getElementById('next_renewal_date');
+        if (!startInput || !monthsInputRenewal || !yearsInputRenewal || !nextInput) return;
+
+        const startDate = startInput.value;
+        const months = parseInt(monthsInputRenewal.value, 10) || 0;
+        const years = parseInt(yearsInputRenewal.value, 10) || 0;
+        const totalMonths = months + (years * 12);
+
+        if (startDate && totalMonths > 0) {
+            let date = new Date(startDate);
+            date.setMonth(date.getMonth() + totalMonths);
+            nextInput.value = date.toISOString().split('T')[0];
+        } else {
+            nextInput.value = '';
         }
     }
 
@@ -424,12 +512,55 @@
 
         // Calibration auto-calc
         const lastCalInput = document.getElementById('last_calibration_date');
-        const freqInput = document.getElementById('calibration_frequency_months');
-        if (lastCalInput && freqInput) {
-            lastCalInput.addEventListener('change', calculateNextCalibrationDate);
-            freqInput.addEventListener('change', calculateNextCalibrationDate);
+        const monthsInput = document.getElementById('calibration_frequency_months');
+        const yearsInput = document.getElementById('calibration_frequency_years');
+        if (lastCalInput && monthsInput && yearsInput) {
+    lastCalInput.addEventListener('change', calculateNextCalibrationDate);
+    monthsInput.addEventListener('change', calculateNextCalibrationDate);
+    yearsInput.addEventListener('change', calculateNextCalibrationDate);
+        }
+
+        // Renewal auto-calc
+        const startInput = document.getElementById('license_start_date');
+        const monthsInputRenewal = document.getElementById('renewal_frequency_months');
+        const yearsInputRenewal = document.getElementById('renewal_frequency_years');
+        if (startInput && monthsInputRenewal && yearsInputRenewal) {
+            startInput.addEventListener('change', calculateNextRenewalDate);
+            monthsInputRenewal.addEventListener('change', calculateNextRenewalDate);
+            yearsInputRenewal.addEventListener('change', calculateNextRenewalDate);
         }
     });
+
+    function showLicenseTypeDetails() {
+        const descriptions = {
+            licensed: "A license purchased for a specific user or device.",
+            free: "No license required; software is free to use.",
+            perpetual: "A one-time purchase license that does not expire.",
+            subscription: "A license that is valid for a set period and requires renewal.",
+            concurrent: "Allows a set number of users to use the software at the same time.",
+            floating: "A license shared across a network, available to any device but limited by the number of licenses.",
+            node_locked: "Tied to a specific device or hardware.",
+            trial_educational: "A temporary or educational-use license, often with restrictions."
+        };
+        const select = document.getElementById('software_license_type');
+        const detailsBox = document.getElementById('licenseTypeDetails');
+        const descBox = document.getElementById('licenseTypeDescription');
+        const licenseDetails = document.getElementById('licenseDetails');
+        const value = select.value;
+        if (descriptions[value]) {
+            descBox.textContent = descriptions[value];
+            detailsBox.classList.remove('hidden');
+        } else {
+            descBox.textContent = '';
+            detailsBox.classList.add('hidden');
+        }
+        // Show license details only for "subscription"
+        if (value === 'subscription') {
+            licenseDetails.classList.remove('hidden');
+        } else {
+            licenseDetails.classList.add('hidden');
+        }
+    }
     </script>
 </body>
 </html>

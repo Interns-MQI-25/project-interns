@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const ActivityLogger = require('../utils/activityLogger');
 
 // Monitor routes module
 module.exports = (pool, requireAuth, requireRole) => {
@@ -177,26 +178,51 @@ module.exports = (pool, requireAuth, requireRole) => {
         const { request_id, action } = req.body;
         
         try {
+            // Get request details for logging
+            const [requestDetails] = await pool.execute(`
+                SELECT pr.*, p.product_name, u.full_name as employee_name
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                WHERE pr.request_id = ?
+            `, [request_id]);
+            
             // Simple update - just change the status
             await pool.execute(
                 'UPDATE product_requests SET status = ?, processed_by = ?, processed_at = NOW() WHERE request_id = ?',
                 [action, req.session.user.user_id, request_id]
             );
             
-            if (action === 'approved') {
-                // Get request details
-                const [requestDetails] = await pool.execute(
-                    'SELECT * FROM product_requests WHERE request_id = ?',
-                    [request_id]
-                );
+            if (requestDetails.length > 0) {
+                const request = requestDetails[0];
                 
-                if (requestDetails.length > 0) {
-                    const request = requestDetails[0];
+                // Log the approval/rejection activity
+                if (action === 'approved') {
+                    await ActivityLogger.logRequestApproval(
+                        pool,
+                        req.session.user.user_id,
+                        request.employee_name,
+                        request.product_name,
+                        request.quantity,
+                        request_id
+                    );
                     
                     // Create basic product assignment
-                    await pool.execute(
+                    const [assignmentResult] = await pool.execute(
                         'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity) VALUES (?, ?, ?, ?)',
                         [request.product_id, request.employee_id, req.session.user.user_id, request.quantity]
+                    );
+                    
+                    // Log the assignment activity
+                    await ActivityLogger.logProductAssignment(
+                        pool,
+                        req.session.user.user_id,
+                        request.employee_name,
+                        request.product_name,
+                        request.quantity,
+                        assignmentResult.insertId,
+                        request.product_id
                     );
                     
                     // Update product quantity

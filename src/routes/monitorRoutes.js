@@ -427,35 +427,72 @@ module.exports = (pool, requireAuth, requireRole) => {
     // Monitor: Add Product Route
     router.post('/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
         const { 
-            product_name, 
-            description, 
-            category, 
-            sub_category, 
-            model_number, 
-            serial_number,
-            quantity,
-            calibration_required,
-            calibration_frequency,
-            calibration_due_date
+            name, 
+            product_category, 
+            type, 
+            model, 
+            serial,
+            purchase_date,
+            pr_no,
+            po_number,
+            inward_date,
+            inwarded_by,
+            requires_calibration,
+            last_calibration_date,
+            calibration_frequency_months,
+            calibration_frequency_years,
+            next_calibration_date,
+            calibration_notes,
+            version_number,
+            software_license_type,
+            license_start_date,
+            renewal_frequency_months,
+            renewal_frequency_years,
+            next_renewal_date
         } = req.body;
         
         try {
+            console.log('Add product request body:', req.body); // Debug logging
+            
             const connection = await pool.getConnection();
             await connection.beginTransaction();
             
             try {
-                // Insert product with all fields
+                // Calculate calibration frequency string
+                let calibrationFrequency = null;
+                if (requires_calibration === 'on') {
+                    const months = parseInt(calibration_frequency_months) || 0;
+                    const years = parseInt(calibration_frequency_years) || 0;
+                    if (months > 0 || years > 0) {
+                        calibrationFrequency = `${years} years ${months} months`;
+                    }
+                }
+                
+                // Insert product with correct field mapping
                 const [productResult] = await connection.execute(`
                     INSERT INTO products (
-                        product_name, description, category, sub_category, 
-                        model_number, serial_number, quantity, added_by,
-                        calibration_required, calibration_frequency, calibration_due_date
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        product_name, 
+                        product_category, 
+                        asset_type,
+                        model_number, 
+                        serial_number, 
+                        quantity, 
+                        added_by,
+                        calibration_required, 
+                        calibration_frequency, 
+                        calibration_due_date
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `, [
-                    product_name, description, category, sub_category,
-                    model_number, serial_number, quantity, req.session.user.user_id,
-                    calibration_required === 'on', calibration_frequency, 
-                    calibration_due_date || null
+                    name || null, 
+                    product_category || null, 
+                    type || null,
+                    model || null, 
+                    serial || null, 
+                    1, // Default quantity
+                    req.session.user.user_id,
+                    requires_calibration === 'on' ? 1 : 0, 
+                    calibrationFrequency, 
+                    next_calibration_date || null
                 ]);
                 
                 // Add to stock history if table exists
@@ -465,7 +502,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                         VALUES (?, 'add', ?, ?, ?)
                     `, [
                         productResult.insertId, 
-                        quantity, 
+                        1, // Default quantity
                         req.session.user.user_id, 
                         'Initial stock added'
                     ]);
@@ -474,7 +511,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 }
                 
                 await connection.commit();
-                req.flash('success', 'Product added successfully to main stock');
+                req.flash('success', 'Product added successfully to inventory');
             } catch (error) {
                 await connection.rollback();
                 throw error;
@@ -482,12 +519,12 @@ module.exports = (pool, requireAuth, requireRole) => {
                 connection.release();
             }
             
-            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
+            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/inventory';
             res.redirect(redirectPath);
         } catch (error) {
             console.error('Add product error:', error);
-            req.flash('error', 'Error adding product to stock');
-            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
+            req.flash('error', 'Error adding product to inventory');
+            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/inventory';
             res.redirect(redirectPath);
         }
     });

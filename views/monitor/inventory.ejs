@@ -20,19 +20,26 @@
             <p class="text-gray-600">Add and manage products in inventory</p>
         </div>
         
-        <!-- Add Product Form -->
-        <div class="bg-white shadow rounded-lg mb-8">
-            <div class="px-4 py-5 sm:p-6">
+        <!-- Add Product Button -->
+        <div class="mb-8">
+            <button type="button" onclick="openModal()" class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" style="background-color: #009A9A;">
+                <i class="fas fa-plus mr-2"></i>Add Product
+            </button>
+        </div>
+
+        <!-- Modal -->
+        <div id="productModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg leading-6 font-medium text-gray-900">
                         Add New Product
                     </h3>
-                    <button type="button" onclick="toggleForm()" class="px-4 py-2 text-white rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" style="background-color: #009A9A;">
-                        <i class="fas fa-plus mr-2"></i>Add Product
+                    <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
 
-                <form action="/add-product" method="POST" class="space-y-6" id="productForm">
+                <form action="/monitor/add-product" method="POST" class="space-y-6" id="productForm">
                     <!-- Basic Information -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -139,14 +146,14 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Calibration Frequency</label>
                                 <div class="flex space-x-2">
-                                    <select name="calibration_frequency_months" id="calibration_frequency_months" class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                        <% for(let i=0; i<12; i++) { %>
-                                            <option value="<%= i %>"><%= i %> Month<%= i !== 1 ? 's' : '' %></option>
-                                        <% } %>
-                                    </select>
                                     <select name="calibration_frequency_years" id="calibration_frequency_years" class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                         <% for(let i=0; i<=10; i++) { %>
                                             <option value="<%= i %>"><%= i %> Year<%= i !== 1 ? 's' : '' %></option>
+                                        <% } %>
+                                    </select>
+                                    <select name="calibration_frequency_months" id="calibration_frequency_months" class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <% for(let i=0; i<12; i++) { %>
+                                            <option value="<%= i %>"><%= i %> Month<%= i !== 1 ? 's' : '' %></option>
                                         <% } %>
                                     </select>
                                 </div>
@@ -204,16 +211,16 @@
         <div>
             <label class="block text-sm font-medium text-gray-700">Renewal Frequency</label>
             <div class="flex space-x-2">
-                <select name="renewal_frequency_months" id="renewal_frequency_months"
-                        class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    <% for(let i=0; i<12; i++) { %>
-                        <option value="<%= i %>"><%= i %> Month<%= i !== 1 ? 's' : '' %></option>
-                    <% } %>
-                </select>
                 <select name="renewal_frequency_years" id="renewal_frequency_years"
                         class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                     <% for(let i=0; i<=10; i++) { %>
                         <option value="<%= i %>"><%= i %> Year<%= i !== 1 ? 's' : '' %></option>
+                    <% } %>
+                </select>
+                <select name="renewal_frequency_months" id="renewal_frequency_months"
+                        class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <% for(let i=0; i<12; i++) { %>
+                        <option value="<%= i %>"><%= i %> Month<%= i !== 1 ? 's' : '' %></option>
                     <% } %>
                 </select>
             </div>
@@ -227,7 +234,7 @@
 </div>
 
                     <div class="flex justify-end">
-                        <button type="submit" class="px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <button type="submit" class="px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" style="background-color: #009A9A;">
                             <i class="fas fa-save mr-2"></i>Save Product
                         </button>
                     </div>
@@ -354,9 +361,20 @@
     </main>
 
     <script>
-    function toggleForm() {
-        const form = document.getElementById('productForm');
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    function openModal() {
+        document.getElementById('productModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('productModal').classList.add('hidden');
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('productModal');
+        if (event.target === modal) {
+            closeModal();
+        }
     }
 
     function toggleCalibrationFields() {
@@ -387,14 +405,19 @@
         const category = document.getElementById('productCategory').value;
         const typeDiv = document.getElementById('typeDiv');
         const modelDiv = document.getElementById('modelDiv');
+        const softwareSection = document.getElementById('softwareSection');
         if (category === 'software') {
             // Hide Type and Model fields
             typeDiv.classList.add('hidden');
             modelDiv.classList.add('hidden');
+            // Show Software Section
+            softwareSection.classList.remove('hidden');
         } else {
             // Show Type and Model fields
             typeDiv.classList.remove('hidden');
             modelDiv.classList.remove('hidden');
+            // Hide Software Section
+            softwareSection.classList.add('hidden');
         }
     }
 
@@ -446,8 +469,8 @@
     // --- Calibration: Auto-calculate next calibration date ---
     function calculateNextCalibrationDate() {
         const lastDateInput = document.getElementById('last_calibration_date');
+         const yearsInput = document.getElementById('calibration_frequency_years');
         const monthsInput = document.getElementById('calibration_frequency_months');
-        const yearsInput = document.getElementById('calibration_frequency_years');
         const nextDateInput = document.getElementById('next_calibration_date');
         if (!lastDateInput || !monthsInput || !yearsInput || !nextDateInput) return;
 
@@ -469,14 +492,14 @@
     // Auto-calculate next renewal date
     function calculateNextRenewalDate() {
         const startInput = document.getElementById('license_start_date');
-        const monthsInputRenewal = document.getElementById('renewal_frequency_months');
         const yearsInputRenewal = document.getElementById('renewal_frequency_years');
+        const monthsInputRenewal = document.getElementById('renewal_frequency_months');
         const nextInput = document.getElementById('next_renewal_date');
         if (!startInput || !monthsInputRenewal || !yearsInputRenewal || !nextInput) return;
 
         const startDate = startInput.value;
-        const months = parseInt(monthsInputRenewal.value, 10) || 0;
         const years = parseInt(yearsInputRenewal.value, 10) || 0;
+        const months = parseInt(monthsInputRenewal.value, 10) || 0;
         const totalMonths = months + (years * 12);
 
         if (startDate && totalMonths > 0) {
@@ -489,8 +512,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Initially hide the form
-        document.getElementById('productForm').style.display = 'none';
         document.getElementById('productCategory').addEventListener('change', function() {
             toggleCalibrationFields();
             toggleSoftwareFields();

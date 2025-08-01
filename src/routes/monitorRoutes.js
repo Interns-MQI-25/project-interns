@@ -27,19 +27,33 @@ module.exports = (pool, requireAuth, requireRole) => {
             // Get pending return requests
             let returnRequests = [];
             try {
-                const [returnResults] = await pool.execute(`
-                    SELECT pa.*, p.product_name, u.full_name as employee_name, d.department_name
-                    FROM product_assignments pa
-                    JOIN products p ON pa.product_id = p.product_id
-                    JOIN employees e ON pa.employee_id = e.employee_id
-                    JOIN users u ON e.user_id = u.user_id
-                    JOIN departments d ON e.department_id = d.department_id
-                    WHERE pa.return_status = 'requested'
-                    ORDER BY pa.assigned_at ASC
+                // First check if return_status column exists
+                const [columnCheck] = await pool.execute(`
+                    SELECT COLUMN_NAME 
+                    FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME = 'product_assignments' 
+                    AND COLUMN_NAME = 'return_status' 
+                    AND TABLE_SCHEMA = 'product_management_system'
                 `);
-                returnRequests = returnResults || [];
+                
+                if (columnCheck.length > 0) {
+                    // Column exists, use it
+                    const [returnResults] = await pool.execute(`
+                        SELECT pa.*, p.product_name, u.full_name as employee_name, d.department_name
+                        FROM product_assignments pa
+                        JOIN products p ON pa.product_id = p.product_id
+                        JOIN employees e ON pa.employee_id = e.employee_id
+                        JOIN users u ON e.user_id = u.user_id
+                        JOIN departments d ON e.department_id = d.department_id
+                        WHERE pa.return_status = 'requested'
+                        ORDER BY pa.assigned_at ASC
+                    `);
+                    returnRequests = returnResults || [];
+                } else {
+                    console.log('return_status column does not exist. Please run: ALTER TABLE product_assignments ADD COLUMN return_status ENUM(\'none\', \'requested\', \'approved\') DEFAULT \'none\';');
+                }
             } catch (err) {
-                console.log('Return requests query failed (column may not exist):', err.message);
+                console.log('Return requests query failed:', err.message);
             }
             
             console.log('Found pending requests:', requests.length);
@@ -195,8 +209,8 @@ module.exports = (pool, requireAuth, requireRole) => {
                     
                     // Create basic product assignment
                     await pool.execute(
-                        'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity) VALUES (?, ?, ?, ?)',
-                        [request.product_id, request.employee_id, req.session.user.user_id, request.quantity]
+                        'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity, return_date) VALUES (?, ?, ?, ?, ?)',
+                        [request.product_id, request.employee_id, req.session.user.user_id, request.quantity, request.return_date]
                     );
                     
                     // Update product quantity
@@ -240,7 +254,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                     
                     // Update assignment as returned and approved
                     await connection.execute(
-                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", return_date = NOW() WHERE assignment_id = ?',
+                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", returned_at = NOW() WHERE assignment_id = ?',
                         [assignment_id]
                     );
                     
@@ -249,6 +263,8 @@ module.exports = (pool, requireAuth, requireRole) => {
                         'UPDATE products SET quantity = quantity + ? WHERE product_id = ?',
                         [assignment.quantity, assignment.product_id]
                     );
+                    
+                    console.log(`Return approved: Assignment ${assignment_id}, Product ${assignment.product_id}, Quantity restored: ${assignment.quantity}`);
                     
                     req.flash('success', 'Return approved successfully. Product is now available for request.');
                 } else if (action === 'reject') {

@@ -95,23 +95,27 @@ module.exports = (pool, requireAuth, requireRole) => {
                     COALESCE((
                         SELECT SUM(pa.quantity) 
                         FROM product_assignments pa 
-                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
+                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE AND pa.return_status != 'approved'
                     ), 0) as assigned_quantity,
                     (
                         SELECT GROUP_CONCAT(
-                            CONCAT(u.full_name, ' (Return: ', 
-                                COALESCE(DATE_FORMAT(pa.return_date, '%Y-%m-%d'), 'Not specified'), ')')
+                            CONCAT(u.full_name, ' (Return by: ', 
+                                COALESCE(DATE_FORMAT(pa.return_date, '%d-%m-%Y'), 'Not specified'), ')')
                             SEPARATOR ', '
                         )
                         FROM product_assignments pa
                         JOIN employees e ON pa.employee_id = e.employee_id
                         JOIN users u ON e.user_id = u.user_id
-                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
+                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE AND pa.return_status != 'approved'
                         LIMIT 3
                     ) as current_users
                 FROM products p
+                WHERE p.is_available = 1
                 ORDER BY p.asset_type, p.product_category, p.product_name
             `);
+            
+            console.log('Products found for employee stock:', products.length);
+            console.log('First few products:', products.slice(0, 3));
             
             res.render('employee/stock', { 
                 user: req.session.user,
@@ -165,7 +169,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             );
 
             req.flash('success', 'Product request submitted successfully');
-            res.redirect('/employee/records');
+            res.redirect('/employee/stock');
         } catch (error) {
             console.error('Request product error:', error);
             req.flash('error', `Error submitting request: ${error.message}`);
@@ -205,6 +209,33 @@ module.exports = (pool, requireAuth, requireRole) => {
             console.error('Return request error:', error);
             req.flash('error', 'Error submitting return request.');
             res.redirect('/employee/records');
+        }
+    });
+
+    // Employee: My Products Route
+    router.get('/my-products', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            const [myProducts] = await pool.execute(`
+                SELECT pa.*, p.product_name, p.asset_type, p.model_number, p.serial_number,
+                       u.full_name as monitor_name
+                FROM product_assignments pa
+                JOIN products p ON pa.product_id = p.product_id
+                JOIN employees e ON pa.employee_id = e.employee_id
+                JOIN users u ON pa.monitor_id = u.user_id
+                WHERE e.user_id = ?
+                ORDER BY pa.assigned_at DESC
+            `, [req.session.user.user_id]);
+            
+            res.render('employee/my-products', { 
+                user: req.session.user,
+                myProducts: myProducts || []
+            });
+        } catch (error) {
+            console.error('My products error:', error);
+            res.render('employee/my-products', { 
+                user: req.session.user,
+                myProducts: []
+            });
         }
     });
 

@@ -185,9 +185,9 @@
 
                         <div>
                             <label for="inwarded_by" class="block text-sm font-medium text-gray-700">Inwarded By</label>
-                            <input type="text" id="inwarded_by" name="inwarded_by" placeholder="Name of person"
-                                   value="<%= user && user.name ? user.name : '' %>"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <input type="text" id="inwarded_by" name="inwarded_by" 
+                                   value="<%= user && user.full_name ? user.full_name : '' %>" readonly
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-700 cursor-not-allowed">
                         </div>
                     </div>
 

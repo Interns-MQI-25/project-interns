@@ -394,6 +394,58 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
 });
 
+// Admin: All Logs API Route for GCloud
+app.get('/admin/all-logs', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+        let history = [];
+        
+        // Get assignments and requests
+        const [basicHistory] = await pool.execute(`
+            SELECT 'assignment' as type, pa.assigned_at as date, p.product_name, 
+                   u1.full_name as employee_name, u2.full_name as monitor_name, pa.quantity,
+                   CASE WHEN pa.is_returned THEN 'Returned' ELSE 'Assigned' END as status
+            FROM product_assignments pa
+            JOIN products p ON pa.product_id = p.product_id
+            JOIN employees e ON pa.employee_id = e.employee_id
+            JOIN users u1 ON e.user_id = u1.user_id
+            JOIN users u2 ON pa.monitor_id = u2.user_id
+            UNION ALL
+            SELECT 'request' as type, pr.requested_at as date, p.product_name,
+                   u1.full_name as employee_name, COALESCE(u2.full_name, 'Pending') as monitor_name, pr.quantity,
+                   pr.status
+            FROM product_requests pr
+            JOIN products p ON pr.product_id = p.product_id
+            JOIN employees e ON pr.employee_id = e.employee_id
+            JOIN users u1 ON e.user_id = u1.user_id
+            LEFT JOIN users u2 ON pr.processed_by = u2.user_id
+            ORDER BY date DESC
+        `);
+        
+        history = basicHistory;
+        
+        // Try to add registration requests if table exists
+        try {
+            const [registrations] = await pool.execute(`
+                SELECT 'registration' as type, requested_at as date, 'User Registration' as product_name,
+                       full_name as employee_name, COALESCE(u.full_name, 'Admin') as monitor_name, 1 as quantity,
+                       COALESCE(status, 'pending') as status
+                FROM registration_requests rr
+                LEFT JOIN users u ON rr.processed_by = u.user_id
+            `);
+            
+            // Merge and sort all records
+            history = [...basicHistory, ...registrations].sort((a, b) => new Date(b.date) - new Date(a.date));
+        } catch (regError) {
+            console.log('Registration requests table not found:', regError.message);
+        }
+        
+        res.json({ logs: history });
+    } catch (error) {
+        console.error('All logs error:', error);
+        res.status(500).json({ error: 'Failed to fetch logs', logs: [] });
+    }
+});
+
 // Use route modules
 app.use('/', commonRoutes(pool, requireAuth, requireRole));
 app.use('/admin', adminRoutes(pool, requireAuth, requireRole));

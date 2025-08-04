@@ -1,4 +1,4 @@
--- Product Management System TEST Database Schema
+-- Marquardt India Pvt. Ltd. TEST Database Schema
 -- This is a test-specific version of the database schema
 
 -- Note: We don't create the database here as it's handled by the CI workflow

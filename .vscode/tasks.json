@@ -2,7 +2,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Start Product Management System",
+			"label": "Start Marquardt India Pvt. Ltd.",
 			"type": "shell",
 			"command": "npm run dev",
 			"group": "build",

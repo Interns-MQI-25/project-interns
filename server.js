@@ -59,8 +59,8 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const pool = mysql.createPool({
-    host: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : 'localhost',
     socketPath: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : undefined,
+    host: process.env.NODE_ENV === 'production' ? undefined : 'localhost',
     user: process.env.NODE_ENV === 'production' ? process.env.DB_USER : 'root',
     password: process.env.NODE_ENV === 'production' ? process.env.DB_PASSWORD : '',
     database: process.env.NODE_ENV === 'production' ? process.env.DB_NAME : 'product_management_system',
@@ -194,8 +194,16 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
     try {
-        // Test database connection first
-        await pool.getConnection().then(conn => conn.release());
+        // Test database connection first with detailed logging
+        console.log('Attempting database connection...');
+        console.log('Environment:', process.env.NODE_ENV);
+        console.log('DB_HOST:', process.env.DB_HOST);
+        console.log('DB_USER:', process.env.DB_USER);
+        console.log('DB_NAME:', process.env.DB_NAME);
+        
+        const connection = await pool.getConnection();
+        console.log('Database connection successful!');
+        connection.release();
         
         const testHash = await bcrypt.hash('password', 10);
         const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
@@ -415,6 +423,13 @@ pool.getConnection()
     })
     .catch(err => {
         console.error('Database connection failed:', err);
+        console.error('Error details:', {
+            code: err.code,
+            errno: err.errno,
+            sqlMessage: err.sqlMessage,
+            sqlState: err.sqlState,
+            message: err.message
+        });
     });
 
 module.exports = app;

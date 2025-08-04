@@ -1,4 +1,4 @@
-# Product Management System
+# Marquardt India Pvt. Ltd.
 
 A comprehensive web application for managing product inventory and employee requests with role-based access control.
 

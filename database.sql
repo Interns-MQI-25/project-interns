@@ -1,4 +1,4 @@
--- Product Management System Database Schema
+-- Marquardt India Pvt. Ltd. Database Schema
 
 -- Create database
 CREATE DATABASE IF NOT EXISTS product_management_system;
@@ -149,6 +149,7 @@ CREATE TABLE product_assignments (
     is_returned BOOLEAN DEFAULT FALSE,
     returned_at TIMESTAMP NULL,
     returned_to INT,
+    return_status ENUM('none', 'requested', 'approved') DEFAULT 'none',
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
     FOREIGN KEY (monitor_id) REFERENCES users(user_id),
@@ -275,6 +276,39 @@ ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
 UPDATE users SET is_active = TRUE;
 ALTER TABLE product_requests ADD COLUMN return_date TIMESTAMP NULL;
 
+-- Fix any assignments that have return_status = 'approved' but is_returned = 0
+UPDATE product_assignments 
+SET is_returned = 1, returned_at = NOW() 
+WHERE return_status = 'approved' AND is_returned = 0;
+
+-- Fix return functionality - ensure return_status column exists and is properly configured
+-- Check if return_status column exists, if not add it
+SET @column_exists = (
+    SELECT COUNT(*) 
+    FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_NAME = 'product_assignments' 
+    AND COLUMN_NAME = 'return_status' 
+    AND TABLE_SCHEMA = 'product_management_system'
+);
+
+-- Add column if it doesn't exist
+SET @sql = IF(@column_exists = 0, 
+    'ALTER TABLE product_assignments ADD COLUMN return_status ENUM(''none'', ''requested'', ''approved'') DEFAULT ''none'';',
+    'SELECT ''Return status column already exists'' as message;'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Update existing records to have proper return_status
+UPDATE product_assignments 
+SET return_status = 'none' 
+WHERE return_status IS NULL;
+
+-- Fix products that had quantity issues after returns
+UPDATE products SET quantity = 1 WHERE product_id IN (6, 21, 26) AND quantity = 0;
+
 -- Display completion message
 SELECT 'Database setup completed successfully!' as message;
 
@@ -295,7 +329,7 @@ alter table products add column inwarded_by INT REFERENCES users(user_id);
 ALTER TABLE products
     ADD COLUMN version_number VARCHAR(50),
     ADD COLUMN software_license_type VARCHAR(50),
-    ADD COLUMN license_expiry DATE,
+    ADD COLUMN license_start DATE,
     ADD COLUMN renewal_frequency VARCHAR(50),
     ADD COLUMN next_renewal_date DATE;
    

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Product Management System Setup Script
+# Marquardt India Pvt. Ltd. Setup Script
 
-echo "Setting up Product Management System..."
+echo "Setting up Marquardt India Pvt. Ltd....."
 
 # Install dependencies
 echo "Installing Node.js dependencies..."
@@ -32,7 +32,7 @@ USE product_management_system;
 source database.sql;
 EOF
 
-echo "Starting Product Management System..."
+echo "Starting Marquardt India Pvt. Ltd....."
 
 # Moving out of scripts directory
 cd ..

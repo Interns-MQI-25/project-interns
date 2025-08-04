@@ -252,8 +252,27 @@ module.exports = (pool, requireAuth, requireRole) => {
                     ORDER BY pa.assigned_at DESC
                     LIMIT 5
                 `, [req.session.user.user_id]);
+
+                // Fetch all product assignments for "My Products" card
+                let myProducts = [];
+                try {
+                    [myProducts] = await pool.execute(`
+                        SELECT pa.assignment_id, pa.product_id, pa.quantity, pa.assigned_at, pa.is_returned, pa.return_status, pa.return_date,
+                               p.product_name,
+                               u.full_name as monitor_name
+                        FROM product_assignments pa
+                        JOIN products p ON pa.product_id = p.product_id
+                        LEFT JOIN users u ON pa.monitor_id = u.user_id
+                        JOIN employees e ON pa.employee_id = e.employee_id
+                        WHERE e.user_id = ?
+                        ORDER BY pa.assigned_at DESC
+                    `, [req.session.user.user_id]);
+                } catch (err) {
+                    console.error('Error fetching myProducts:', err);
+                    myProducts = [];
+                }
                 
-                res.render('employee/dashboard', { user: req.session.user, recentRequests, recentActivity });
+                res.render('employee/dashboard', { user: req.session.user, recentRequests, recentActivity, myProducts });
             } else if (role === 'monitor') {
                 // Fetch statistics for monitor
                 const [pendingRequests] = await pool.execute(
@@ -368,7 +387,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             }
         } catch (error) {
             console.error('Dashboard error:', error);
-            res.render('error', { message: 'Error loading dashboard' });
+            res.status(500).render('error', { message: 'Error loading dashboard', error: error.message, stack: error.stack });
         }
     });
 

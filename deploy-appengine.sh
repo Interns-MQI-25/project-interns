@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Fresh App Engine Deployment Script for Product Management System
+# Fresh App Engine Deployment Script for Marquardt India Pvt. Ltd.
 # Project ID: mqi-interns-467405
 
 set -e  # Exit on any error

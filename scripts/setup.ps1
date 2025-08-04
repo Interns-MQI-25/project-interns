@@ -1,6 +1,6 @@
-# Product Management System Setup Script for Windows (PowerShell)
+# Marquardt India Pvt. Ltd. Setup Script for Windows (PowerShell)
 
-Write-Host "Setting up Product Management System..." -ForegroundColor Green
+Write-Host "Setting up Marquardt India Pvt. Ltd...." -ForegroundColor Green
 Write-Host ""
 
 # Install dependencies
@@ -51,7 +51,7 @@ try {
 }
 
 Write-Host ""
-Write-Host "Starting Product Management System..." -ForegroundColor Green
+Write-Host "Starting Marquardt India Pvt. Ltd...." -ForegroundColor Green
 
 # Create admin account
 Write-Host "Creating admin account..." -ForegroundColor Yellow

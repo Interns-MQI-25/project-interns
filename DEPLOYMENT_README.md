@@ -1,8 +1,10 @@
-# Product Management System - Cloud Deployment Guide
+# Marquardt India Pvt. Ltd. - Cloud Deployment Guide
 
-## 🚀 Overview
+## Overview
 
-This is a comprehensive Product Management System built with Node.js, Express, and MySQL, deployed on Google Cloud Platform using Cloud Run and Cloud SQL.
+This is a comprehensive Marquardt India system built with Node.js, Express, and MySQL, deployed on Google Cloud Platform using Cloud Run and Cloud SQL.
+
+## 🚀 Features
 
 ## 📋 Architecture
 

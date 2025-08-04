@@ -1,45 +1,88 @@
 const express = require('express');
 const router = express.Router();
 
+// Try to import ActivityLogger, fallback if not available
+let ActivityLogger;
+try {
+    ActivityLogger = require('../utils/activityLogger');
+} catch (err) {
+    console.log('ActivityLogger not available, using fallback');
+    ActivityLogger = {
+        logRequestApproval: () => Promise.resolve(),
+        logProductAssignment: () => Promise.resolve()
+    };
+}
+
 // Monitor routes module
 module.exports = (pool, requireAuth, requireRole) => {
     
     // Monitor: Approvals Route
     router.get('/approvals', requireAuth, requireRole(['monitor']), async (req, res) => {
         try {
-            // Check all requests first
-            const [allRequests] = await pool.execute('SELECT * FROM product_requests');
-            console.log('All requests in database:', allRequests.length);
-            console.log('All requests:', allRequests);
+            const currentUserId = req.session.user.user_id;
             
-            // Get pending product requests
+            // Get current monitor's employee_id
+            const [currentMonitor] = await pool.execute(
+                'SELECT employee_id FROM employees WHERE user_id = ?', 
+                [currentUserId]
+            );
+            
+            if (currentMonitor.length === 0) {
+                return res.render('monitor/approvals', { 
+                    user: req.session.user, 
+                    requests: [], 
+                    returnRequests: [],
+                    error: 'Monitor employee record not found'
+                });
+            }
+            
+            const currentMonitorEmployeeId = currentMonitor[0].employee_id;
+            
+            // Get pending product requests assigned to this monitor OR unassigned legacy requests
             const [requests] = await pool.execute(`
-                SELECT pr.*, p.product_name, u.full_name as employee_name, d.department_name
+                SELECT pr.*, p.product_name, u.full_name as employee_name, d.department_name,
+                       requestor.full_name as requestor_name, requestor.role as requestor_role
                 FROM product_requests pr
                 JOIN products p ON pr.product_id = p.product_id
                 JOIN employees e ON pr.employee_id = e.employee_id
                 JOIN users u ON e.user_id = u.user_id
                 JOIN departments d ON e.department_id = d.department_id
-                WHERE pr.status = 'pending'
+                JOIN users requestor ON e.user_id = requestor.user_id
+                WHERE pr.status = 'pending' 
+                AND (pr.assigned_monitor_id = ? OR pr.assigned_monitor_id IS NULL)
                 ORDER BY pr.requested_at ASC
-            `);
+            `, [currentMonitorEmployeeId]);
             
             // Get pending return requests
             let returnRequests = [];
             try {
-                const [returnResults] = await pool.execute(`
-                    SELECT pa.*, p.product_name, u.full_name as employee_name, d.department_name
-                    FROM product_assignments pa
-                    JOIN products p ON pa.product_id = p.product_id
-                    JOIN employees e ON pa.employee_id = e.employee_id
-                    JOIN users u ON e.user_id = u.user_id
-                    JOIN departments d ON e.department_id = d.department_id
-                    WHERE pa.return_status = 'requested'
-                    ORDER BY pa.assigned_at ASC
+                // First check if return_status column exists
+                const [columnCheck] = await pool.execute(`
+                    SELECT COLUMN_NAME 
+                    FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME = 'product_assignments' 
+                    AND COLUMN_NAME = 'return_status' 
+                    AND TABLE_SCHEMA = 'product_management_system'
                 `);
-                returnRequests = returnResults || [];
+                
+                if (columnCheck.length > 0) {
+                    // Column exists, use it
+                    const [returnResults] = await pool.execute(`
+                        SELECT pa.*, p.product_name, u.full_name as employee_name, d.department_name
+                        FROM product_assignments pa
+                        JOIN products p ON pa.product_id = p.product_id
+                        JOIN employees e ON pa.employee_id = e.employee_id
+                        JOIN users u ON e.user_id = u.user_id
+                        JOIN departments d ON e.department_id = d.department_id
+                        WHERE pa.return_status = 'requested'
+                        ORDER BY pa.assigned_at ASC
+                    `);
+                    returnRequests = returnResults || [];
+                } else {
+                    console.log('return_status column does not exist. Please run: ALTER TABLE product_assignments ADD COLUMN return_status ENUM(\'none\', \'requested\', \'approved\') DEFAULT \'none\';');
+                }
             } catch (err) {
-                console.log('Return requests query failed (column may not exist):', err.message);
+                console.log('Return requests query failed:', err.message);
             }
             
             console.log('Found pending requests:', requests.length);
@@ -64,7 +107,10 @@ module.exports = (pool, requireAuth, requireRole) => {
     router.get('/inventory', requireAuth, requireRole(['monitor']), async (req, res) => {
         try {
             const [products] = await pool.execute('SELECT * FROM products ORDER BY product_name');
-            res.render('monitor/inventory', { user: req.session.user, products });
+            res.render('monitor/inventory', { 
+                user: req.session.user, 
+                products 
+            });
         } catch (error) {
             console.error('Inventory error:', error);
             res.render('error', { message: 'Error loading inventory' });
@@ -135,10 +181,36 @@ module.exports = (pool, requireAuth, requireRole) => {
     // Monitor: Records Route
     router.get('/records', requireAuth, requireRole(['monitor']), async (req, res) => {
         try {
+            const currentUserId = req.session.user.user_id;
+            
+            // Get current monitor's employee_id
+            const [currentMonitor] = await pool.execute(
+                'SELECT employee_id FROM employees WHERE user_id = ?', 
+                [currentUserId]
+            );
+            
+            if (currentMonitor.length === 0) {
+                return res.render('monitor/records', { 
+                    user: req.session.user, 
+                    assignments: [],
+                    productRequests: [],
+                    totalProducts: 0,
+                    totalAssignments: 0,
+                    activeAssignments: 0,
+                    pendingRequests: 0,
+                    returnedItems: 0,
+                    error: 'Monitor employee record not found'
+                });
+            }
+            
+            const currentMonitorEmployeeId = currentMonitor[0].employee_id;
+            
+            // Get assignment records
             const [records] = await pool.execute(`
                 SELECT 
                     pa.*,
                     p.product_name,
+                    p.asset_type,
                     u.full_name as employee_name,
                     d.department_name
                 FROM product_assignments pa
@@ -148,18 +220,42 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN departments d ON e.department_id = d.department_id
                 WHERE pa.monitor_id = ?
                 ORDER BY pa.assigned_at DESC
-            `, [req.session.user.user_id]);
+            `, [currentUserId]);
+            
+            // Get product request history (all requests handled by this monitor)
+            const [productRequests] = await pool.execute(`
+                SELECT 
+                    pr.*,
+                    p.product_name,
+                    p.asset_type,
+                    u.full_name as employee_name,
+                    d.department_name,
+                    requestor.full_name as requestor_name,
+                    requestor.role as requestor_role,
+                    monitor_user.full_name as monitor_name
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                JOIN departments d ON e.department_id = d.department_id
+                JOIN users requestor ON e.user_id = requestor.user_id
+                LEFT JOIN employees monitor_emp ON pr.assigned_monitor_id = monitor_emp.employee_id
+                LEFT JOIN users monitor_user ON monitor_emp.user_id = monitor_user.user_id
+                WHERE pr.assigned_monitor_id = ? OR pr.processed_by = ?
+                ORDER BY pr.requested_at DESC
+            `, [currentMonitorEmployeeId, currentUserId]);
             
             // Get statistics for the template
             const [totalProducts] = await pool.execute('SELECT COUNT(*) as count FROM products');
-            const [totalAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ?', [req.session.user.user_id]);
-            const [activeAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = FALSE', [req.session.user.user_id]);
-            const [pendingRequests] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"');
-            const [returnedItems] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = TRUE', [req.session.user.user_id]);
+            const [totalAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ?', [currentUserId]);
+            const [activeAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = FALSE', [currentUserId]);
+            const [pendingRequests] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending" AND (assigned_monitor_id = ? OR assigned_monitor_id IS NULL)', [currentMonitorEmployeeId]);
+            const [returnedItems] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = TRUE', [currentUserId]);
             
             res.render('monitor/records', { 
                 user: req.session.user, 
                 assignments: records,
+                productRequests: productRequests,
                 totalProducts: totalProducts[0].count,
                 totalAssignments: totalAssignments[0].count,
                 activeAssignments: activeAssignments[0].count,
@@ -177,32 +273,46 @@ module.exports = (pool, requireAuth, requireRole) => {
         const { request_id, action } = req.body;
         
         try {
+            // Get request details for logging
+            const [requestDetails] = await pool.execute(`
+                SELECT pr.*, p.product_name, u.full_name as employee_name
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                WHERE pr.request_id = ?
+            `, [request_id]);
+            
             // Simple update - just change the status
             await pool.execute(
                 'UPDATE product_requests SET status = ?, processed_by = ?, processed_at = NOW() WHERE request_id = ?',
                 [action, req.session.user.user_id, request_id]
             );
             
-            if (action === 'approved') {
-                // Get request details
-                const [requestDetails] = await pool.execute(
-                    'SELECT * FROM product_requests WHERE request_id = ?',
-                    [request_id]
-                );
+            if (requestDetails.length > 0) {
+                const request = requestDetails[0];
                 
-                if (requestDetails.length > 0) {
-                    const request = requestDetails[0];
+                // Log the approval/rejection activity
+                if (action === 'approved') {
+                    if (ActivityLogger && ActivityLogger.logRequestApproval) {
+                        try {
+                            await ActivityLogger.logRequestApproval(
+                                pool,
+                                req.session.user.user_id,
+                                request.employee_name,
+                                request.product_name,
+                                request.quantity,
+                                request_id
+                            );
+                        } catch (logError) {
+                            console.error('Error logging request approval:', logError);
+                        }
+                    }
                     
                     // Create basic product assignment
                     await pool.execute(
-                        'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity) VALUES (?, ?, ?, ?)',
-                        [request.product_id, request.employee_id, req.session.user.user_id, request.quantity]
-                    );
-                    
-                    // Update product quantity
-                    await pool.execute(
-                        'UPDATE products SET quantity = quantity - ? WHERE product_id = ?',
-                        [request.quantity, request.product_id]
+                        'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity, return_date) VALUES (?, ?, ?, ?, ?)',
+                        [request.product_id, request.employee_id, req.session.user.user_id, request.quantity, request.return_date]
                     );
                 }
             }
@@ -240,15 +350,11 @@ module.exports = (pool, requireAuth, requireRole) => {
                     
                     // Update assignment as returned and approved
                     await connection.execute(
-                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", return_date = NOW() WHERE assignment_id = ?',
+                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", returned_at = NOW() WHERE assignment_id = ?',
                         [assignment_id]
                     );
                     
-                    // Restore product quantity
-                    await connection.execute(
-                        'UPDATE products SET quantity = quantity + ? WHERE product_id = ?',
-                        [assignment.quantity, assignment.product_id]
-                    );
+                    console.log(`Return approved: Assignment ${assignment_id}, Product ${assignment.product_id}, Quantity restored: ${assignment.quantity}`);
                     
                     req.flash('success', 'Return approved successfully. Product is now available for request.');
                 } else if (action === 'reject') {
@@ -308,50 +414,91 @@ module.exports = (pool, requireAuth, requireRole) => {
     // Monitor: Add Product Route
     router.post('/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
         const { 
-            product_name, 
-            description, 
-            category, 
-            sub_category, 
-            model_number, 
-            serial_number,
-            quantity,
-            calibration_required,
-            calibration_frequency,
-            calibration_due_date
+            name, 
+            product_category, 
+            type, 
+            model, 
+            serial,
+            purchase_date,
+            pr_no,
+            po_number,
+            inward_date,
+            inwarded_by,
+            requires_calibration,
+            last_calibration_date,
+            calibration_frequency_months,
+            calibration_frequency_years,
+            next_calibration_date,
+            calibration_notes,
+            version_number,
+            software_license_type,
+            license_start_date,
+            renewal_frequency_months,
+            renewal_frequency_years,
+            next_renewal_date
         } = req.body;
         
         try {
+            console.log('Add product request body:', req.body); // Debug logging
+            
             const connection = await pool.getConnection();
             await connection.beginTransaction();
             
             try {
-                // Insert product with all fields
+                // Calculate calibration frequency string
+                let calibrationFrequency = null;
+                if (requires_calibration === 'on') {
+                    const months = parseInt(calibration_frequency_months) || 0;
+                    const years = parseInt(calibration_frequency_years) || 0;
+                    if (months > 0 || years > 0) {
+                        calibrationFrequency = `${years} years ${months} months`;
+                    }
+                }
+                
+                // Insert product with correct field mapping
                 const [productResult] = await connection.execute(`
                     INSERT INTO products (
-                        product_name, description, category, sub_category, 
-                        model_number, serial_number, quantity, added_by,
-                        calibration_required, calibration_frequency, calibration_due_date
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        product_name, 
+                        product_category, 
+                        asset_type,
+                        model_number, 
+                        serial_number, 
+                        quantity, 
+                        added_by,
+                        calibration_required, 
+                        calibration_frequency, 
+                        calibration_due_date
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `, [
-                    product_name, description, category, sub_category,
-                    model_number, serial_number, quantity, req.session.user.user_id,
-                    calibration_required === 'on', calibration_frequency, 
-                    calibration_due_date || null
+                    name || null, 
+                    product_category || null, 
+                    type || null,
+                    model || null, 
+                    serial || null, 
+                    1, // Default quantity
+                    req.session.user.user_id,
+                    requires_calibration === 'on' ? 1 : 0, 
+                    calibrationFrequency, 
+                    next_calibration_date || null
                 ]);
                 
-                // Add to stock history
-                await connection.execute(`
-                    INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) 
-                    VALUES (?, 'add', ?, ?, ?)
-                `, [
-                    productResult.insertId, 
-                    quantity, 
-                    req.session.user.user_id, 
-                    'Initial stock added'
-                ]);
+                // Add to stock history if table exists
+                try {
+                    await connection.execute(`
+                        INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) 
+                        VALUES (?, 'add', ?, ?, ?)
+                    `, [
+                        productResult.insertId, 
+                        1, // Default quantity
+                        req.session.user.user_id, 
+                        'Initial stock added'
+                    ]);
+                } catch (historyError) {
+                    console.log('Stock history table not found, skipping history entry');
+                }
                 
                 await connection.commit();
-                req.flash('success', 'Product added successfully to main stock');
+                req.flash('success', 'Product added successfully to inventory');
             } catch (error) {
                 await connection.rollback();
                 throw error;
@@ -359,13 +506,80 @@ module.exports = (pool, requireAuth, requireRole) => {
                 connection.release();
             }
             
-            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
+            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/inventory';
             res.redirect(redirectPath);
         } catch (error) {
             console.error('Add product error:', error);
-            req.flash('error', 'Error adding product to stock');
-            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
+            req.flash('error', 'Error adding product to inventory');
+            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/inventory';
             res.redirect(redirectPath);
+        }
+    });
+
+    // Monitor: Request Product Route
+    router.post('/request-product', requireAuth, requireRole(['monitor']), async (req, res) => {
+        try {
+            const { product_id, return_date, purpose } = req.body;
+            const requesterId = req.session.user.user_id;
+            
+            // Get the requester's employee record to get employee_id
+            const [requesterEmployee] = await pool.execute(
+                'SELECT employee_id FROM employees WHERE user_id = ?', 
+                [requesterId]
+            );
+            
+            if (requesterEmployee.length === 0) {
+                req.flash('error', 'Employee record not found');
+                return res.redirect('/monitor/stock');
+            }
+            
+            const employeeId = requesterEmployee[0].employee_id;
+            
+            // Get all monitors except the requester
+            const [otherMonitors] = await pool.execute(`
+                SELECT e.employee_id, u.full_name, u.email 
+                FROM employees e 
+                JOIN users u ON e.user_id = u.user_id 
+                WHERE u.role = 'monitor' AND u.user_id != ? AND u.is_active = 1
+            `, [requesterId]);
+            
+            if (otherMonitors.length === 0) {
+                req.flash('error', 'No other monitors available to handle your request');
+                return res.redirect('/monitor/stock');
+            }
+            
+            // Randomly assign to one of the other monitors
+            const randomMonitor = otherMonitors[Math.floor(Math.random() * otherMonitors.length)];
+            const assignedMonitorId = randomMonitor.employee_id;
+            
+            // Create the product request
+            await pool.execute(`
+                INSERT INTO product_requests 
+                (employee_id, product_id, return_date, purpose, status, requested_at, assigned_monitor_id) 
+                VALUES (?, ?, ?, ?, 'pending', NOW(), ?)
+            `, [employeeId, product_id, return_date, purpose || null, assignedMonitorId]);
+            
+            // Log the activity
+            if (ActivityLogger && ActivityLogger.logRequest) {
+                try {
+                    await ActivityLogger.logRequest(requesterId, {
+                        type: 'monitor_product_request',
+                        product_id: product_id,
+                        assigned_monitor: randomMonitor.full_name,
+                        return_date: return_date,
+                        purpose: purpose
+                    });
+                } catch (logError) {
+                    console.error('Error logging monitor request activity:', logError);
+                }
+            }
+            
+            req.flash('success', `Product request submitted successfully and assigned to monitor: ${randomMonitor.full_name}`);
+            res.redirect('/monitor/records');
+        } catch (error) {
+            console.error('Error submitting monitor product request:', error);
+            req.flash('error', 'Error submitting product request');
+            res.redirect('/monitor/stock');
         }
     });
 

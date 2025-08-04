@@ -15,7 +15,7 @@
         <!-- Logo Header + Close Button -->
         <div class="flex items-center justify-between h-14 sm:h-16 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 sm:px-6 flex-shrink-0">
             <div class="flex items-center space-x-2">
-                <img class="h-8 sm:h-10 w-auto" src="/images/Marquardt_Logo.png" alt="Marquardt Logo" onerror="this.style.display='none'">
+                <img class="h-8 sm:h-10 justify-center w-auto" src="/images/Marquardt_Logo.png" alt="Marquardt Logo" onerror="this.style.display='none'">
                 <div class="flex flex-col">
                 </div>
             </div>
@@ -49,6 +49,10 @@
             </a>
             
             <% if (user.role === 'employee') { %>
+                <a href="/employee/my-products" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-laptop mr-3"></i>
+                    My Products
+                </a>
                 <a href="/employee/records" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
                     <i class="fas fa-history mr-3"></i>
                     Records
@@ -85,6 +89,10 @@
                 <a href="/admin/employees" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="employees">
                     <i class="fas fa-users mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
                     <span class="font-medium text-sm sm:text-base">Employees</span>
+                </a>
+                <a href="/admin/clearance" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="clearance">
+                    <i class="fas fa-clipboard-check mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Employee Clearance</span>
                 </a>
                 <a href="/admin/monitors" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="monitors">
                     <i class="fas fa-user-shield mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>

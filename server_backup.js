@@ -596,7 +596,11 @@ app.get('/monitor/approvals', requireAuth, requireRole(['monitor']), async (req,
             ORDER BY pr.requested_at ASC
         `);
         
-        res.render('monitor/approvals', { user: req.session.user, requests });
+        res.render('monitor/approvals', { 
+            user: req.session.user, 
+            requests,
+            returnRequests: []
+        });
     } catch (error) {
         console.error('Approvals error:', error);
         res.render('error', { message: 'Error loading approvals' });
@@ -671,6 +675,51 @@ app.get('/monitor/inventory', requireAuth, requireRole(['monitor']), async (req,
     } catch (error) {
         console.error('Inventory error:', error);
         res.render('error', { message: 'Error loading inventory' });
+    }
+});
+
+app.get('/monitor/records', requireAuth, requireRole(['monitor']), async (req, res) => {
+    try {
+        const [assignments] = await pool.execute(`
+            SELECT 
+                pa.*,
+                p.product_name,
+                p.asset_type,
+                u.full_name as employee_name
+            FROM product_assignments pa
+            JOIN products p ON pa.product_id = p.product_id
+            JOIN employees e ON pa.employee_id = e.employee_id
+            JOIN users u ON e.user_id = u.user_id
+            WHERE pa.monitor_id = ?
+            ORDER BY pa.assigned_at DESC
+        `, [req.session.user.user_id]);
+        
+        const [totalProducts] = await pool.execute('SELECT COUNT(*) as count FROM products');
+        const [totalAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ?', [req.session.user.user_id]);
+        const [activeAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = FALSE', [req.session.user.user_id]);
+        const [pendingRequests] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"');
+        const [returnedItems] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = TRUE', [req.session.user.user_id]);
+        
+        res.render('monitor/records', { 
+            user: req.session.user, 
+            assignments,
+            totalProducts: totalProducts[0].count,
+            totalAssignments: totalAssignments[0].count,
+            activeAssignments: activeAssignments[0].count,
+            pendingRequests: pendingRequests[0].count,
+            returnedItems: returnedItems[0].count
+        });
+    } catch (error) {
+        console.error('Monitor records error:', error);
+        res.render('monitor/records', {
+            user: req.session.user,
+            assignments: [],
+            totalProducts: 0,
+            totalAssignments: 0,
+            activeAssignments: 0,
+            pendingRequests: 0,
+            returnedItems: 0
+        });
     }
 });
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Product Management System</title>
+    <title>Register - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/responsive.css">
@@ -39,14 +39,16 @@
                         <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
                         <input id="username" name="username" type="text" required 
                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                               placeholder="Username">
+                               placeholder="Use your Windows Login Username">
                     </div>
                     
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
                         <input id="email" name="email" type="email" required 
                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                               placeholder="Email">
+                               pattern=".*@marquardt\.com$"
+                               title="Please enter a valid @marquardt.com email address">
+                               
                     </div>
                     
                     <div>

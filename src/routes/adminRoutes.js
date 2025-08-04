@@ -162,20 +162,35 @@ module.exports = (pool, requireAuth, requireRole) => {
             `);
             
             if (tableExists[0].count === 0) {
-                // Fallback to old history system
-                const [history] = await pool.execute(`
-                    SELECT 'assignment' as activity_type, pa.assigned_at as created_at, p.product_name, 
-                           u1.full_name as performed_by, u2.full_name as monitor_name, pa.quantity,
-                           CONCAT('Assigned ', p.product_name, ' to ', u1.full_name) as description,
-                           u2.role as performer_role, NULL as target_user
+                // Fallback to old history system - get both assignments and requests
+                const [assignments] = await pool.execute(`
+                    SELECT 'assignment' as type, pa.assigned_at as date, p.product_name, 
+                           u1.full_name as employee_name, u2.full_name as monitor_name, 
+                           pa.quantity, 'Assigned' as status
                     FROM product_assignments pa
                     JOIN products p ON pa.product_id = p.product_id
                     JOIN employees e ON pa.employee_id = e.employee_id
                     JOIN users u1 ON e.user_id = u1.user_id
                     JOIN users u2 ON pa.monitor_id = u2.user_id
                     ORDER BY pa.assigned_at DESC
-                    LIMIT 50
+                    LIMIT 25
                 `);
+
+                const [requests] = await pool.execute(`
+                    SELECT 'request' as type, pr.request_date as date, p.product_name,
+                           u1.full_name as employee_name, u2.full_name as monitor_name,
+                           pr.quantity, pr.status
+                    FROM product_requests pr
+                    JOIN products p ON pr.product_id = p.product_id
+                    JOIN employees e ON pr.employee_id = e.employee_id
+                    JOIN users u1 ON e.user_id = u1.user_id
+                    LEFT JOIN users u2 ON pr.monitor_id = u2.user_id
+                    ORDER BY pr.request_date DESC
+                    LIMIT 25
+                `);
+
+                // Combine and sort by date
+                const history = [...assignments, ...requests].sort((a, b) => new Date(b.date) - new Date(a.date));
                 
                 return res.render('admin/history', { 
                     user: req.session.user, 
@@ -201,13 +216,17 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             const [history] = await pool.execute(`
                 SELECT 
-                    sal.activity_type,
-                    sal.description,
-                    sal.created_at,
-                    u1.full_name as performed_by,
-                    u1.role as performer_role,
-                    u2.full_name as target_user,
-                    p.product_name
+                    sal.activity_type as type,
+                    sal.created_at as date,
+                    u1.full_name as employee_name,
+                    u2.full_name as monitor_name,
+                    p.product_name,
+                    1 as quantity,
+                    CASE 
+                        WHEN sal.activity_type = 'assignment' THEN 'Assigned'
+                        WHEN sal.activity_type = 'request' THEN 'Requested'
+                        ELSE 'Unknown'
+                    END as status
                 FROM system_activity_log sal
                 JOIN users u1 ON sal.user_id = u1.user_id
                 LEFT JOIN users u2 ON sal.target_user_id = u2.user_id
@@ -226,7 +245,15 @@ module.exports = (pool, requireAuth, requireRole) => {
             });
         } catch (error) {
             console.error('History error:', error);
-            res.render('error', { message: 'Error loading history' });
+            // Render history page with empty data instead of error page
+            res.render('admin/history', { 
+                user: req.session.user, 
+                history: [],
+                currentPage: 1,
+                totalPages: 1,
+                totalRecords: 0,
+                error: 'Unable to load history data. Please check database connection.'
+            });
         }
     });
 

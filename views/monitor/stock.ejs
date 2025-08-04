@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock - Product Management System</title>
+    <title>Stock - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/responsive.css">
@@ -25,7 +25,59 @@
         <p class="text-gray-600 text-base sm:text-lg">Browse available products and request assignments.</p>
     </div>
 
-    
+    <!-- Search and Filter Section -->
+    <div class="bg-white shadow rounded-lg mb-6">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex flex-col sm:flex-row gap-4">
+                <!-- Search Input -->
+                <div class="flex-1">
+                    <label for="search-input" class="block text-sm font-medium text-gray-700 mb-2">Search Products</label>
+                    <div class="relative">
+                        <input type="text" id="search-input" placeholder="Search by name, category, or model..." 
+                               class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Asset Type Filter -->
+                <div class="sm:w-48">
+                    <label for="asset-type-filter" class="block text-sm font-medium text-gray-700 mb-2">Asset Type</label>
+                    <select id="asset-type-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
+                        <option value="">All Types</option>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                
+                <!-- Availability Filter -->
+                <div class="sm:w-48">
+                    <label for="availability-filter" class="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                    <select id="availability-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
+                        <option value="">All Products</option>
+                        <option value="available">Available Only</option>
+                        <option value="assigned">Assigned Only</option>
+                    </select>
+                </div>
+                
+                <!-- Search Button -->
+                <div class="flex items-end">
+                    <button id="search-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" style="background-color: #009A9A;">
+                        <i class="fas fa-search mr-2"></i>
+                        Search
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Clear Filters Button -->
+            <div class="mt-4">
+                <button id="clear-filters-btn" class="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    <i class="fas fa-times mr-1"></i>
+                    Clear Filters
+                </button>
+            </div>
+        </div>
+    </div>
         
         <!-- Stock Table -->
         <div class="bg-white shadow rounded-lg">
@@ -41,9 +93,6 @@
                                     Product Name
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Action
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Asset Type
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -53,9 +102,11 @@
                                     Model
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Availability Status
+                                    Availability
                                 </th>
-                                
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Action
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200" id="products-table">
@@ -123,9 +174,43 @@
                 allProducts = [];
             }
             filteredProducts = [...allProducts];
+            populateAssetTypeFilter();
             displayProducts();
             setupPagination();
+            setupFilterEventListeners();
         });
+
+        // Populate asset type filter dropdown
+        function populateAssetTypeFilter() {
+            const assetTypeSelect = document.getElementById('asset-type-filter');
+            const assetTypes = [...new Set(allProducts.map(product => product.asset_type).filter(Boolean))];
+            
+            // Clear existing options except "All Types"
+            assetTypeSelect.innerHTML = '<option value="">All Types</option>';
+            
+            // Add asset type options
+            assetTypes.forEach(assetType => {
+                const option = document.createElement('option');
+                option.value = assetType;
+                option.textContent = assetType;
+                assetTypeSelect.appendChild(option);
+            });
+        }
+
+        // Setup filter event listeners
+        function setupFilterEventListeners() {
+            document.getElementById('search-btn').addEventListener('click', filterProducts);
+            document.getElementById('asset-type-filter').addEventListener('change', filterProducts);
+            document.getElementById('availability-filter').addEventListener('change', filterProducts);
+            document.getElementById('clear-filters-btn').addEventListener('click', clearFilters);
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    filterProducts();
+                }
+            });
+            // Real-time search as user types
+            document.getElementById('search-input').addEventListener('input', filterProducts);
+        }
 
         // Pagination functions
         function displayProducts() {
@@ -179,7 +264,7 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isAvailable.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                                ${isAvailable.available ? 'Yes' : 'No'}
+                                ${isAvailable.available ? 'Available' : 'Assigned'}
                             </span>
                             ${!isAvailable.available && isAvailable.userInfo ? 
                                 `<div class="text-xs text-gray-500 mt-1">
@@ -189,19 +274,30 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         ${isAvailable.available ? 
-                            `<button onclick="openRequestModal('${product.product_id}', '${product.product_name}', ${availableQty})" 
-                                class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" style="background-color: #009A9A;">
+                            `<button class="request-btn inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" 
+                                style="background-color: #009A9A;" 
+                                data-product-id="${product.product_id}" 
+                                data-product-name="${escapeHtml(product.product_name)}" 
+                                data-available-qty="${availableQty}">
                                 <i class="fas fa-plus mr-1"></i>Request
                             </button>` : 
-                            `<div class="text-xs text-gray-500">
-                                ${isAvailable.userInfo || 'Not Available'}
-                            </div>`}
+                            `<span class="text-xs text-gray-500">Not Available</span>`}
                     </td>
                 `;
                 tbody.appendChild(row);
             });
             
             updatePaginationInfo();
+            
+            // Add event listeners for request buttons
+            document.querySelectorAll('.request-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-product-id');
+                    const productName = this.getAttribute('data-product-name');
+                    const availableQty = this.getAttribute('data-available-qty');
+                    openRequestModal(productId, productName, availableQty);
+                });
+            });
         }
 
         function setupPagination() {
@@ -278,29 +374,49 @@
         }
 
         // Search and filter functionality with error handling
-        document.getElementById('search-btn').addEventListener('click', filterProducts);
-        document.getElementById('asset-type-filter').addEventListener('change', filterProducts);
-        document.getElementById('search-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                filterProducts();
-            }
-        });
-
         function filterProducts() {
             const assetType = document.getElementById('asset-type-filter').value;
-            const search = document.getElementById('search-input').value.toLowerCase();
+            const availability = document.getElementById('availability-filter').value;
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
             
             filteredProducts = allProducts.filter(product => {
+                // Asset type filter
                 const matchesAssetType = !assetType || product.asset_type === assetType;
-                const matchesSearch = !search || 
-                    product.product_name.toLowerCase().includes(search) ||
-                    product.product_category.toLowerCase().includes(search) ||
-                    product.model_number.toLowerCase().includes(search);
                 
-                return matchesAssetType && matchesSearch;
+                // Availability filter
+                let matchesAvailability = true;
+                if (availability) {
+                    const productAvailability = getAvailabilityStatus(product);
+                    if (availability === 'available') {
+                        matchesAvailability = productAvailability.available;
+                    } else if (availability === 'assigned') {
+                        matchesAvailability = !productAvailability.available;
+                    }
+                }
+                
+                // Search filter
+                const matchesSearch = !search || 
+                    (product.product_name && product.product_name.toLowerCase().includes(search)) ||
+                    (product.product_category && product.product_category.toLowerCase().includes(search)) ||
+                    (product.model_number && product.model_number.toLowerCase().includes(search)) ||
+                    (product.serial_number && product.serial_number.toLowerCase().includes(search));
+                
+                return matchesAssetType && matchesAvailability && matchesSearch;
             });
             
             currentPage = 1; // Reset to first page after filtering
+            displayProducts();
+            updatePaginationControls();
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('asset-type-filter').value = '';
+            document.getElementById('availability-filter').value = '';
+            
+            filteredProducts = [...allProducts];
+            currentPage = 1;
             displayProducts();
             updatePaginationControls();
         }
@@ -329,6 +445,13 @@
                     userInfo: product.current_users || 'Currently assigned'
                 };
             }
+        }
+
+        // Escape HTML to prevent XSS and quote issues
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
         function openRequestModal(productId, productName, availableQty) {
@@ -402,7 +525,3 @@
     </script>
 </body>
 </html>
-<button onclick="openRequestModal('${product.product_id}', '${product.product_name}', ${availableQty})" 
-    class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-[#1B4965] hover:bg-[#16384D] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1B4965]">
-    <i class="fas fa-plus mr-1"></i>Request
-</button>

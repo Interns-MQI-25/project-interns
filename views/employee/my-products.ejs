@@ -10,13 +10,19 @@
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-64 p-6">
-        <%- include('../partials/messages') %>
-        
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">My Products</h1>
-            <p class="text-gray-600">Complete history of all products assigned to you</p>
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <div class="mb-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">My Products</h1>
+                <p class="text-gray-600">Welcome <%= user.full_name %>! Complete history of all products assigned to you</p>
+            </div>
         </div>
+        
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
 
         <!-- My Products Table -->
         <div class="bg-white shadow rounded-lg">
@@ -129,6 +135,7 @@
                 <% } %>
             </div>
         </div>
+        </div> <!-- End scrollable content area -->
     </main>
 </body>
 </html>

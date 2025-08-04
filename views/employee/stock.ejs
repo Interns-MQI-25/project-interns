@@ -11,21 +11,25 @@
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-<main class="ml-0 md:ml-64 p-4 sm:p-6">
-        <%- include('../partials/messages') %>
-        
-        <% if (typeof error !== 'undefined' && error) { %>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <%= error %>
+    <main class="ml-0 md:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <%= error %>
+                </div>
+            <% } %>
+            
+            <div class="mb-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Product Stock</h1>
+                <p class="text-gray-600">Welcome <%= user.full_name %>! Browse available products and request assignments.</p>
             </div>
-        <% } %>
+        </div>
         
-    <div class="mb-8">
-        <h1 class="text-2xl sm:text-2xl sm:text-3xl font-bold text-gray-900">Product Stock</h1>
-        <p class="text-gray-600 text-base sm:text-lg">Browse available products and request assignments.</p>
-    </div>
-
-    
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
         
         <!-- Stock Table -->
         <div class="bg-white shadow rounded-lg">
@@ -98,6 +102,7 @@
                 </div>
             </div>
         </div>
+        </div> <!-- End scrollable content area -->
     </main>
 
     <!-- Product data for JavaScript -->

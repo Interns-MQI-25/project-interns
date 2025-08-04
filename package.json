@@ -1,7 +1,7 @@
 {
   "name": "product-management-system",
   "version": "1.0.0",
-  "description": "Product Management System for GCP",
+  "description": "Marquardt India Pvt. Ltd. for GCP",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

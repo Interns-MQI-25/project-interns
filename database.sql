@@ -1,4 +1,4 @@
--- Product Management System Database Schema
+-- Marquardt India Pvt. Ltd. Database Schema
 
 -- Create database
 CREATE DATABASE IF NOT EXISTS product_management_system;

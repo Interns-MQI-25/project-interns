@@ -199,6 +199,7 @@ app.post('/login', async (req, res) => {
         
         const testHash = await bcrypt.hash('password', 10);
         const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
+        const vennuHash = await bcrypt.hash('Vennu@123', 10);
 
         await pool.execute('CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE, full_name VARCHAR(100), email VARCHAR(100), password VARCHAR(255), role VARCHAR(20) DEFAULT "admin", is_active BOOLEAN DEFAULT TRUE)');
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['test', 'Test User', 'test@example.com', testHash, 'admin', 1]);
@@ -258,11 +259,6 @@ app.post('/login', async (req, res) => {
         res.render('error', { message: 'Error loading dashboard', error: error.message || error.toString(), stack: error.stack });
     }
 });
-
-
-
-
-
 
 
 // Monitor routes
@@ -399,14 +395,6 @@ app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
 app.get('/health', (req, res) => {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
-
-
-
-
-
-
-
-
 
 
 

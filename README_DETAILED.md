@@ -1,4 +1,4 @@
-# Product Management System
+# Marquardt India Pvt. Ltd.
 
 A comprehensive web-based product management system built with Express.js, Node.js, and MySQL, featuring role-based access control for employees, monitors, and administrators.
 

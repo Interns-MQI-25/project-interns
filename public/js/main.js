@@ -4,6 +4,17 @@
 console.log('Main.js loaded successfully');
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
+    
+    // Set active page for sidebar
+    const currentPath = window.location.pathname;
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    
+    sidebarLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath || 
+            (currentPath.includes('dashboard') && link.getAttribute('data-page') === 'dashboard')) {
+            link.classList.add('bg-primary-100', 'text-primary-700', 'border-r-4', 'border-primary-600');
+        }
+    });
     // Initialize tooltips
     initializeTooltips();
     
@@ -18,8 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize live counts
     initializeLiveCounts();
-    
-
 });
 
 // Initialize tooltips
@@ -189,7 +198,6 @@ function updateLiveCounts() {
         })
         .then(data => {
             console.log('Live counts:', data);
-            alert('Pending requests: ' + data.pendingRequests);
             // Update pending requests count for monitors
             const pendingRequestsCount = document.getElementById('pendingRequestsCount');
             if (pendingRequestsCount) {
@@ -210,7 +218,6 @@ function updateLiveCounts() {
         })
         .catch(error => {
             console.error('Error updating live counts:', error);
-            alert('API Error: ' + error.message);
         });
 }
 
@@ -221,4 +228,3 @@ window.formatDate = formatDate;
 window.formatCurrency = formatCurrency;
 window.openModal = openModal;
 window.closeModal = closeModal;
-

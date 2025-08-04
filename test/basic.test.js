@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Basic Tests for Product Management System
- * This file contains basic functionality tests
- */
+ * Basic Tests for Marquardt India Pvt. Ltd.
+ * Tests fundamental functionality and API endpoints
 
 console.log('🧪 Running Basic Tests...\n');
 
@@ -97,6 +96,6 @@ try {
     await testBcrypt();
     
     console.log('\n🎉 All basic tests passed!');
-    console.log('✨ Product Management System basic functionality verified\n');
+    console.log('✨ Marquardt India Pvt. Ltd. basic functionality verified\n');
     process.exit(0);
 })();

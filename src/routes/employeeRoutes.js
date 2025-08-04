@@ -1,6 +1,17 @@
 const express = require('express');
 const router = express.Router();
 
+// Try to import ActivityLogger, fallback if not available
+let ActivityLogger;
+try {
+    ActivityLogger = require('../utils/activityLogger');
+} catch (err) {
+    console.log('ActivityLogger not available, using fallback');
+    ActivityLogger = {
+        logProductRequest: () => Promise.resolve()
+    };
+}
+
 // Employee routes module
 module.exports = (pool, requireAuth, requireRole) => {
     
@@ -88,28 +99,26 @@ module.exports = (pool, requireAuth, requireRole) => {
                     p.product_category,
                     p.model_number,
                     p.serial_number,
-                    p.is_available,
                     p.quantity,
-                    COALESCE(p.calibration_required, FALSE) as calibration_required,
                     p.added_at,
-                    COALESCE((
-                        SELECT SUM(pa.quantity) 
-                        FROM product_assignments pa 
-                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
-                    ), 0) as assigned_quantity,
+                    CASE WHEN EXISTS(
+                        SELECT 1 FROM product_assignments pa 
+                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE AND pa.return_status != 'approved'
+                    ) THEN 1 ELSE 0 END as is_assigned,
                     (
                         SELECT GROUP_CONCAT(
                             CONCAT(u.full_name, ' (Return: ', 
-                                COALESCE(DATE_FORMAT(pa.return_date, '%Y-%m-%d'), 'Not specified'), ')')
+                                DATE_FORMAT(pa.return_date, '%d/%m/%Y'), ')')
                             SEPARATOR ', '
                         )
                         FROM product_assignments pa
                         JOIN employees e ON pa.employee_id = e.employee_id
                         JOIN users u ON e.user_id = u.user_id
-                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
+                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE AND pa.return_status != 'approved'
                         LIMIT 3
                     ) as current_users
                 FROM products p
+                WHERE p.is_available = 1
                 ORDER BY p.asset_type, p.product_category, p.product_name
             `);
             
@@ -159,13 +168,36 @@ module.exports = (pool, requireAuth, requireRole) => {
                 return res.redirect('/employee/stock');
             }
 
-            await pool.execute(
+            // Get product details for logging
+            const [productDetails] = await pool.execute(
+                'SELECT product_name FROM products WHERE product_id = ?',
+                [product_id]
+            );
+            
+            const [result] = await pool.execute(
                 'INSERT INTO product_requests (employee_id, product_id, quantity, purpose, return_date) VALUES (?, ?, ?, ?, ?)',
                 [employee[0].employee_id, product_id, 1, purpose || null, return_date]
             );
+            
+            // Log the product request activity
+            if (productDetails.length > 0 && ActivityLogger && ActivityLogger.logProductRequest) {
+                try {
+                    await ActivityLogger.logProductRequest(
+                        pool,
+                        req.session.user.user_id,
+                        product_id,
+                        result.insertId,
+                        productDetails[0].product_name,
+                        1,
+                        purpose || 'No purpose specified'
+                    );
+                } catch (logError) {
+                    console.error('Error logging product request:', logError);
+                }
+            }
 
             req.flash('success', 'Product request submitted successfully');
-            res.redirect('/employee/records');
+            res.redirect('/employee/stock');
         } catch (error) {
             console.error('Request product error:', error);
             req.flash('error', `Error submitting request: ${error.message}`);
@@ -205,6 +237,34 @@ module.exports = (pool, requireAuth, requireRole) => {
             console.error('Return request error:', error);
             req.flash('error', 'Error submitting return request.');
             res.redirect('/employee/records');
+        }
+    });
+
+    // Employee: My Products Route
+    router.get('/my-products', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            const [myProducts] = await pool.execute(`
+                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status,
+                       p.product_name, p.asset_type, p.model_number, p.serial_number,
+                       u.full_name as monitor_name
+                FROM product_assignments pa
+                JOIN products p ON pa.product_id = p.product_id
+                JOIN employees e ON pa.employee_id = e.employee_id
+                JOIN users u ON pa.monitor_id = u.user_id
+                WHERE e.user_id = ?
+                ORDER BY pa.assigned_at DESC
+            `, [req.session.user.user_id]);
+            
+            res.render('employee/my-products', { 
+                user: req.session.user,
+                myProducts: myProducts || []
+            });
+        } catch (error) {
+            console.error('My products error:', error);
+            res.render('employee/my-products', { 
+                user: req.session.user,
+                myProducts: []
+            });
         }
     });
 

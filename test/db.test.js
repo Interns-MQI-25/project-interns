@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Database Tests for Product Management System
- * This file contains database connectivity and functionality tests
- */
+ * Database Tests for Marquardt India Pvt. Ltd.
+ * Tests database connections and basic operations
 
 const mysql = require('mysql2/promise');
 

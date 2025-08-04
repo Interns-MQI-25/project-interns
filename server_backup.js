@@ -35,6 +35,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 app.use(flash());
+app.use('/images', express.static('images'));
 
 // Set view engine
 app.set('view engine', 'ejs');
@@ -313,7 +314,30 @@ app.get('/dashboard', requireAuth, async (req, res) => {
                 LIMIT 5
             `, [req.session.user.user_id]);
             
-            res.render('monitor/dashboard', { user: req.session.user, recentActivity });
+            // Fetch dashboard statistics for monitor
+            const [pendingRequests] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
+            );
+            
+            const [approvedToday] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "approved" AND DATE(processed_at) = CURDATE()'
+            );
+            
+            const [totalProducts] = await pool.execute(
+                'SELECT COUNT(*) as count FROM products'
+            );
+            
+            const monitorStats = {
+                pendingRequests: pendingRequests[0].count,
+                approvedToday: approvedToday[0].count,
+                totalProducts: totalProducts[0].count
+            };
+            
+            res.render('monitor/dashboard', { 
+                user: req.session.user, 
+                recentActivity,
+                stats: monitorStats
+            });
         } else if (role === 'admin') {
             // Fetch dashboard statistics for admin
             const [totalEmployees] = await pool.execute(
@@ -430,20 +454,43 @@ app.post('/employee/return-product', requireAuth, requireRole(['employee']), asy
 
 app.get('/employee/records', requireAuth, requireRole(['employee']), async (req, res) => {
     try {
-        const [records] = await pool.execute(`
-            SELECT pa.*, p.product_name, u.full_name as monitor_name, pa.return_date, pa.assignment_id, pa.is_returned
-            FROM product_assignments pa
-            JOIN products p ON pa.product_id = p.product_id
-            JOIN users u ON pa.monitor_id = u.user_id
-            JOIN employees e ON pa.employee_id = e.employee_id
-            WHERE e.user_id = ?
-            ORDER BY pa.assigned_at DESC
-        `, [req.session.user.user_id]);
+        let assignments = [];
+        let requests = [];
         
-        res.render('employee/records', { user: req.session.user, records });
+        try {
+            const [assignmentResults] = await pool.execute(`
+                SELECT pa.*, p.product_name, u.full_name as monitor_name, pa.return_date, pa.assignment_id, pa.is_returned, pa.return_status
+                FROM product_assignments pa
+                JOIN products p ON pa.product_id = p.product_id
+                JOIN users u ON pa.monitor_id = u.user_id
+                JOIN employees e ON pa.employee_id = e.employee_id
+                WHERE e.user_id = ?
+                ORDER BY pa.assigned_at DESC
+            `, [req.session.user.user_id]);
+            assignments = assignmentResults || [];
+        } catch (err) {
+            console.error('Assignments query error:', err);
+        }
+        
+        try {
+            const [requestResults] = await pool.execute(`
+                SELECT pr.*, p.product_name, u.full_name as processed_by_name
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                LEFT JOIN users u ON pr.processed_by = u.user_id
+                WHERE e.user_id = ?
+                ORDER BY pr.requested_at DESC
+            `, [req.session.user.user_id]);
+            requests = requestResults || [];
+        } catch (err) {
+            console.error('Requests query error:', err);
+        }
+        
+        res.render('employee/records', { user: req.session.user, assignments, requests });
     } catch (error) {
         console.error('Records error:', error);
-        res.render('error', { message: 'Error loading records' });
+        res.render('employee/records', { user: req.session.user, assignments: [], requests: [] });
     }
 });
 
@@ -471,13 +518,18 @@ app.get('/employee/account', requireAuth, requireRole(['employee']), async (req,
 
 app.get('/employee/requests', requireAuth, requireRole(['employee']), async (req, res) => {
     try {
-        const [products] = await pool.execute('SELECT * FROM products WHERE quantity > 0');
+        const [products] = await pool.execute(`
+            SELECT product_id, product_name, quantity
+            FROM products 
+            WHERE is_available = TRUE AND quantity > 0
+            ORDER BY product_name
+        `);
+        
         const [requests] = await pool.execute(`
-            SELECT pr.*, p.product_name, u.full_name as processed_by_name
+            SELECT pr.*, p.product_name
             FROM product_requests pr
             JOIN products p ON pr.product_id = p.product_id
             JOIN employees e ON pr.employee_id = e.employee_id
-            LEFT JOIN users u ON pr.processed_by = u.user_id
             WHERE e.user_id = ?
             ORDER BY pr.requested_at DESC
         `, [req.session.user.user_id]);
@@ -488,6 +540,27 @@ app.get('/employee/requests', requireAuth, requireRole(['employee']), async (req
         res.render('error', { message: 'Error loading requests' });
     }
 });
+
+app.get('/employee/my-products', requireAuth, requireRole(['employee']), async (req, res) => {
+    try {
+        const [myProducts] = await pool.execute(`
+            SELECT pa.*, p.product_name, p.serial_number, pa.return_date, pa.assignment_id, pa.is_returned,
+                   pa.return_status
+            FROM product_assignments pa
+            JOIN products p ON pa.product_id = p.product_id
+            JOIN employees e ON pa.employee_id = e.employee_id
+            WHERE e.user_id = ?
+            ORDER BY pa.assigned_at DESC
+        `, [req.session.user.user_id]);
+        
+        res.render('employee/my-products', { user: req.session.user, myProducts });
+    } catch (error) {
+        console.error('My products error:', error);
+        res.render('error', { message: 'Error loading my products' });
+    }
+});
+
+
 
 app.post('/employee/request-product', requireAuth, requireRole(['employee']), async (req, res) => {
     const { product_id, quantity, purpose } = req.body;
@@ -603,7 +676,46 @@ app.get('/monitor/approvals', requireAuth, requireRole(['monitor']), async (req,
         });
     } catch (error) {
         console.error('Approvals error:', error);
-        res.render('error', { message: 'Error loading approvals' });
+        res.render('monitor/approvals', { user: req.session.user, requests: [], returnRequests: [] });
+    }
+});
+
+app.get('/monitor/records', requireAuth, requireRole(['monitor']), async (req, res) => {
+    try {
+        const [records] = await pool.execute(`
+            SELECT 
+                pa.*,
+                p.product_name,
+                u.full_name as employee_name,
+                d.department_name
+            FROM product_assignments pa
+            JOIN products p ON pa.product_id = p.product_id
+            JOIN employees e ON pa.employee_id = e.employee_id
+            JOIN users u ON e.user_id = u.user_id
+            JOIN departments d ON e.department_id = d.department_id
+            WHERE pa.monitor_id = ?
+            ORDER BY pa.assigned_at DESC
+        `, [req.session.user.user_id]);
+        
+        // Get statistics for the template
+        const [totalProducts] = await pool.execute('SELECT COUNT(*) as count FROM products');
+        const [totalAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ?', [req.session.user.user_id]);
+        const [activeAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = FALSE', [req.session.user.user_id]);
+        const [pendingRequests] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"');
+        const [returnedItems] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = TRUE', [req.session.user.user_id]);
+        
+        res.render('monitor/records', { 
+            user: req.session.user, 
+            assignments: records,
+            totalProducts: totalProducts[0].count,
+            totalAssignments: totalAssignments[0].count,
+            activeAssignments: activeAssignments[0].count,
+            pendingRequests: pendingRequests[0].count,
+            returnedItems: returnedItems[0].count
+        });
+    } catch (error) {
+        console.error('Monitor records error:', error);
+        res.render('error', { message: 'Error loading records' });
     }
 });
 
@@ -644,11 +756,15 @@ app.post('/monitor/process-request', requireAuth, requireRole(['monitor']), asyn
                     [request.quantity, request.product_id]
                 );
                 
-                // Add to stock history
-                await connection.execute(
-                    'INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) VALUES (?, ?, ?, ?, ?)',
-                    [request.product_id, 'assign', request.quantity, req.session.user.user_id, `Assigned to employee ID: ${request.employee_id}`]
-                );
+                // Add to stock history if table exists
+                try {
+                    await connection.execute(
+                        'INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) VALUES (?, ?, ?, ?, ?)',
+                        [request.product_id, 'assign', request.quantity, req.session.user.user_id, `Assigned to employee ID: ${request.employee_id}`]
+                    );
+                } catch (historyError) {
+                    console.log('Stock history table not found, skipping history entry');
+                }
             }
             
             await connection.commit();
@@ -999,7 +1115,12 @@ app.get('/admin/stock', requireAuth, requireRole(['admin']), async (req, res) =>
 
 app.get('/admin/history', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-        const [history] = await pool.execute(`
+        const page = parseInt(req.query.page) || 1;
+        const limit = 15;
+        const offset = (page - 1) * limit;
+        
+        // Get assignments
+        const [assignments] = await pool.execute(`
             SELECT 'assignment' as type, pa.assigned_at as date, p.product_name, 
                    u1.full_name as employee_name, u2.full_name as monitor_name, pa.quantity,
                    CASE WHEN pa.is_returned THEN 'Returned' ELSE 'Assigned' END as status
@@ -1008,7 +1129,10 @@ app.get('/admin/history', requireAuth, requireRole(['admin']), async (req, res) 
             JOIN employees e ON pa.employee_id = e.employee_id
             JOIN users u1 ON e.user_id = u1.user_id
             JOIN users u2 ON pa.monitor_id = u2.user_id
-            UNION ALL
+        `);
+        
+        // Get requests
+        const [requests] = await pool.execute(`
             SELECT 'request' as type, pr.requested_at as date, p.product_name,
                    u1.full_name as employee_name, COALESCE(u2.full_name, 'Pending') as monitor_name, pr.quantity,
                    pr.status
@@ -1017,11 +1141,23 @@ app.get('/admin/history', requireAuth, requireRole(['admin']), async (req, res) 
             JOIN employees e ON pr.employee_id = e.employee_id
             JOIN users u1 ON e.user_id = u1.user_id
             LEFT JOIN users u2 ON pr.processed_by = u2.user_id
-            ORDER BY date DESC
-            LIMIT 100
         `);
         
-        res.render('admin/history', { user: req.session.user, history });
+        // Combine and sort
+        const allHistory = [...assignments, ...requests]
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        const totalRecords = allHistory.length;
+        const totalPages = Math.ceil(totalRecords / limit);
+        const history = allHistory.slice(offset, offset + limit);
+        
+        res.render('admin/history', { 
+            user: req.session.user, 
+            history,
+            currentPage: page,
+            totalPages,
+            totalRecords
+        });
     } catch (error) {
         console.error('History error:', error);
         res.render('error', { message: 'Error loading history' });
@@ -1477,7 +1613,8 @@ app.post('/admin/toggle-employee-status/:id', requireAuth, requireRole(['admin']
                 `, [employeeId]);
                 
                 if (assignments[0].count > 0) {
-                    req.flash('error', 'Cannot deactivate employee with active product assignments');
+                    req.flash('error', `Cannot deactivate employee with ${assignments[0].count} unreturned product(s). Please check Employee Clearance page.`);
+                    await connection.rollback();
                     res.redirect('/admin/employees');
                     return;
                 }
@@ -1621,6 +1758,82 @@ app.post('/admin/bulk-activate-employees', requireAuth, requireRole(['admin']), 
     }
     
     res.redirect('/admin/employees');
+});
+
+// Admin: Employee Clearance Route
+app.get('/admin/clearance', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+        const { employee_id } = req.query;
+        
+        // Get all employees
+        const [employees] = await pool.execute(`
+            SELECT u.user_id, u.full_name, u.username, u.is_active, d.department_name
+            FROM users u
+            JOIN employees e ON u.user_id = e.user_id
+            JOIN departments d ON e.department_id = d.department_id
+            WHERE u.role IN ('employee', 'monitor')
+            ORDER BY u.full_name
+        `);
+        
+        let selectedEmployee = null;
+        let assignments = [];
+        let clearanceStatus = {
+            totalAssigned: 0,
+            totalReturned: 0,
+            pendingReturns: 0,
+            clearancePercentage: 0,
+            canDeactivate: false
+        };
+        
+        if (employee_id) {
+            // Get selected employee details
+            const [empDetails] = await pool.execute(`
+                SELECT u.user_id, u.full_name, u.username, u.is_active, d.department_name
+                FROM users u
+                JOIN employees e ON u.user_id = e.user_id
+                JOIN departments d ON e.department_id = d.department_id
+                WHERE u.user_id = ?
+            `, [employee_id]);
+            
+            if (empDetails.length > 0) {
+                selectedEmployee = empDetails[0];
+                
+                // Get all product assignments for this employee
+                const [assignmentData] = await pool.execute(`
+                    SELECT pa.*, p.product_name, u.full_name as monitor_name
+                    FROM product_assignments pa
+                    JOIN products p ON pa.product_id = p.product_id
+                    JOIN users u ON pa.monitor_id = u.user_id
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    WHERE e.user_id = ?
+                    ORDER BY pa.assigned_at DESC
+                `, [employee_id]);
+                
+                assignments = assignmentData;
+                
+                // Calculate clearance status
+                clearanceStatus.totalAssigned = assignments.length;
+                clearanceStatus.totalReturned = assignments.filter(a => a.is_returned).length;
+                clearanceStatus.pendingReturns = clearanceStatus.totalAssigned - clearanceStatus.totalReturned;
+                clearanceStatus.clearancePercentage = clearanceStatus.totalAssigned > 0 
+                    ? Math.round((clearanceStatus.totalReturned / clearanceStatus.totalAssigned) * 100) 
+                    : 100;
+                clearanceStatus.canDeactivate = clearanceStatus.pendingReturns === 0;
+            }
+        }
+        
+        res.render('admin/clearance', {
+            user: req.session.user,
+            employees,
+            selectedEmployee,
+            assignments,
+            clearanceStatus
+        });
+    } catch (error) {
+        console.error('Clearance page error:', error);
+        req.flash('error', 'Error loading clearance page');
+        res.redirect('/admin/employees');
+    }
 });
 
 app.listen(PORT, () => {

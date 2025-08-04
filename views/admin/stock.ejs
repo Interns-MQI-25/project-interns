@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Management - Product Management System</title>
+    <title>Stock Management - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-64 p-6">
+    <main class="ml-0 lg:ml-64 p-4 sm:p-6">
         <%- include('../partials/messages') %>
         
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Stock Management</h1>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Stock Management</h1>
+            <p class="text-gray-600">Manage and track inventory</p>
             <p class="text-gray-600">Complete oversight of inventory and analytics</p>
         </div>
 
         <!-- Stock Analytics -->
         <% if (typeof stockStats !== 'undefined' && stockStats && stockStats.length > 0) { %>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <% stockStats.forEach(stat => { %>
                 <div class="bg-white overflow-hidden shadow rounded-lg">
                     <div class="p-5">
@@ -62,14 +64,17 @@
         </div>
         <% } %>
 
-        <!-- Recent Activity -->
+        <!-- Recent Activity Dropdown -->
         <% if (typeof recentActivity !== 'undefined' && recentActivity && recentActivity.length > 0) { %>
         <div class="bg-white shadow rounded-lg mb-8">
             <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Recent Stock Activity
-                </h3>
-                <div class="flow-root max-h-[400px] overflow-y-auto">
+                <button id="toggleRecentActivity" type="button" class="w-full flex justify-between items-center text-lg leading-6 font-medium text-gray-900 mb-4 focus:outline-none">
+                    <span>Recent Stock Activity</span>
+                    <svg id="recentActivityChevron" class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div id="recentActivityPanel" class="flow-root max-h-[400px] overflow-y-auto">
                     <ul class="-mb-8">
                         <% recentActivity.slice(0, 5).forEach((activity, index) => { %>
                             <li>
@@ -106,14 +111,26 @@
                 </div>
             </div>
         </div>
+        <script>
+        const toggleRecentActivity = document.getElementById('toggleRecentActivity');
+        const recentActivityPanel = document.getElementById('recentActivityPanel');
+        const recentActivityChevron = document.getElementById('recentActivityChevron');
+        if (toggleRecentActivity && recentActivityPanel && recentActivityChevron) {
+            recentActivityPanel.style.display = '';
+            toggleRecentActivity.addEventListener('click', function() {
+                if (recentActivityPanel.style.display === '' || recentActivityPanel.style.display === 'block') {
+                    recentActivityPanel.style.display = 'none';
+                    recentActivityChevron.style.transform = 'rotate(-90deg)';
+                } else {
+                    recentActivityPanel.style.display = 'block';
+                    recentActivityChevron.style.transform = 'rotate(0deg)';
+                }
+            });
+        }
+        </script>
         <% } %>
         
-        <!-- Stock Table -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Product Inventory
-                </h3>
+        <!-- ...existing code... -->
                 <div class="mb-4">
     <div class="flex flex-col md:flex-row gap-4">
         <div class="flex-1">
@@ -193,16 +210,16 @@
                         data-product-name="<%= product.product_name.toLowerCase() %>"
                         data-asset-type="<%= product.asset_type %>"
                         data-calibration-status="<%= product.calibration_required ? product.calibration_status : 'Not Required' %>">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">
+                        <td class="px-6 py-4 align-top" style="white-space:normal; word-break:break-word;">
+                            <div class="text-sm font-medium text-gray-900 break-words whitespace-normal">
                                 <%= product.product_name %>
                             </div>
-                            <div class="text-sm text-gray-500">
+                            <div class="text-sm text-gray-500 break-words whitespace-normal">
                                 <%= product.product_category %>
                             </div>
                             <% if (product.description) { %>
-                                <div class="text-xs text-gray-400 truncate max-w-xs">
-                                    <%= product.description.substring(0, 50) %>...
+                                <div class="text-xs text-gray-400 break-words whitespace-normal">
+                                    <%= product.description %>
                                 </div>
                             <% } %>
                         </td>

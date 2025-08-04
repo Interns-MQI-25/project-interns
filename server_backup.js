@@ -518,13 +518,18 @@ app.get('/employee/account', requireAuth, requireRole(['employee']), async (req,
 
 app.get('/employee/requests', requireAuth, requireRole(['employee']), async (req, res) => {
     try {
-        const [products] = await pool.execute('SELECT * FROM products WHERE quantity > 0');
+        const [products] = await pool.execute(`
+            SELECT product_id, product_name, quantity
+            FROM products 
+            WHERE is_available = TRUE AND quantity > 0
+            ORDER BY product_name
+        `);
+        
         const [requests] = await pool.execute(`
-            SELECT pr.*, p.product_name, u.full_name as processed_by_name
+            SELECT pr.*, p.product_name
             FROM product_requests pr
             JOIN products p ON pr.product_id = p.product_id
             JOIN employees e ON pr.employee_id = e.employee_id
-            LEFT JOIN users u ON pr.processed_by = u.user_id
             WHERE e.user_id = ?
             ORDER BY pr.requested_at DESC
         `, [req.session.user.user_id]);
@@ -535,6 +540,27 @@ app.get('/employee/requests', requireAuth, requireRole(['employee']), async (req
         res.render('error', { message: 'Error loading requests' });
     }
 });
+
+app.get('/employee/my-products', requireAuth, requireRole(['employee']), async (req, res) => {
+    try {
+        const [myProducts] = await pool.execute(`
+            SELECT pa.*, p.product_name, p.serial_number, pa.return_date, pa.assignment_id, pa.is_returned,
+                   pa.return_status
+            FROM product_assignments pa
+            JOIN products p ON pa.product_id = p.product_id
+            JOIN employees e ON pa.employee_id = e.employee_id
+            WHERE e.user_id = ?
+            ORDER BY pa.assigned_at DESC
+        `, [req.session.user.user_id]);
+        
+        res.render('employee/my-products', { user: req.session.user, myProducts });
+    } catch (error) {
+        console.error('My products error:', error);
+        res.render('error', { message: 'Error loading my products' });
+    }
+});
+
+
 
 app.post('/employee/request-product', requireAuth, requireRole(['employee']), async (req, res) => {
     const { product_id, quantity, purpose } = req.body;

@@ -255,7 +255,7 @@ app.post('/login', async (req, res) => {
         }
     } catch (error) {
         console.error('Dashboard error:', error);
-        res.render('error', { message: 'Error loading dashboard' });
+        res.render('error', { message: 'Error loading dashboard', error: error.message || error.toString(), stack: error.stack });
     }
 });
 

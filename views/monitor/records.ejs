@@ -110,28 +110,28 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="pr-0 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 40%">
                                     Product
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="pl-0 pr-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Category
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Requestor
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Type
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Quantity
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Requested Date
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Processed Date
                                 </th>
                             </tr>
@@ -140,15 +140,15 @@
                             <% if (productRequests && productRequests.length > 0) { %>
                                 <% productRequests.forEach(request => { %>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td class="pr-0 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             <%= request.product_name || 'N/A' %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="pl-0 pr-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                                 <%= request.asset_type || 'General' %>
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div class="flex items-center">
                                                 <%= request.employee_name || 'Unknown' %>
                                                 <% if (request.requestor_role === 'monitor') { %>
@@ -158,20 +158,20 @@
                                                 <% } %>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <% if (request.requestor_role === 'monitor') { %>
                                                 <span class="text-blue-600 font-medium">Monitor Request</span>
                                             <% } else { %>
                                                 <span class="text-gray-600">Employee Request</span>
                                             <% } %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= request.quantity || 1 %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= request.requested_at ? new Date(request.requested_at).toLocaleDateString() : 'N/A' %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-1 py-4 whitespace-nowrap">
                                             <% if (request.status === 'approved') { %>
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                                     Approved
@@ -186,14 +186,14 @@
                                                 </span>
                                             <% } %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= request.processed_at ? new Date(request.processed_at).toLocaleDateString() : 'N/A' %>
                                         </td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    <td colspan="8" class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                         <div class="text-center py-8">
                                             <i class="fas fa-clipboard-list text-gray-400 text-4xl mb-4"></i>
                                             <p class="text-gray-500">No product request history found</p>

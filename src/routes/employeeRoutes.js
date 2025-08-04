@@ -251,7 +251,9 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN products p ON pa.product_id = p.product_id
                 JOIN employees e ON pa.employee_id = e.employee_id
                 JOIN users u ON pa.monitor_id = u.user_id
-                WHERE e.user_id = ?
+                WHERE e.user_id = ? 
+                AND pa.is_returned = FALSE 
+                AND pa.return_status != 'approved'
                 ORDER BY pa.assigned_at DESC
             `, [req.session.user.user_id]);
             

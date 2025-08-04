@@ -53,9 +53,12 @@
                     <i class="fas fa-laptop mr-3"></i>
                     My Products
                 </a>
-                <a href="/employee/records" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-history mr-3"></i>
-                    Records
+                <a href="/employee/records" class="sidebar-link group flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="records">
+                    <div class="flex items-center">
+                        <i class="fas fa-history mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                        <span class="font-medium text-sm sm:text-base">Records</span>
+                    </div>
+                    <span id="employeeUpdatesCount" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 font-bold min-w-[20px] text-center" style="display: none;">0</span>
                 </a>
                 <a href="/employee/stock" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
                     <i class="fas fa-boxes mr-3"></i>
@@ -156,6 +159,21 @@ function updateLiveCounts() {
                 } else {
                     pendingRegistrationsCount.style.display = 'none';
                 }
+            }
+            
+            const employeeUpdatesCount = document.getElementById('employeeUpdatesCount');
+            if (employeeUpdatesCount) {
+                console.log('Employee updates count:', data.employeeUpdates);
+                employeeUpdatesCount.textContent = data.employeeUpdates || 0;
+                if (data.employeeUpdates > 0) {
+                    employeeUpdatesCount.style.display = 'inline-block';
+                    console.log('Showing employee updates badge with count:', data.employeeUpdates);
+                } else {
+                    employeeUpdatesCount.style.display = 'none';
+                    console.log('Hiding employee updates badge');
+                }
+            } else {
+                console.log('employeeUpdatesCount element not found');
             }
         })
         .catch(error => {

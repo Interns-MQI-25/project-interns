@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const flash = require('express-flash');
@@ -59,15 +60,12 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const pool = mysql.createPool({
-    host: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : 'localhost',
-    socketPath: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : undefined,
-    user: process.env.NODE_ENV === 'production' ? process.env.DB_USER : 'root',
-    password: process.env.NODE_ENV === 'production' ? process.env.DB_PASSWORD : '',
-    database: process.env.NODE_ENV === 'production' ? process.env.DB_NAME : 'product_management_system',
-    connectionLimit: 5,
-    acquireTimeout: 60000,
-    timeout: 60000,
-    reconnect: true
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'product_management_system',
+    port: process.env.DB_PORT || 3306,
+    connectionLimit: 5
 });
 app.locals.pool = pool;
 
@@ -149,12 +147,44 @@ app.get('/api/live-counts', requireAuth, async (req, res) => {
             'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
         );
         
+        let employeeUpdates = 0;
+        if (req.session.user.role === 'employee') {
+            try {
+                const [updates] = await pool.execute(
+                    `SELECT COUNT(*) as count FROM product_requests pr 
+                     JOIN employees e ON pr.employee_id = e.employee_id 
+                     WHERE e.user_id = ? AND pr.status IN ('approved', 'rejected') 
+                     AND pr.processed_at > DATE_SUB(NOW(), INTERVAL 7 DAY)`,
+                    [req.session.user.user_id]
+                );
+                employeeUpdates = updates[0].count;
+                console.log('Employee updates for user', req.session.user.user_id, ':', employeeUpdates);
+            } catch (err) {
+                console.error('Error fetching employee updates:', err);
+                // Fallback: get all approved/rejected requests for this employee
+                try {
+                    const [fallback] = await pool.execute(
+                        `SELECT COUNT(*) as count FROM product_requests pr 
+                         JOIN employees e ON pr.employee_id = e.employee_id 
+                         WHERE e.user_id = ? AND pr.status IN ('approved', 'rejected')`,
+                        [req.session.user.user_id]
+                    );
+                    employeeUpdates = fallback[0].count;
+                    console.log('Fallback employee updates:', employeeUpdates);
+                } catch (fallbackErr) {
+                    console.error('Fallback query also failed:', fallbackErr);
+                }
+            }
+        }
+        
         console.log('API Debug - Pending requests:', pendingRequests[0].count);
         console.log('API Debug - Pending registrations:', pendingRegistrations[0].count);
+        console.log('API Debug - Employee updates:', employeeUpdates);
         
         res.json({
             pendingRequests: pendingRequests[0].count,
-            pendingRegistrations: pendingRegistrations[0].count
+            pendingRegistrations: pendingRegistrations[0].count,
+            employeeUpdates: employeeUpdates
         });
     } catch (error) {
         console.error('Live counts error:', error);

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Quick Start Script for Product Management System
+# Quick Start Script for Marquardt India Pvt. Ltd.
 
-echo "🚀 Starting Product Management System..."
+echo "🚀 Starting Marquardt India Pvt. Ltd....."
 echo "Create admin username and password"
     node create-admin.js   
 

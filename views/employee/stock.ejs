@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock - Marquardt India Pvt. Ltd.</title>
+    <title>Product Catalog - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/responsive.css">
@@ -11,7 +11,7 @@
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-0 md:ml-64 flex flex-col h-screen">
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
         <!-- Fixed Header Section -->
         <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
             <%- include('../partials/messages') %>
@@ -22,19 +22,36 @@
                 </div>
             <% } %>
             
-            <div class="mb-6">
-                <div class="flex justify-between items-start">
+            <div class="mb-4">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                     <div>
                         <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Product Catalog</h1>
-                        <p class="text-gray-600">Browse available products and submit requests for assignment.</p>
+                        <p class="text-gray-600">
+                            <% if (products && products.length > 0) { %>
+                                Browse <%= products.length %> available products and submit requests for assignment.
+                                <%
+                                    const availableProducts = products.filter(p => {
+                                        const totalQty = p.quantity || 0;
+                                        const assignedQty = p.assigned_quantity || 0;
+                                        return (totalQty - assignedQty) > 0;
+                                    });
+                                    const assetTypes = [...new Set(products.map(p => p.asset_type).filter(Boolean))];
+                                %>
+                                <br><span class="text-sm text-gray-500">
+                                    <%= availableProducts.length %> currently available • <%= assetTypes.length %> asset types
+                                </span>
+                            <% } else { %>
+                                No products currently available for request.
+                            <% } %>
+                        </p>
                     </div>
                     
                     <!-- Quick Actions -->
-                    <div class="flex space-x-3">
-                        <a href="/employee/my-products" class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" style="background-color: #009A9A;">
+                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                        <a href="/employee/my-products" class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-center" style="background-color: #009A9A;">
                             <i class="fas fa-box mr-2"></i>My Products
                         </a>
-                        <a href="/employee/records" class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        <a href="/employee/records" class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 text-center">
                             <i class="fas fa-history mr-2"></i>View Records
                         </a>
                     </div>
@@ -44,9 +61,9 @@
             <!-- Search and Filter Section -->
             <div class="bg-white shadow rounded-lg">
                 <div class="px-4 py-5 sm:p-6">
-                    <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                         <!-- Search Input -->
-                        <div class="flex-1">
+                        <div class="sm:col-span-2 lg:col-span-2">
                             <label for="search-input" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
                             <div class="relative">
                                 <input type="text" id="search-input" placeholder="Search by name, category, or model..." 
@@ -58,7 +75,7 @@
                         </div>
                         
                         <!-- Asset Type Filter -->
-                        <div class="sm:w-48">
+                        <div>
                             <label for="asset-type-filter" class="block text-sm font-medium text-gray-700 mb-2">Asset Type</label>
                             <select id="asset-type-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
                                 <option value="">All Types</option>
@@ -67,7 +84,7 @@
                         </div>
                         
                         <!-- Category Filter -->
-                        <div class="sm:w-48">
+                        <div>
                             <label for="category-filter" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
                             <select id="category-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
                                 <option value="">All Categories</option>
@@ -76,7 +93,7 @@
                         </div>
                         
                         <!-- Availability Filter -->
-                        <div class="sm:w-48">
+                        <div>
                             <label for="availability-filter" class="block text-sm font-medium text-gray-700 mb-2">Availability</label>
                             <select id="availability-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
                                 <option value="">All Products</option>
@@ -84,22 +101,19 @@
                                 <option value="assigned">Assigned Only</option>
                             </select>
                         </div>
+                    </div>
                         
-                        <!-- Search Button -->
-                        <div class="flex items-end">
-                            <button id="search-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" style="background-color: #009A9A;">
-                                <i class="fas fa-search mr-2"></i>
-                                Search
-                            </button>
-                        </div>
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-2 mt-4">
+                        <button id="search-btn" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" style="background-color: #009A9A;">
+                            <i class="fas fa-search mr-2"></i>
+                            Search
+                        </button>
                         
-                        <!-- Clear Filters Button -->
-                        <div class="flex items-end">
-                            <button id="clear-filters-btn" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                                <i class="fas fa-times mr-1"></i>
-                                Clear
-                            </button>
-                        </div>
+                        <button id="clear-filters-btn" class="inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            <i class="fas fa-times mr-1"></i>
+                            Clear
+                        </button>
                     </div>
                 </div>
             </div>
@@ -113,10 +127,18 @@
                 <div class="flex-shrink-0 px-4 py-5 sm:px-6 sm:py-4 border-b border-gray-200">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            Available Products (<span id="total-products"><%= (products && products.length) || 0 %></span> items)
+                            <% if (products && products.length > 0) { %>
+                                Available Products (<span id="total-products"><%= products.length %></span> items)
+                            <% } else { %>
+                                Product Catalog (0 items)
+                            <% } %>
                         </h3>
                         <div class="text-sm text-gray-700">
-                            Showing <span id="showing-from">1</span> to <span id="showing-to">15</span> of <span id="total-count">0</span> results
+                            <% if (products && products.length > 0) { %>
+                                Showing <span id="showing-from">1</span> to <span id="showing-to">15</span> of <span id="total-count">0</span> results
+                            <% } else { %>
+                                No products available
+                            <% } %>
                         </div>
                     </div>
                 </div>
@@ -127,28 +149,40 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50 sticky top-0 z-10">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th class="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Product Details
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th class="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Action
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th class="hidden md:table-cell px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Asset Type
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th class="hidden lg:table-cell px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Category
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th class="hidden xl:table-cell px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Model/Serial
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th class="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Availability
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200" id="products-table">
-                                <!-- Products will be populated by JavaScript -->
+                                <% if (!products || products.length === 0) { %>
+                                    <tr>
+                                        <td colspan="6" class="px-2 sm:px-6 py-12 text-center">
+                                            <div class="text-gray-400">
+                                                <i class="fas fa-box-open text-4xl mb-4"></i>
+                                                <p class="text-lg font-medium">No Products Available</p>
+                                                <p class="text-sm">Check back later for new product listings or contact your administrator.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <% } else { %>
+                                    <!-- Products will be populated by JavaScript -->
+                                <% } %>
                             </tbody>
                         </table>
                     </div>
@@ -188,7 +222,7 @@
 
     <!-- Product Request Modal -->
     <div id="requestModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-sm sm:max-w-md mx-4 sm:w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">
                     <i class="fas fa-plus-circle mr-2 text-blue-600"></i>
@@ -215,13 +249,13 @@
                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
                     </div>
                     
-                    <div class="flex justify-end space-x-3">
+                    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                         <button type="button" onclick="closeRequestModal()" 
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 order-2 sm:order-1">
                             Cancel
                         </button>
                         <button type="submit" 
-                                class="px-4 py-2 text-sm font-medium text-white rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" style="background-color: #009A9A;">
+                                class="px-4 py-2 text-sm font-medium text-white rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 order-1 sm:order-2" style="background-color: #009A9A;">
                             <i class="fas fa-paper-plane mr-1"></i>
                             Submit Request
                         </button>
@@ -253,6 +287,15 @@
                 console.error('Error parsing products data:', e);
                 allProducts = [];
             }
+            
+            // Check if we have products to display
+            if (allProducts.length === 0) {
+                console.log('No products available - disabling interactive features');
+                // Disable search and filter controls when no products
+                disableSearchAndFilters();
+                return;
+            }
+            
             filteredProducts = [...allProducts];
             populateFilters();
             displayProducts();
@@ -313,7 +356,7 @@
             if (pageProducts.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center">
+                        <td colspan="6" class="px-2 sm:px-6 py-12 text-center">
                             <div class="text-gray-400">
                                 <i class="fas fa-search text-4xl mb-4"></i>
                                 <p class="text-lg font-medium">No products found</p>
@@ -335,48 +378,49 @@
                 }
                 
                 row.innerHTML = `
-                    <td class="px-6 py-4">
+                    <td class="px-2 sm:px-6 py-4">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0 h-10 w-10">
-                                <div class="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                                    <i class="fas fa-box text-gray-500"></i>
+                            <div class="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10">
+                                <div class="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-box text-gray-500 text-xs sm:text-sm"></i>
                                 </div>
                             </div>
-                            <div class="ml-4">
-                                <div class="text-sm font-medium text-gray-900">${product.product_name || 'N/A'}</div>
-                                <div class="text-sm text-gray-500">${product.asset_type || 'N/A'}</div>
+                            <div class="ml-2 sm:ml-4 min-w-0 flex-1">
+                                <div class="text-sm font-medium text-gray-900 truncate">${product.product_name || 'N/A'}</div>
+                                <div class="text-xs sm:text-sm text-gray-500 md:hidden">${product.asset_type || 'N/A'}</div>
+                                <div class="text-xs text-gray-400 lg:hidden">${product.product_category || 'N/A'}</div>
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td class="px-2 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                         ${isAvailable.available ? 
-                            `<button class="request-btn inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" 
+                            `<button class="request-btn inline-flex items-center px-2 sm:px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A] w-full sm:w-auto justify-center" 
                                 style="background-color: #009A9A;" 
                                 data-product-id="${product.product_id}" 
                                 data-product-name="${escapeHtml(product.product_name)}">
-                                <i class="fas fa-plus mr-1"></i>Request
+                                <i class="fas fa-plus mr-1"></i><span class="hidden sm:inline">Request</span><span class="sm:hidden">+</span>
                             </button>` : 
                             `<span class="text-xs text-gray-500">Not Available</span>`}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="hidden md:table-cell px-2 sm:px-6 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                             ${product.asset_type || 'N/A'}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="hidden lg:table-cell px-2 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         ${product.product_category || 'N/A'}
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="hidden xl:table-cell px-2 sm:px-6 py-4">
                         <div class="text-sm text-gray-900">${product.model_number || 'N/A'}</div>
                         ${product.serial_number ? `<div class="text-sm text-gray-500">S/N: ${product.serial_number}</div>` : ''}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-2 sm:px-6 py-4 whitespace-nowrap">
                         <div class="text-sm">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isAvailable.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
                                 ${isAvailable.available ? 'Available' : 'Assigned'}
                             </span>
                             ${!isAvailable.available && isAvailable.userInfo ? 
-                                `<div class="text-xs text-gray-500 mt-1">
+                                `<div class="text-xs text-gray-500 mt-1 hidden sm:block">
                                     <div><strong>Used by:</strong> ${isAvailable.userInfo}</div>
                                 </div>` : ''}
                         </div>
@@ -539,6 +583,23 @@
                     userInfo: product.current_users || 'Currently assigned'
                 };
             }
+        }
+
+        // Disable search and filter controls when no products available
+        function disableSearchAndFilters() {
+            const searchInput = document.getElementById('search-input');
+            const assetTypeFilter = document.getElementById('asset-type-filter');
+            const categoryFilter = document.getElementById('category-filter');
+            const availabilityFilter = document.getElementById('availability-filter');
+            const searchBtn = document.getElementById('search-btn');
+            const clearBtn = document.getElementById('clear-filters-btn');
+            
+            [searchInput, assetTypeFilter, categoryFilter, availabilityFilter, searchBtn, clearBtn].forEach(element => {
+                if (element) {
+                    element.disabled = true;
+                    element.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            });
         }
 
         // Escape HTML to prevent XSS and quote issues

@@ -4,6 +4,72 @@ const router = express.Router();
 // Admin routes module
 module.exports = (pool, requireAuth, requireRole) => {
     
+    // Admin: Dashboard Route (add this before other routes)
+    router.get('/dashboard', requireAuth, requireRole(['admin']), async (req, res) => {
+        try {
+            // Get dashboard statistics
+            const [totalEmployees] = await pool.execute(
+                'SELECT COUNT(*) as count FROM users WHERE role IN ("employee", "monitor")'
+            );
+            
+            const [activeMonitors] = await pool.execute(
+                'SELECT COUNT(*) as count FROM users WHERE role = "monitor"'
+            );
+            
+            const [pendingRegistrations] = await pool.execute(
+                'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
+            );
+            
+            const [totalProducts] = await pool.execute(
+                'SELECT COUNT(*) as count FROM products'
+            );
+
+            const [lowStockProducts] = await pool.execute(
+                'SELECT COUNT(*) as count FROM products WHERE quantity <= 5'
+            );
+
+            // Get recent activity
+            const [recentActivity] = await pool.execute(`
+                SELECT 'request' as type, pr.requested_at as date, p.product_name, 
+                       u.full_name as employee_name, pr.status, pr.quantity
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                UNION ALL
+                SELECT 'assignment' as type, pa.assigned_at as date, p.product_name,
+                       u.full_name as employee_name, 
+                       CASE WHEN pa.is_returned THEN 'returned' ELSE 'assigned' END as status,
+                       pa.quantity
+                FROM product_assignments pa
+                JOIN products p ON pa.product_id = p.product_id
+                JOIN employees e ON pa.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                ORDER BY date DESC
+                LIMIT 10
+            `);
+
+            res.render('admin/dashboard', {
+                user: req.session.user,
+                stats: {
+                    totalEmployees: totalEmployees[0].count,
+                    activeMonitors: activeMonitors[0].count,
+                    pendingRegistrations: pendingRegistrations[0].count,
+                    totalProducts: totalProducts[0].count,
+                    lowStockProducts: lowStockProducts[0].count
+                },
+                recentActivity: recentActivity || [],
+                messages: req.flash()
+            });
+        } catch (error) {
+            console.error('Admin dashboard error:', error);
+            res.render('error', { 
+                message: 'Error loading admin dashboard',
+                user: req.session.user 
+            });
+        }
+    });
+
     // Admin: Employees Route
     router.get('/employees', requireAuth, requireRole(['admin']), async (req, res) => {
         try {
@@ -152,6 +218,21 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+
+    // Inventory
+    router.get('/inventory', requireAuth, requireRole(['admin']), async (req, res) => {
+        try {
+            const [products] = await pool.execute('SELECT * FROM products ORDER BY product_name');
+            res.render('admin/inventory', { 
+                user: req.session.user, 
+                products 
+            });
+        } catch (error) {
+            console.error('Inventory error:', error);
+            res.render('error', { message: 'Error loading inventory' });
+        }
+    });
+
     // Admin: History Route with Fallback
     router.get('/history', requireAuth, requireRole(['admin']), async (req, res) => {
         try {
@@ -287,6 +368,98 @@ module.exports = (pool, requireAuth, requireRole) => {
             res.redirect('/admin/dashboard');
         }
     });
+
+
+    // Admin: Account Route
+    router.get('/account', requireAuth, requireRole(['admin']), async (req, res) => {
+        try {
+            const [adminDetails] = await pool.execute(`
+                SELECT u.user_id, u.username, u.full_name, u.email, u.role, u.created_at,
+                       COALESCE(e.is_active, 1) as is_active, 
+                       COALESCE(d.department_name, 'Administration') as department_name
+                FROM users u
+                LEFT JOIN employees e ON u.user_id = e.user_id
+                LEFT JOIN departments d ON e.department_id = d.department_id
+                WHERE u.user_id = ?
+            `, [req.session.user.user_id]);
+
+            if (!adminDetails || adminDetails.length === 0) {
+                req.flash('error', 'Admin details not found.');
+                return res.redirect('/admin/dashboard');
+            }
+
+            res.render('admin/account', { 
+                user: req.session.user, 
+                admin: adminDetails[0],
+                messages: req.flash()
+            });
+        } catch (error) {
+            console.error('Account error:', error);
+            res.render('error', { message: 'Error loading account details' });
+        }
+    });
+
+    // Admin: Change Password Route
+    router.post('/change-password', requireAuth, requireRole(['admin']), async (req, res) => {
+        const { current_password, new_password, confirm_password } = req.body;
+        
+        try {
+            // Validate input
+            if (!current_password || !new_password || !confirm_password) {
+                req.flash('error', 'All password fields are required');
+                return res.redirect('/admin/account');
+            }
+            
+            if (new_password !== confirm_password) {
+                req.flash('error', 'New password and confirmation do not match');
+                return res.redirect('/admin/account');
+            }
+            
+            if (new_password.length < 6) {
+                req.flash('error', 'New password must be at least 6 characters long');
+                return res.redirect('/admin/account');
+            }
+            
+            // Get current user details
+            const [users] = await pool.execute(
+                'SELECT password FROM users WHERE user_id = ?',
+                [req.session.user.user_id]
+            );
+            
+            if (users.length === 0) {
+                req.flash('error', 'User not found');
+                return res.redirect('/admin/account');
+            }
+            
+            // Verify current password
+            const bcrypt = require('bcryptjs');
+            const isValidPassword = await bcrypt.compare(current_password, users[0].password);
+            
+            if (!isValidPassword) {
+                req.flash('error', 'Current password is incorrect');
+                return res.redirect('/admin/account');
+            }
+            
+            // Hash new password
+            const hashedNewPassword = await bcrypt.hash(new_password, 10);
+            
+            // Update password in database
+            await pool.execute(
+                'UPDATE users SET password = ?, updated_at = NOW() WHERE user_id = ?',
+                [hashedNewPassword, req.session.user.user_id]
+            );
+            
+            req.flash('success', 'Password changed successfully');
+            res.redirect('/admin/account');
+            
+        } catch (error) {
+            console.error('Change password error:', error);
+            req.flash('error', 'Error changing password. Please try again.');
+            res.redirect('/admin/account');
+        }
+    });
+
+
 
     // Admin: Dashboard Stats API
     router.get('/dashboard-stats', requireAuth, requireRole(['admin']), async (req, res) => {

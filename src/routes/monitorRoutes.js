@@ -38,7 +38,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             const currentMonitorEmployeeId = currentMonitor[0].employee_id;
             
-            // Get pending product requests assigned to this monitor OR unassigned legacy requests
+            // Get all pending product requests
             const [requests] = await pool.execute(`
                 SELECT pr.*, p.product_name, u.full_name as employee_name, d.department_name,
                        requestor.full_name as requestor_name, requestor.role as requestor_role
@@ -48,10 +48,9 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN users u ON e.user_id = u.user_id
                 JOIN departments d ON e.department_id = d.department_id
                 JOIN users requestor ON e.user_id = requestor.user_id
-                WHERE pr.status = 'pending' 
-                AND (pr.assigned_monitor_id = ? OR pr.assigned_monitor_id IS NULL)
+                WHERE pr.status = 'pending'
                 ORDER BY pr.requested_at ASC
-            `, [currentMonitorEmployeeId]);
+            `);
             
             // Get pending return requests
             let returnRequests = [];
@@ -222,7 +221,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 ORDER BY pa.assigned_at DESC
             `, [currentUserId]);
             
-            // Get product request history (all requests handled by this monitor)
+            // Get product request history (all requests processed by this monitor)
             const [productRequests] = await pool.execute(`
                 SELECT 
                     pr.*,
@@ -239,17 +238,16 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN users u ON e.user_id = u.user_id
                 JOIN departments d ON e.department_id = d.department_id
                 JOIN users requestor ON e.user_id = requestor.user_id
-                LEFT JOIN employees monitor_emp ON pr.assigned_monitor_id = monitor_emp.employee_id
-                LEFT JOIN users monitor_user ON monitor_emp.user_id = monitor_user.user_id
-                WHERE pr.assigned_monitor_id = ? OR pr.processed_by = ?
+                LEFT JOIN users monitor_user ON pr.processed_by = monitor_user.user_id
+                WHERE pr.processed_by = ?
                 ORDER BY pr.requested_at DESC
-            `, [currentMonitorEmployeeId, currentUserId]);
+            `, [currentUserId]);
             
             // Get statistics for the template
             const [totalProducts] = await pool.execute('SELECT COUNT(*) as count FROM products');
             const [totalAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ?', [currentUserId]);
             const [activeAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = FALSE', [currentUserId]);
-            const [pendingRequests] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending" AND (assigned_monitor_id = ? OR assigned_monitor_id IS NULL)', [currentMonitorEmployeeId]);
+            const [pendingRequests] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"');
             const [returnedItems] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = TRUE', [currentUserId]);
             
             res.render('monitor/records', { 

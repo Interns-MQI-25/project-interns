@@ -43,7 +43,7 @@
                                 <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
                                     Requested Date
                                 </th>
-                                <th class="pl-2 pr-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                <th class="pl-2 pr-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                                     Processed By
                                 </th>
                             </tr>
@@ -69,7 +69,7 @@
                                         <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             <%= new Date(request.requested_at).toLocaleDateString() %>
                                         </td>
-                                        <td class="pl-2 pr-4 py-4 text-sm text-gray-500 text-right">
+                                        <td class="pl-2 pr-4 py-4 text-sm text-gray-500 text-center">
                                             <div class="break-words"><%= request.processed_by_name || '-' %></div>
                                         </td>
                                     </tr>

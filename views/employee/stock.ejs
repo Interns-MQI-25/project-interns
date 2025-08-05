@@ -31,6 +31,60 @@
         <!-- Scrollable Content Area -->
         <div class="flex-1 overflow-y-auto p-4 sm:p-6">
         
+        <!-- Search and Filter Section -->
+        <div class="bg-white shadow rounded-lg mb-6">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <!-- Search Products -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search Products</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <input type="text" id="search-input" placeholder="Search by name, category, or model..."
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-teal-500 focus:border-teal-500">
+                        </div>
+                    </div>
+                    
+                    <!-- Asset Type Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Asset Type</label>
+                        <select id="asset-type-filter" class="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">All Types</option>
+                            <option value="Hardware">Hardware</option>
+                            <option value="Software">Software</option>
+                            <option value="License">License</option>
+                            <option value="Laptop">Laptop</option>
+                            <option value="Misc">Misc</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Availability Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                        <select id="availability-filter" class="block w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">All Products</option>
+                            <option value="available">Available</option>
+                            <option value="assigned">Assigned</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Search Button and Clear Filters -->
+                <div class="flex items-center space-x-3 mt-4">
+                    <button id="search-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                        <i class="fas fa-search mr-2"></i>
+                        Search
+                    </button>
+                    <button id="clear-filters" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                        <i class="fas fa-times mr-2"></i>
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+        
         <!-- Stock Table -->
         <div class="bg-white shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
@@ -286,6 +340,8 @@
         // Search and filter functionality with error handling
         document.getElementById('search-btn').addEventListener('click', filterProducts);
         document.getElementById('asset-type-filter').addEventListener('change', filterProducts);
+        document.getElementById('availability-filter').addEventListener('change', filterProducts);
+        document.getElementById('clear-filters').addEventListener('click', clearFilters);
         document.getElementById('search-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 filterProducts();
@@ -294,19 +350,38 @@
 
         function filterProducts() {
             const assetType = document.getElementById('asset-type-filter').value;
+            const availability = document.getElementById('availability-filter').value;
             const search = document.getElementById('search-input').value.toLowerCase();
             
             filteredProducts = allProducts.filter(product => {
                 const matchesAssetType = !assetType || product.asset_type === assetType;
                 const matchesSearch = !search || 
-                    product.product_name.toLowerCase().includes(search) ||
-                    product.product_category.toLowerCase().includes(search) ||
-                    product.model_number.toLowerCase().includes(search);
+                    (product.product_name && product.product_name.toLowerCase().includes(search)) ||
+                    (product.product_category && product.product_category.toLowerCase().includes(search)) ||
+                    (product.model_number && product.model_number.toLowerCase().includes(search));
                 
-                return matchesAssetType && matchesSearch;
+                let matchesAvailability = true;
+                if (availability === 'available') {
+                    matchesAvailability = product.is_assigned !== 1;
+                } else if (availability === 'assigned') {
+                    matchesAvailability = product.is_assigned === 1;
+                }
+                
+                return matchesAssetType && matchesSearch && matchesAvailability;
             });
             
             currentPage = 1; // Reset to first page after filtering
+            displayProducts();
+            updatePaginationControls();
+        }
+        
+        function clearFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('asset-type-filter').value = '';
+            document.getElementById('availability-filter').value = '';
+            
+            filteredProducts = [...allProducts];
+            currentPage = 1;
             displayProducts();
             updatePaginationControls();
         }

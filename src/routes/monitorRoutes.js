@@ -16,6 +16,57 @@ try {
 // Monitor routes module
 module.exports = (pool, requireAuth, requireRole) => {
     
+    // Monitor: Dashboard Route
+    router.get('/dashboard', requireAuth, requireRole(['monitor']), async (req, res) => {
+        try {
+            // Get basic stats for the dashboard
+            const [pendingRequests] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
+            );
+            
+            const [approvedToday] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "approved" AND DATE(processed_at) = CURDATE()'
+            );
+            
+            const [totalProducts] = await pool.execute(
+                'SELECT COUNT(*) as count FROM products'
+            );
+            
+            // Get recent activity
+            const [recentActivity] = await pool.execute(`
+                SELECT 'request' as type, pr.requested_at as date, p.product_name,
+                       u.full_name as employee_name, pr.status
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                ORDER BY pr.requested_at DESC
+                LIMIT 10
+            `);
+            
+            res.render('monitor/dashboard', { 
+                user: req.session.user,
+                stats: {
+                    pendingRequests: pendingRequests[0].count,
+                    approvedToday: approvedToday[0].count,
+                    totalProducts: totalProducts[0].count
+                },
+                recentActivity: recentActivity || []
+            });
+        } catch (error) {
+            console.error('Monitor dashboard error:', error);
+            res.render('monitor/dashboard', { 
+                user: req.session.user,
+                stats: {
+                    pendingRequests: 0,
+                    approvedToday: 0,
+                    totalProducts: 0
+                },
+                recentActivity: []
+            });
+        }
+    });
+    
     // Monitor: Approvals Route
     router.get('/approvals', requireAuth, requireRole(['monitor']), async (req, res) => {
         try {

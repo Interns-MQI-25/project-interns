@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Account - Marquardt India Pvt. Ltd.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body class="bg-gray-50">
+    <%- include('../partials/navbar') %>
+
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+
+            <div class="mb-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Admin Account Details</h1>
+                <p class="text-gray-600">Welcome <%= user.full_name %>! View your profile and manage your account</p>
+            </div>
+        </div>
+        
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Profile Information -->
+            <div class="bg-white shadow-lg rounded-lg p-6 border border-gray-300">
+                <div class="mb-6 border-b border-gray-200 pb-4">
+                    <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-user-circle mr-3 text-blue-600"></i>
+                        Profile Information
+                    </h2>
+                </div>
+                <div class="grid grid-cols-1 gap-y-4 text-gray-700">
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Full Name</dt>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= admin.full_name %></dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Username</dt>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= admin.username %></dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Email</dt>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= admin.email %></dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Role</dt>
+                        <dd class="mt-1">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-900 shadow-sm">
+                                <i class="fas fa-crown mr-1"></i>
+                                Administrator
+                            </span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Department</dt>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= admin.department_name %></dd>
+                    </div>
+                    <!-- <div>
+                        <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Account Status</dt>
+                        <dd class="mt-1">
+                            <% if (admin.is_active) { %>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-900 shadow-sm">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Active
+                                </span>
+                            <% } else { %>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-900 shadow-sm">
+                                    <i class="fas fa-times-circle mr-1"></i>
+                                    Inactive
+                                </span>
+                            <% } %>
+                        </dd>
+                    </div> -->
+                </div>
+            </div>
+
+            <!-- Change Password Section -->
+            <div class="bg-white shadow-lg rounded-lg p-6 border border-gray-300">
+                <div class="mb-6 border-b border-gray-200 pb-4">
+                    <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-key mr-3 text-yellow-600"></i>
+                        Change Password
+                    </h2>
+                </div>
+                <form action="/admin/change-password" method="POST" class="space-y-4">
+                    <div>
+                        <label for="current_password" class="block text-sm font-medium text-gray-700">Current Password</label>
+                        <div class="relative">
+                            <input type="password" 
+                                   id="current_password" 
+                                   name="current_password" 
+                                   required 
+                                   class="mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <button type="button" 
+                                    onclick="togglePassword('current_password', this)"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-eye" id="current_password_icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="new_password" class="block text-sm font-medium text-gray-700">New Password</label>
+                        <div class="relative">
+                            <input type="password" 
+                                   id="new_password" 
+                                   name="new_password" 
+                                   required 
+                                   minlength="6"
+                                   class="mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <button type="button" 
+                                    onclick="togglePassword('new_password', this)"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-eye" id="new_password_icon"></i>
+                            </button>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-600">Password must be at least 6 characters long</p>
+                    </div>
+                    
+                    <div>
+                        <label for="confirm_password" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                        <div class="relative">
+                            <input type="password" 
+                                   id="confirm_password" 
+                                   name="confirm_password" 
+                                   required 
+                                   minlength="6"
+                                   class="mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <button type="button" 
+                                    onclick="togglePassword('confirm_password', this)"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-eye" id="confirm_password_icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                            <i class="fas fa-lock mr-2"></i>
+                            Change Password
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <h4 class="text-sm font-medium text-blue-900 mb-2">Password Requirements:</h4>
+                    <ul class="text-sm text-blue-800 space-y-1">
+                        <li class="flex items-center"><i class="fas fa-check mr-2"></i>Minimum 6 characters</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-2"></i>Use a mix of letters and numbers</li>
+                        <li class="flex items-center"><i class="fas fa-check mr-2"></i>Avoid common passwords</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        </div> <!-- End scrollable content area -->
+    </main>
+
+    <script>
+        // Password visibility toggle function
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(inputId + '_icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+                button.setAttribute('title', 'Hide password');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+                button.setAttribute('title', 'Show password');
+            }
+        }
+
+        // Password confirmation validation
+        document.getElementById('confirm_password').addEventListener('input', function() {
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = this.value;
+            
+            if (newPassword !== confirmPassword) {
+                this.setCustomValidity('Passwords do not match');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+        
+        // Real-time password matching feedback
+        document.getElementById('new_password').addEventListener('input', function() {
+            const confirmPassword = document.getElementById('confirm_password');
+            if (confirmPassword.value) {
+                if (this.value !== confirmPassword.value) {
+                    confirmPassword.setCustomValidity('Passwords do not match');
+                } else {
+                    confirmPassword.setCustomValidity('');
+                }
+            }
+        });
+
+        // Initialize tooltips for password visibility buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButtons = document.querySelectorAll('[onclick^="togglePassword"]');
+            toggleButtons.forEach(button => {
+                button.setAttribute('title', 'Show password');
+            });
+        });
+    </script>
+</body>
+</html>

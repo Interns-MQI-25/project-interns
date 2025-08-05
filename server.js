@@ -97,7 +97,6 @@ app.set('views', path.join(__dirname, 'views'));
 app.use('/', commonRoutes(pool, requireAuth, requireRole));
 app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
 app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
-app.use(monitorRoutes(pool, requireAuth, requireRole));
 
 // Middleware to check authentication
 // const { requireAuth, requireRole } = require('./src/middleware/auth'); {
@@ -207,8 +206,6 @@ app.get('/api/monitor/pending-approvals-count', requireAuth, requireRole(['monit
         res.json({ count: 0 });
     }
 });
-app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
-
 // Routes
 app.get('/', (req, res) => {
     if (req.session.user) {
@@ -302,108 +299,7 @@ app.post('/login', async (req, res) => {
 });
 
 
-// Monitor routes
-app.get('/monitor/approvals', requireAuth, requireRole(['monitor']), async (req, res) => {
-    try {
-        const [requests] = await pool.execute(`
-            SELECT pr.*, p.product_name, u.full_name as employee_name, d.department_name
-            FROM product_requests pr
-            JOIN products p ON pr.product_id = p.product_id
-            JOIN employees e ON pr.employee_id = e.employee_id
-            JOIN users u ON e.user_id = u.user_id
-            JOIN departments d ON e.department_id = d.department_id
-            WHERE pr.status = 'pending'
-            ORDER BY pr.requested_at ASC
-        `);
-        
-        res.render('monitor/approvals', { title: 'Approvals', user: req.session.user, requests });
-    } catch (error) {
-        console.error('Approvals error:', error);
-        res.render('error', { message: 'Error loading approvals' });
-    }
-});
 
-app.post('/monitor/process-request', requireAuth, requireRole(['monitor']), async (req, res) => {
-    const { request_id, action } = req.body;
-    
-    try {
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
-        
-        try {
-            // Update request status
-            await connection.execute(
-                'UPDATE product_requests SET status = ?, processed_by = ?, processed_at = NOW() WHERE request_id = ?',
-                [action, req.session.user.user_id, request_id]
-            );
-            
-            if (action === 'approved') {
-                // Get request details
-                const [requestDetails] = await connection.execute(`
-                    SELECT pr.*, e.employee_id 
-                    FROM product_requests pr 
-                    JOIN employees e ON pr.employee_id = e.employee_id 
-                    WHERE pr.request_id = ?
-                `, [request_id]);
-                
-                const request = requestDetails[0];
-                
-                // Create product assignment
-                await connection.execute(
-                    'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity) VALUES (?, ?, ?, ?)',
-                    [request.product_id, request.employee_id, req.session.user.user_id, request.quantity]
-                );
-                
-                // Update product quantity
-                await connection.execute(
-                    'UPDATE products SET quantity = quantity - ? WHERE product_id = ?',
-                    [request.quantity, request.product_id]
-                );
-                
-                // Add to stock history
-                await connection.execute(
-                    'INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) VALUES (?, ?, ?, ?, ?)',
-                    [request.product_id, 'assign', request.quantity, req.session.user.user_id, `Assigned to employee ID: ${request.employee_id}`]
-                );
-            }
-            
-            await connection.commit();
-            req.flash('success', `Request ${action} successfully`);
-        } catch (error) {
-            await connection.rollback();
-            throw error;
-        } finally {
-            connection.release();
-        }
-        
-        res.redirect('/monitor/approvals');
-    } catch (error) {
-        console.error('Process request error:', error);
-        req.flash('error', 'Error processing request');
-        res.redirect('/monitor/approvals');
-    }
-});
-
-app.get('/monitor/dashboard', (req, res) => {
-    if (!req.session.user || req.session.user.role !== 'monitor') {
-        return res.redirect('/login');
-    }
-    
-    try {
-        res.render('monitor/dashboard', { 
-            user: req.session.user,
-            stats: {
-                pendingRequests: 0,
-                approvedToday: 0,
-                totalProducts: 0
-            },
-            recentActivity: []
-        });
-    } catch (error) {
-        console.error('Monitor dashboard error:', error);
-        res.send(`<h1>Monitor Dashboard</h1><p>Welcome ${req.session.user.full_name}!</p><p>Role: ${req.session.user.role}</p><a href="/logout">Logout</a>`);
-    }
-});
 
 app.get('/employee/dashboard', (req, res) => {
     if (!req.session.user || req.session.user.role !== 'employee') {

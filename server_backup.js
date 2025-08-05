@@ -1,11 +1,26 @@
 require('dotenv').config();
-
 const express = require('express');
 const session = require('express-session');
 const flash = require('express-flash');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+
+// Database configuration
+const dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'product_management_system',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    acquireTimeout: 60000,
+    timeout: 60000
+};
+
+// Create the database pool BEFORE using it
+const pool = mysql.createPool(dbConfig);
 
 // Import middleware
 const requireAuth = (req, res, next) => {
@@ -60,20 +75,7 @@ process.on('unhandledRejection', (reason, promise) => {
     process.exit(1);
 });
 
-// Database configuration for localhost
-const dbConfig = {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'product_management_system',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    charset: 'utf8mb4'
-};
-
-// Create connection pool with proper localhost configuration
-const pool = mysql.createPool(dbConfig);
+// Now set the pool in app.locals AFTER it's defined
 app.locals.pool = pool;
 
 app.use(express.urlencoded({ extended: true }));
@@ -82,12 +84,12 @@ app.use(express.static('public'));
 app.use('/images', express.static('images'));
 
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'localhost-secret-key-change-in-production',
+    secret: process.env.SESSION_SECRET || 'secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false, // Always false for localhost
-        maxAge: 86400000, // 24 hours
+        secure: false, // Set to false for App Engine since it handles HTTPS termination
+        maxAge: 86400000,
         httpOnly: true
     }
 }));
@@ -95,6 +97,51 @@ app.use(flash());
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Use route modules
+app.use('/', commonRoutes(pool, requireAuth, requireRole));
+app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
+app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
+
+// Middleware to check authentication
+// const { requireAuth, requireRole } = require('./src/middleware/auth'); {
+//     try {
+//         if (req.session.user) {
+//             // Get complete user data from database using pool instead of db
+//             const [users] = await pool.execute(
+//                 'SELECT * FROM users WHERE user_id = ?', 
+//                 [req.session.user.user_id]
+//             );
+
+//             if (users.length === 0) {
+//                 req.session.destroy();
+//                 return res.redirect('/login');
+//             }
+
+//             req.user = users[0];
+//             next();
+//         } else {
+//             res.redirect('/login');
+//         }
+//     } catch (error) {
+//         console.error('Auth error:', error);
+//         req.session.destroy();
+//         res.redirect('/login');
+//     }
+// };
+
+// // Middleware to check role
+// const requireRole = (roles) => {
+//     return (req, res, next) => {
+//         if (req.session.user && roles.includes(req.session.user.role)) {
+//             next();
+//         } else {
+//             res.status(403).render('error', { message: 'Access denied' });
+//         }
+//     };
+// };
+
+
 
 // API endpoint for live counts
 app.get('/api/live-counts', requireAuth, async (req, res) => {
@@ -107,12 +154,44 @@ app.get('/api/live-counts', requireAuth, async (req, res) => {
             'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
         );
         
+        let employeeUpdates = 0;
+        if (req.session.user.role === 'employee') {
+            try {
+                const [updates] = await pool.execute(
+                    `SELECT COUNT(*) as count FROM product_requests pr 
+                     JOIN employees e ON pr.employee_id = e.employee_id 
+                     WHERE e.user_id = ? AND pr.status IN ('approved', 'rejected') 
+                     AND pr.processed_at > DATE_SUB(NOW(), INTERVAL 7 DAY)`,
+                    [req.session.user.user_id]
+                );
+                employeeUpdates = updates[0].count;
+                console.log('Employee updates for user', req.session.user.user_id, ':', employeeUpdates);
+            } catch (err) {
+                console.error('Error fetching employee updates:', err);
+                // Fallback: get all approved/rejected requests for this employee
+                try {
+                    const [fallback] = await pool.execute(
+                        `SELECT COUNT(*) as count FROM product_requests pr 
+                         JOIN employees e ON pr.employee_id = e.employee_id 
+                         WHERE e.user_id = ? AND pr.status IN ('approved', 'rejected')`,
+                        [req.session.user.user_id]
+                    );
+                    employeeUpdates = fallback[0].count;
+                    console.log('Fallback employee updates:', employeeUpdates);
+                } catch (fallbackErr) {
+                    console.error('Fallback query also failed:', fallbackErr);
+                }
+            }
+        }
+        
         console.log('API Debug - Pending requests:', pendingRequests[0].count);
         console.log('API Debug - Pending registrations:', pendingRegistrations[0].count);
+        console.log('API Debug - Employee updates:', employeeUpdates);
         
         res.json({
             pendingRequests: pendingRequests[0].count,
-            pendingRegistrations: pendingRegistrations[0].count
+            pendingRegistrations: pendingRegistrations[0].count,
+            employeeUpdates: employeeUpdates
         });
     } catch (error) {
         console.error('Live counts error:', error);
@@ -132,19 +211,10 @@ app.get('/api/monitor/pending-approvals-count', requireAuth, requireRole(['monit
         res.json({ count: 0 });
     }
 });
-
 // Routes
 app.get('/', (req, res) => {
     if (req.session.user) {
-        if (req.session.user.role === 'admin') {
-            res.redirect('/admin/dashboard');
-        } else if (req.session.user.role === 'monitor') {
-            res.redirect('/monitor/dashboard');
-        } else if (req.session.user.role === 'employee') {
-            res.redirect('/employee/dashboard');
-        } else {
-            res.redirect('/login');
-        }
+        res.redirect('/dashboard');
     } else {
         res.redirect('/login');
     }
@@ -159,54 +229,26 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
     try {
-        // Test database connection first
-        console.log('Testing database connection...');
+        // Test database connection first with detailed logging
+        console.log('Attempting database connection...');
+        console.log('Environment:', process.env.NODE_ENV);
+        console.log('DB_HOST:', process.env.DB_HOST);
+        console.log('DB_USER:', process.env.DB_USER);
+        console.log('DB_NAME:', process.env.DB_NAME);
+        
         const connection = await pool.getConnection();
         console.log('Database connection successful!');
         connection.release();
         
-        // Create test users if they don't exist
         const testHash = await bcrypt.hash('password', 10);
         const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
+        const vennuHash = await bcrypt.hash('Vennu@123', 10);
+
+        await pool.execute('CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE, full_name VARCHAR(100), email VARCHAR(100), password VARCHAR(255), role VARCHAR(20) DEFAULT "admin", is_active BOOLEAN DEFAULT TRUE)');
+        await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['test', 'Test User', 'test@example.com', testHash, 'admin', 1]);
+        await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Guddi.Somling@marquardt.com', guddiHash, 'admin', 1]);
         
-        // Ensure users table exists
-        await pool.execute(`
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INT AUTO_INCREMENT PRIMARY KEY, 
-                username VARCHAR(50) UNIQUE, 
-                full_name VARCHAR(100), 
-                email VARCHAR(100), 
-                password VARCHAR(255), 
-                role VARCHAR(20) DEFAULT "employee", 
-                is_active BOOLEAN DEFAULT TRUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            )
-        `);
-        
-        // Insert test users
-        await pool.execute(
-            'INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', 
-            ['test', 'Test Admin', 'test@example.com', testHash, 'admin', 1]
-        );
-        await pool.execute(
-            'INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', 
-            ['GuddiS', 'Somling Guddi', 'Guddi.Somling@marquardt.com', guddiHash, 'admin', 1]
-        );
-        await pool.execute(
-            'INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', 
-            ['employee1', 'John Employee', 'employee@example.com', testHash, 'employee', 1]
-        );
-        await pool.execute(
-            'INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', 
-            ['monitor1', 'Jane Monitor', 'monitor@example.com', testHash, 'monitor', 1]
-        );
-        
-        // Find user
-        const [users] = await pool.execute(
-            'SELECT * FROM users WHERE username = ? AND is_active = 1', 
-            [username]
-        );
+        const [users] = await pool.execute('SELECT * FROM users WHERE username = ? AND is_active = 1', [username]);
         
         if (users.length === 0) {
             req.flash('error', 'Invalid username or password');
@@ -246,7 +288,6 @@ app.post('/login', async (req, res) => {
             }
         }
         
-        // Redirect based on role
         if (user.role === 'admin') {
             res.redirect('/admin/dashboard');
         } else if (user.role === 'monitor') {
@@ -254,62 +295,89 @@ app.post('/login', async (req, res) => {
         } else if (user.role === 'employee') {
             res.redirect('/employee/dashboard');
         } else {
-            res.redirect('/login');
+            res.redirect('/dashboard');
         }
-        
     } catch (error) {
-        console.error('Login error:', error);
-        req.flash('error', 'Database connection error. Please try again.');
-        res.redirect('/login');
+        console.error('Dashboard error:', error);
+        res.render('error', { message: 'Error loading dashboard', error: error.message || error.toString(), stack: error.stack });
     }
 });
 
-// Monitor routes with productRequests fix
-app.get('/monitor/records', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
+
+
+
+app.get('/employee/dashboard', (req, res) => {
+    if (!req.session.user || req.session.user.role !== 'employee') {
+        return res.redirect('/login');
+    }
+    
     try {
-        // Get product assignments
-        const [assignments] = await pool.execute(`
-            SELECT pa.*, p.product_name, p.model_number, p.serial_number, 
-                   u.full_name as employee_name, pa.assigned_date, pa.expected_return_date,
-                   pa.return_date, pa.status
-            FROM product_assignments pa
-            LEFT JOIN products p ON pa.product_id = p.product_id
-            LEFT JOIN users u ON pa.user_id = u.user_id
-            ORDER BY pa.assigned_date DESC
-            LIMIT 50
-        `);
-
-        // Get product requests
-        const [productRequests] = await pool.execute(`
-            SELECT pr.*, p.product_name, p.model_number, p.serial_number,
-                   u.full_name as employee_name, pr.request_date, pr.expected_return_date,
-                   pr.status, pr.approved_by, pr.approved_date
-            FROM product_requests pr
-            LEFT JOIN products p ON pr.product_id = p.product_id
-            LEFT JOIN users u ON pr.user_id = u.user_id
-            ORDER BY pr.request_date DESC
-            LIMIT 50
-        `);
-
-        res.render('monitor/records', { 
-            assignments: assignments || [],
-            productRequests: productRequests || [],
-            user: req.session.user 
+        res.render('employee/dashboard', { 
+            user: req.session.user,
+            recentRequests: [],
+            recentActivity: []
         });
     } catch (error) {
-        console.error('Error fetching records:', error);
-        res.render('monitor/records', { 
-            assignments: [],
-            productRequests: [],
-            user: req.session.user,
-            error: 'Unable to load records data. Please check database connection.'
-        });
+        console.error('Employee dashboard error:', error);
+        res.send(`<h1>Employee Dashboard</h1><p>Welcome ${req.session.user.full_name}!</p><p>Role: ${req.session.user.role}</p><a href="/logout">Logout</a>`);
     }
 });
 
 app.get('/logout', (req, res) => {
     req.session.destroy();
     res.redirect('/login');
+});
+
+// Admin: All Logs API Route for GCloud
+app.get('/admin/all-logs', requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+        let history = [];
+        
+        // Get assignments and requests
+        const [basicHistory] = await pool.execute(`
+            SELECT 'assignment' as type, pa.assigned_at as date, p.product_name, 
+                   u1.full_name as employee_name, u2.full_name as monitor_name, pa.quantity,
+                   CASE WHEN pa.is_returned THEN 'Returned' ELSE 'Assigned' END as status
+            FROM product_assignments pa
+            JOIN products p ON pa.product_id = p.product_id
+            JOIN employees e ON pa.employee_id = e.employee_id
+            JOIN users u1 ON e.user_id = u1.user_id
+            JOIN users u2 ON pa.monitor_id = u2.user_id
+            UNION ALL
+            SELECT 'request' as type, pr.requested_at as date, p.product_name,
+                   u1.full_name as employee_name, COALESCE(u2.full_name, 'Pending') as monitor_name, pr.quantity,
+                   pr.status
+            FROM product_requests pr
+            JOIN products p ON pr.product_id = p.product_id
+            JOIN employees e ON pr.employee_id = e.employee_id
+            JOIN users u1 ON e.user_id = u1.user_id
+            LEFT JOIN users u2 ON pr.processed_by = u2.user_id
+            ORDER BY date DESC
+        `);
+        
+        history = basicHistory;
+        
+        // Try to add registration requests if table exists
+        try {
+            const [registrations] = await pool.execute(`
+                SELECT 'registration' as type, requested_at as date, 'User Registration' as product_name,
+                       full_name as employee_name, COALESCE(u.full_name, 'Admin') as monitor_name, 1 as quantity,
+                       COALESCE(status, 'pending') as status
+                FROM registration_requests rr
+                LEFT JOIN users u ON rr.processed_by = u.user_id
+            `);
+            
+            // Merge and sort all records
+            history = [...basicHistory, ...registrations].sort((a, b) => new Date(b.date) - new Date(a.date));
+        } catch (regError) {
+            console.log('Registration requests table not found:', regError.message);
+        }
+        
+        res.json({ logs: history });
+    } catch (error) {
+        console.error('All logs error:', error);
+        res.status(500).json({ error: 'Failed to fetch logs', logs: [] });
+    }
 });
 
 // Use route modules
@@ -319,39 +387,15 @@ app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
 app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
 
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'healthy', 
-        timestamp: new Date().toISOString(),
-        environment: 'localhost'
-    });
+    res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('Application error:', err);
-    res.status(500).render('error', { 
-        message: 'Something went wrong!', 
-        error: process.env.NODE_ENV === 'development' ? err : {}
-    });
-});
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).render('error', { 
-        message: 'Page not found',
-        error: { status: 404 }
-    });
-});
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: localhost development`);
-    console.log(`Database: ${dbConfig.host}:3306/${dbConfig.database}`);
-    console.log(`Available test users:`);
-    console.log(`  - test/password (admin)`);
-    console.log(`  - GuddiS/Welcome@MQI (admin)`);
-    console.log(`  - employee1/password (employee)`);
-    console.log(`  - monitor1/password (monitor)`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`DB Host: ${process.env.DB_HOST}`);
 }).on('error', (err) => {
     console.error('Server failed to start:', err);
     process.exit(1);
@@ -360,13 +404,18 @@ app.listen(PORT, '0.0.0.0', () => {
 // Test database connection
 pool.getConnection()
     .then(connection => {
-        console.log('✅ Database connected successfully');
+        console.log('Database connected successfully');
         connection.release();
     })
     .catch(err => {
-        console.error('❌ Database connection failed:', err.message);
-        console.error('Make sure MySQL is running and credentials are correct');
-        console.error('Check your .env file or update the database configuration');
+        console.error('Database connection failed:', err);
+        console.error('Error details:', {
+            code: err.code,
+            errno: err.errno,
+            sqlMessage: err.sqlMessage,
+            sqlState: err.sqlState,
+            message: err.message
+        });
     });
 
 module.exports = app;

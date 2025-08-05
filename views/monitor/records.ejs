@@ -146,8 +146,8 @@
                             <% if (productRequests && productRequests.length > 0) { %>
                                 <% productRequests.forEach(request => { %>
                                     <tr>
-                                        <td class="pr-0 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <%= request.product_name || 'N/A' %>
+                                        <td class="pr-0 py-4 text-sm font-medium text-gray-900" style="max-width: 200px;">
+                                            <div class="break-words whitespace-normal"><%= request.product_name || 'N/A' %></div>
                                         </td>
                                         <td class="pl-0 pr-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -249,8 +249,8 @@
                             <% if (assignments && assignments.length > 0) { %>
                                 <% assignments.forEach(assignment => { %>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <%= assignment.product_name || 'N/A' %>
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900" style="max-width: 200px;">
+                                            <div class="break-words whitespace-normal"><%= assignment.product_name || 'N/A' %></div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">

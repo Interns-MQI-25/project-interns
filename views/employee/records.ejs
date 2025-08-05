@@ -52,8 +52,8 @@
                             <% if (typeof requests !== 'undefined' && requests && requests.length > 0) { %>
                                 <% requests.forEach(request => { %>
                                     <tr>
-                                        <td class="px-4 py-4">
-                                            <div class="text-sm font-medium text-gray-900 break-words leading-tight"><%= request.product_name %></div>
+                                        <td class="px-4 py-4" style="max-width: 250px;">
+                                            <div class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-tight"><%= request.product_name %></div>
                                         </td>
                                         <td class="px-2 py-4 text-sm text-gray-500">
                                             <div class="break-words"><%= request.purpose || '-' %></div>
@@ -123,8 +123,8 @@
                             <% if (typeof assignments !== 'undefined' && assignments && assignments.length > 0) { %>
                                 <% assignments.forEach(assignment => { %>
                                     <tr>
-                                        <td class="px-4 py-4">
-                                            <div class="text-sm font-medium text-gray-900 break-words leading-tight"><%= assignment.product_name %></div>
+                                        <td class="px-4 py-4" style="max-width: 250px;">
+                                            <div class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-tight"><%= assignment.product_name %></div>
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= assignment.quantity %>

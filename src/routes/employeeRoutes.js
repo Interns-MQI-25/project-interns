@@ -74,10 +74,74 @@ module.exports = (pool, requireAuth, requireRole) => {
                 return res.redirect('/employee/dashboard');
             }
 
-            res.render('employee/account', { user: req.session.user, employee: employeeDetails[0] });
+            res.render('employee/account', { 
+                user: req.session.user, 
+                employee: employeeDetails[0],
+                messages: req.flash()
+            });
         } catch (error) {
             console.error('Account error:', error);
             res.render('error', { message: 'Error loading account details' });
+        }
+    });
+
+    // Employee: Change Password Route
+    router.post('/change-password', requireAuth, requireRole(['employee']), async (req, res) => {
+        const { current_password, new_password, confirm_password } = req.body;
+        
+        try {
+            // Validate input
+            if (!current_password || !new_password || !confirm_password) {
+                req.flash('error', 'All password fields are required');
+                return res.redirect('/employee/account');
+            }
+            
+            if (new_password !== confirm_password) {
+                req.flash('error', 'New password and confirmation do not match');
+                return res.redirect('/employee/account');
+            }
+            
+            if (new_password.length < 6) {
+                req.flash('error', 'New password must be at least 6 characters long');
+                return res.redirect('/employee/account');
+            }
+            
+            // Get current user details
+            const [users] = await pool.execute(
+                'SELECT password FROM users WHERE user_id = ?',
+                [req.session.user.user_id]
+            );
+            
+            if (users.length === 0) {
+                req.flash('error', 'User not found');
+                return res.redirect('/employee/account');
+            }
+            
+            // Verify current password
+            const bcrypt = require('bcryptjs');
+            const isValidPassword = await bcrypt.compare(current_password, users[0].password);
+            
+            if (!isValidPassword) {
+                req.flash('error', 'Current password is incorrect');
+                return res.redirect('/employee/account');
+            }
+            
+            // Hash new password
+            const hashedNewPassword = await bcrypt.hash(new_password, 10);
+            
+            // Update password in database
+            await pool.execute(
+                'UPDATE users SET password = ?, updated_at = NOW() WHERE user_id = ?',
+                [hashedNewPassword, req.session.user.user_id]
+            );
+            
+            req.flash('success', 'Password changed successfully');
+            res.redirect('/employee/account');
+            
+        } catch (error) {
+            console.error('Change password error:', error);
+            req.flash('error', 'Error changing password. Please try again.');
+            res.redirect('/employee/account');
         }
     });
 

@@ -111,7 +111,13 @@
         <!-- Recent Assignments Table -->
         <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
             <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Product Request History</h3>
+                <div class="mb-4">
+                    <button onclick="toggleSection('productRequestHistory')" class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-2 hover:bg-gray-50">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Product Request History</h3>
+                        <i id="productRequestHistoryIcon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
+                    </button>
+                </div>
+                <div id="productRequestHistoryContent" class="block">
                 <div class="overflow-x-auto w-full">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -211,13 +217,20 @@
                         </tbody>
                     </table>
                 </div>
+                </div>
             </div>
         </div>
         
         <!-- Recent Assignments Table -->
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Product Assignment History</h3>
+                <div class="mb-4">
+                    <button onclick="toggleSection('productAssignmentHistory')" class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-2 hover:bg-gray-50">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Product Assignment History</h3>
+                        <i id="productAssignmentHistoryIcon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
+                    </button>
+                </div>
+                <div id="productAssignmentHistoryContent" class="block">
                 <div class="overflow-x-auto w-full">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -290,9 +303,29 @@
                         </tbody>
                     </table>
                 </div>
+                </div>
             </div>
         </div>
         </div> <!-- End scrollable content area -->
     </main>
+
+    <script>
+        function toggleSection(sectionId) {
+            const content = document.getElementById(sectionId + 'Content');
+            const icon = document.getElementById(sectionId + 'Icon');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                content.classList.add('block');
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                content.classList.remove('block');
+                content.classList.add('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            }
+        }
+    </script>
 </body>
 </html>

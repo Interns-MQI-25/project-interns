@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/responsive.css">
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-50">
 
@@ -88,6 +90,9 @@
                     </button>
                     <button onclick="collapseAllCategories()" class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200">
                         <i class="fas fa-compress-alt mr-1"></i>Collapse All
+                    </button>
+                    <button onclick="exportToExcel()" class="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-full hover:bg-green-200">
+                        <i class="fas fa-file-excel mr-1"></i>Export to Excel
                     </button>
                 </div>
 
@@ -441,6 +446,157 @@
                 content.style.display = 'none';
                 icon.style.transform = 'rotate(-90deg)';
             }
+        }
+
+        function exportToExcel() {
+            // Get all visible product rows
+            const visibleRows = document.querySelectorAll('.product-row:not([style*="display: none"])');
+            
+            if (visibleRows.length === 0) {
+                alert('No products to export. Please adjust your filters.');
+                return;
+            }
+
+            // Prepare data for export
+            const data = [];
+            
+            // Add headers
+            data.push([
+                'Model Number',
+                'Product Name',
+                'Category',
+                'Asset Type',
+                'Serial Number',
+                'Total Stock',
+                'Currently Assigned',
+                'Available',
+                'Calibration Status',
+                'Calibration Frequency',
+                'Description',
+                'Added By',
+                'Added Date'
+            ]);
+
+            // Add data rows
+            visibleRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const model = row.dataset.model || 'No Model';
+                const productName = row.dataset.productName;
+                const category = row.dataset.category;
+                const assetType = row.dataset.assetType;
+                const serial = row.dataset.serial || 'N/A';
+                const totalStock = cells[3].textContent.trim();
+                const assigned = cells[4].textContent.trim();
+                const available = cells[5].textContent.trim();
+                const calibration = row.dataset.calibration;
+                const addedBy = row.dataset.addedBy;
+                
+                // Extract calibration frequency from the UI
+                const calibrationCell = cells[6];
+                const calibrationFreq = calibrationCell.querySelector('.text-xs') ? 
+                    calibrationCell.querySelector('.text-xs').textContent.trim() : 'N/A';
+                
+                // Extract description from the UI
+                const productCell = cells[0];
+                const descriptionElement = productCell.querySelector('.text-xs.text-gray-400');
+                const description = descriptionElement ? 
+                    descriptionElement.textContent.replace('...', '').trim() : '';
+                
+                // Extract added date
+                const addedDate = cells[8].textContent.trim();
+
+                data.push([
+                    model,
+                    productName,
+                    category,
+                    assetType,
+                    serial,
+                    totalStock,
+                    assigned,
+                    available,
+                    calibration,
+                    calibrationFreq,
+                    description,
+                    addedBy,
+                    addedDate
+                ]);
+            });
+
+            // Create workbook and worksheet
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+
+            // Set column widths
+            const colWidths = [
+                { wch: 15 }, // Model Number
+                { wch: 25 }, // Product Name
+                { wch: 15 }, // Category
+                { wch: 12 }, // Asset Type
+                { wch: 15 }, // Serial Number
+                { wch: 12 }, // Total Stock
+                { wch: 15 }, // Currently Assigned
+                { wch: 10 }, // Available
+                { wch: 15 }, // Calibration Status
+                { wch: 15 }, // Calibration Frequency
+                { wch: 30 }, // Description
+                { wch: 15 }, // Added By
+                { wch: 12 }  // Added Date
+            ];
+            ws['!cols'] = colWidths;
+
+            // Style the header row
+            const headerRange = XLSX.utils.decode_range(ws['!ref']);
+            for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                if (!ws[cellAddress]) continue;
+                ws[cellAddress].s = {
+                    font: { bold: true },
+                    fill: { fgColor: { rgb: "E5E7EB" } },
+                    alignment: { horizontal: "center" }
+                };
+            }
+
+            // Add the worksheet to the workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+
+            // Generate filename with current date and applied filters
+            const currentDate = new Date().toISOString().split('T')[0];
+            const searchTerm = document.getElementById('searchInput').value;
+            const assetTypeFilter = document.getElementById('assetTypeFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const calibrationFilter = document.getElementById('calibrationFilter').value;
+            
+            let filename = `Inventory_${currentDate}`;
+            
+            // Add filter info to filename if any filters are applied
+            const activeFilters = [];
+            if (searchTerm) activeFilters.push(`Search-${searchTerm.substring(0, 10)}`);
+            if (assetTypeFilter) activeFilters.push(`Asset-${assetTypeFilter}`);
+            if (categoryFilter) activeFilters.push(`Category-${categoryFilter}`);
+            if (calibrationFilter) activeFilters.push(`Calibration-${calibrationFilter}`);
+            
+            if (activeFilters.length > 0) {
+                filename += `_Filtered_${activeFilters.join('_')}`;
+            }
+            
+            filename += '.xlsx';
+
+            // Save the file
+            XLSX.writeFile(wb, filename);
+
+            // Show success message
+            const resultsSummary = document.getElementById('resultsSummary');
+            const originalText = resultsSummary.textContent;
+            const originalClass = resultsSummary.className;
+            
+            resultsSummary.textContent = `✓ Exported ${visibleRows.length} products to ${filename}`;
+            resultsSummary.className = 'mt-2 text-sm text-green-600';
+            
+            // Reset message after 3 seconds
+            setTimeout(() => {
+                resultsSummary.textContent = originalText;
+                resultsSummary.className = originalClass;
+            }, 3000);
         }
 
         // Event listeners

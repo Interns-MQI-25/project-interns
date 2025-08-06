@@ -218,6 +218,111 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // Admin: Update Product Route
+    router.post('/update-product/:productId', requireAuth, requireRole(['admin']), async (req, res) => {
+        const productId = req.params.productId;
+        const {
+            product_name,
+            product_category,
+            asset_type,
+            serial_number,
+            model_number,
+            quantity,
+            calibration_required,
+            calibration_frequency,
+            description
+        } = req.body;
+
+        try {
+            const connection = await pool.getConnection();
+            await connection.beginTransaction();
+
+            try {
+                // Validate required fields
+                if (!product_name || !asset_type || quantity === undefined) {
+                    req.flash('error', 'Product name, asset type, and quantity are required');
+                    return res.redirect('/admin/stock');
+                }
+
+                // Check if product exists and get current data
+                const [existingProduct] = await connection.execute(
+                    'SELECT * FROM products WHERE product_id = ?',
+                    [productId]
+                );
+
+                if (existingProduct.length === 0) {
+                    req.flash('error', 'Product not found');
+                    return res.redirect('/admin/stock');
+                }
+
+                // Validate quantity is not negative
+                if (parseInt(quantity) < 0) {
+                    req.flash('error', 'Quantity cannot be negative');
+                    return res.redirect('/admin/stock');
+                }
+
+                // Update the product
+                const updateQuery = `
+                    UPDATE products SET 
+                        product_name = ?,
+                        product_category = ?,
+                        asset_type = ?,
+                        serial_number = ?,
+                        model_number = ?,
+                        quantity = ?,
+                        calibration_required = ?,
+                        calibration_frequency = ?,
+                        description = ?,
+                        updated_at = NOW()
+                    WHERE product_id = ?
+                `;
+
+                await connection.execute(updateQuery, [
+                    product_name,
+                    product_category || null,
+                    asset_type,
+                    serial_number || null,
+                    model_number || null,
+                    parseInt(quantity),
+                    calibration_required === '1' ? 1 : 0,
+                    calibration_frequency || null,
+                    description || null,
+                    productId
+                ]);
+
+                // Log the update activity (if you have activity logging)
+                try {
+                    await connection.execute(
+                        `INSERT INTO activity_logs (user_id, action, table_name, record_id, details, performed_at) 
+                         VALUES (?, 'UPDATE', 'products', ?, ?, NOW())`,
+                        [
+                            req.session.user.user_id,
+                            productId,
+                            `Updated product: ${product_name}`
+                        ]
+                    );
+                } catch (logError) {
+                    console.log('Activity logging failed (table may not exist):', logError.message);
+                }
+
+                await connection.commit();
+                req.flash('success', `Product "${product_name}" updated successfully`);
+
+            } catch (error) {
+                await connection.rollback();
+                throw error;
+            } finally {
+                connection.release();
+            }
+
+        } catch (error) {
+            console.error('Update product error:', error);
+            req.flash('error', 'Error updating product. Please try again.');
+        }
+
+        res.redirect('/admin/stock');
+    });
+
 
     // Inventory
     router.get('/inventory', requireAuth, requireRole(['admin']), async (req, res) => {

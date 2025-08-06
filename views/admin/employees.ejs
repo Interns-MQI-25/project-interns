@@ -260,22 +260,21 @@
                 return;
             }
             if (confirm(`Are you sure you want to deactivate ${selectedIds.length} employee(s)?`)) {
-                const formData = new FormData();
-                selectedIds.forEach(id => formData.append('employee_ids', id));
-                fetch('/admin/bulk-deactivate-employees', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(res => {
-                    if (!res.ok) throw new Error('Failed to deactivate');
-                    return res.json ? res.json() : res.text();
-                })
-                .then(() => {
-                    location.reload();
-                })
-                .catch(() => {
-                    alert('Error updating employee status');
+                // Create and submit a form for bulk deactivation
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/admin/bulk-deactivate-employees';
+                
+                selectedIds.forEach(id => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'employee_ids';
+                    input.value = id;
+                    form.appendChild(input);
                 });
+                
+                document.body.appendChild(form);
+                form.submit();
             }
         });
 
@@ -286,22 +285,21 @@
                 return;
             }
             if (confirm(`Are you sure you want to activate ${selectedIds.length} employee(s)?`)) {
-                const formData2 = new FormData();
-                selectedIds.forEach(id => formData2.append('employee_ids', id));
-                fetch('/admin/bulk-activate-employees', {
-                    method: 'POST',
-                    body: formData2
-                })
-                .then(res => {
-                    if (!res.ok) throw new Error('Failed to activate');
-                    return res.json ? res.json() : res.text();
-                })
-                .then(() => {
-                    location.reload();
-                })
-                .catch(() => {
-                    alert('Error updating employee status');
+                // Create and submit a form for bulk activation
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/admin/bulk-activate-employees';
+                
+                selectedIds.forEach(id => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'employee_ids';
+                    input.value = id;
+                    form.appendChild(input);
                 });
+                
+                document.body.appendChild(form);
+                form.submit();
             }
         });
 

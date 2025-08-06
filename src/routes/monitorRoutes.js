@@ -270,7 +270,7 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Monitor: Process Request Route
     router.post('/process-request', requireAuth, requireRole(['monitor']), async (req, res) => {
-        const { request_id, action } = req.body;
+        const { request_id, action, remarks } = req.body;
         
         try {
             // Get request details for logging
@@ -283,10 +283,10 @@ module.exports = (pool, requireAuth, requireRole) => {
                 WHERE pr.request_id = ?
             `, [request_id]);
             
-            // Simple update - just change the status
+            // Update with remarks
             await pool.execute(
-                'UPDATE product_requests SET status = ?, processed_by = ?, processed_at = NOW() WHERE request_id = ?',
-                [action, req.session.user.user_id, request_id]
+                'UPDATE product_requests SET status = ?, processed_by = ?, processed_at = NOW(), remarks = ? WHERE request_id = ?',
+                [action, req.session.user.user_id, remarks || null, request_id]
             );
             
             if (requestDetails.length > 0) {
@@ -328,7 +328,7 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Monitor: Process Return Request Route
     router.post('/process-return', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
-        const { assignment_id, action } = req.body;
+        const { assignment_id, action, remarks } = req.body;
         
         try {
             const connection = await pool.getConnection();
@@ -358,10 +358,10 @@ module.exports = (pool, requireAuth, requireRole) => {
                     
                     req.flash('success', 'Return approved successfully. Product is now available for request.');
                 } else if (action === 'reject') {
-                    // Reset return status to none
+                    // Reset return status to none with remarks
                     await connection.execute(
-                        'UPDATE product_assignments SET return_status = "none" WHERE assignment_id = ?',
-                        [assignment_id]
+                        'UPDATE product_assignments SET return_status = "none", return_remarks = ? WHERE assignment_id = ?',
+                        [remarks || null, assignment_id]
                     );
                     
                     req.flash('success', 'Return request rejected.');
@@ -435,7 +435,9 @@ module.exports = (pool, requireAuth, requireRole) => {
             license_start_date,
             renewal_frequency_months,
             renewal_frequency_years,
-            next_renewal_date
+            next_renewal_date,
+            new_license_key,
+            new_version_number
         } = req.body;
         
         try {
@@ -467,8 +469,15 @@ module.exports = (pool, requireAuth, requireRole) => {
                         added_by,
                         calibration_required, 
                         calibration_frequency, 
-                        calibration_due_date
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        calibration_due_date,
+                        version_number,
+                        software_license_type,
+                        license_start,
+                        renewal_frequency,
+                        next_renewal_date,
+                        new_license_key,
+                        new_version_number
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `, [
                     name || null, 
                     product_category || null, 
@@ -479,7 +488,14 @@ module.exports = (pool, requireAuth, requireRole) => {
                     req.session.user.user_id,
                     requires_calibration === 'on' ? 1 : 0, 
                     calibrationFrequency, 
-                    next_calibration_date || null
+                    next_calibration_date || null,
+                    version_number || null,
+                    software_license_type || null,
+                    license_start_date || null,
+                    `${renewal_frequency_years || 0} years ${renewal_frequency_months || 0} months`,
+                    next_renewal_date || null,
+                    new_license_key || null,
+                    new_version_number || null
                 ]);
                 
                 // Add to stock history if table exists

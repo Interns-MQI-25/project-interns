@@ -23,7 +23,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             try {
                 const [assignmentResults] = await pool.execute(`
-                    SELECT pa.*, p.product_name, u.full_name as monitor_name, pa.return_date, pa.assignment_id, pa.is_returned, pa.return_status
+                    SELECT pa.*, p.product_name, u.full_name as monitor_name, pa.return_date, pa.assignment_id, pa.is_returned, pa.return_status, pa.return_remarks
                     FROM product_assignments pa
                     JOIN products p ON pa.product_id = p.product_id
                     JOIN users u ON pa.monitor_id = u.user_id

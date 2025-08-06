@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const flash = require('express-flash');
@@ -59,15 +60,14 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const pool = mysql.createPool({
-    host: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : 'localhost',
-    socketPath: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : undefined,
-    user: process.env.NODE_ENV === 'production' ? process.env.DB_USER : 'root',
-    password: process.env.NODE_ENV === 'production' ? process.env.DB_PASSWORD : '',
-    database: process.env.NODE_ENV === 'production' ? process.env.DB_NAME : 'product_management_system',
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'product_management_system',
+    port: process.env.DB_PORT || 3306,
     connectionLimit: 5,
-    acquireTimeout: 60000,
-    timeout: 60000,
-    reconnect: true
+    waitForConnections: true,
+    queueLimit: 0
 });
 app.locals.pool = pool;
 

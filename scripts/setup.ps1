@@ -1,6 +1,6 @@
-# Product Management System Setup Script for Windows (PowerShell)
+# Marquardt India Pvt. Ltd. Setup Script for Windows (PowerShell)
 
-Write-Host "Setting up Product Management System..." -ForegroundColor Green
+Write-Host "Setting up Marquardt India Pvt. Ltd...." -ForegroundColor Green
 Write-Host ""
 
 # Install dependencies
@@ -51,12 +51,12 @@ try {
 }
 
 Write-Host ""
-Write-Host "Starting Product Management System..." -ForegroundColor Green
+Write-Host "Starting Marquardt India Pvt. Ltd...." -ForegroundColor Green
 
 # Create admin account
 Write-Host "Creating admin account..." -ForegroundColor Yellow
 try {
-    node fix-admin.js
+    node create-admin.js
     if ($LASTEXITCODE -ne 0) { throw "Admin creation failed" }
 } catch {
     Write-Host "Warning: Failed to create admin account - you may need to do this manually" -ForegroundColor Yellow

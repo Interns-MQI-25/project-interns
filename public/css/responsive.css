@@ -1,0 +1,60 @@
+/* Responsive table styles */
+@media (max-width: 768px) {
+    .responsive-table {
+        font-size: 0.875rem;
+    }
+    
+    .responsive-table th,
+    .responsive-table td {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .responsive-table th {
+        font-size: 0.75rem;
+    }
+    
+    /* Hide less important columns on mobile */
+    .hide-mobile {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .responsive-table {
+        font-size: 0.75rem;
+    }
+    
+    .responsive-table th,
+    .responsive-table td {
+        padding: 0.375rem 0.5rem;
+    }
+    
+    /* Stack cards vertically on very small screens */
+    .responsive-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Mobile-first button groups */
+.mobile-button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+    .mobile-button-group {
+        flex-direction: row;
+        gap: 0.75rem;
+    }
+}
+
+/* Responsive modal */
+@media (max-width: 768px) {
+    .responsive-modal {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+    }
+}

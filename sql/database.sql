@@ -1,19 +1,21 @@
--- Product Management System Database Schema
+-- Marquardt India Pvt. Ltd. Database Schema
 
 -- Create database
 CREATE DATABASE IF NOT EXISTS product_management_system;
 USE product_management_system;
 
 -- Drop existing tables in correct order to handle foreign key constraints
-DROP TABLE IF EXISTS product_assignments;
-DROP TABLE IF EXISTS product_requests;
-DROP TABLE IF EXISTS stock_history;
-DROP TABLE IF EXISTS registration_requests;
-DROP TABLE IF EXISTS monitor_assignments;
-DROP TABLE IF EXISTS employees;
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS departments;
-DROP TABLE IF EXISTS users;
+-- DROP TABLE IF EXISTS product_assignments;
+-- DROP TABLE IF EXISTS product_requests;
+-- DROP TABLE IF EXISTS stock_history;
+-- DROP TABLE IF EXISTS registration_requests;
+-- DROP TABLE IF EXISTS admin_assignments;
+-- DROP TABLE IF EXISTS admin_assignments;
+-- DROP TABLE IF EXISTS monitor_assignments;
+-- DROP TABLE IF EXISTS employees;
+-- DROP TABLE IF EXISTS products;
+-- DROP TABLE IF EXISTS departments;
+-- DROP TABLE IF EXISTS users;
 
 -- Create users table
 CREATE TABLE users (
@@ -23,8 +25,10 @@ CREATE TABLE users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     role ENUM('employee', 'monitor', 'admin') NOT NULL DEFAULT 'employee',
+    is_super_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE
 );
 
 -- Create departments table
@@ -56,6 +60,18 @@ CREATE TABLE monitor_assignments (
     FOREIGN KEY (assigned_by) REFERENCES users(user_id)
 );
 
+-- Create admin_assignments table (similar to monitor_assignments)
+CREATE TABLE admin_assignments (
+    assignment_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    assigned_by INT NOT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (assigned_by) REFERENCES users(user_id)
+);
+
 -- Create registration_requests table
 CREATE TABLE registration_requests (
     request_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -76,14 +92,14 @@ CREATE TABLE registration_requests (
 CREATE TABLE products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     item_number INT,
-    asset_type VARCHAR(50) NOT NULL,
-    product_category VARCHAR(100) NOT NULL,
-    product_name VARCHAR(500) NOT NULL,
+    asset_type VARCHAR(50) ,
+    product_category VARCHAR(100) ,
+    product_name VARCHAR(500) ,
     model_number VARCHAR(100),
     serial_number VARCHAR(100),
     is_available BOOLEAN DEFAULT TRUE,
-    quantity INT NOT NULL DEFAULT 1,
-    added_by INT NOT NULL,
+    quantity INT DEFAULT 1,
+    added_by INT,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     calibration_required BOOLEAN DEFAULT FALSE,
     calibration_frequency VARCHAR(50),
@@ -115,6 +131,7 @@ CREATE TABLE product_requests (
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     processed_by INT,
     processed_at TIMESTAMP NULL,
+    return_date TIMESTAMP NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (processed_by) REFERENCES users(user_id)
@@ -132,15 +149,18 @@ CREATE TABLE product_assignments (
     is_returned BOOLEAN DEFAULT FALSE,
     returned_at TIMESTAMP NULL,
     returned_to INT,
+    return_status ENUM('none', 'requested', 'approved') DEFAULT 'none',
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
     FOREIGN KEY (monitor_id) REFERENCES users(user_id),
     FOREIGN KEY (returned_to) REFERENCES users(user_id)
 );
 
--- Insert admin user
-INSERT INTO users (username, full_name, email, password, role) 
-VALUES ('admin', 'System Administrator', 'admin@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+-- Insert admin users with correct password hashes
+INSERT INTO users (username, full_name, email, password, role, is_active) VALUES
+('admin', 'System Administrator', 'admin@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE),
+('test', 'Test User', 'test@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE),
+('GuddiS', 'Somling Guddi', 'guddi.somling@marquardt.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE);
 
 -- Insert departments
 INSERT INTO departments (department_name, description) VALUES 
@@ -246,12 +266,79 @@ CREATE INDEX idx_products_asset_type ON products(asset_type);
 CREATE INDEX idx_products_category ON products(product_category);
 CREATE INDEX idx_product_assignments_employee ON product_assignments(employee_id);
 CREATE INDEX idx_product_assignments_returned ON product_assignments(is_returned);
-
--- Display completion message
-SELECT 'Database setup completed successfully!' as message;
+CREATE INDEX idx_registration_requests_status ON registration_requests(status);
+CREATE INDEX idx_monitor_assignments_active ON monitor_assignments(is_active);
 
 -- Add is_active column to users table
 ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
 
 -- Update existing users to be active
 UPDATE users SET is_active = TRUE;
+ALTER TABLE product_requests ADD COLUMN return_date TIMESTAMP NULL;
+
+-- Fix any assignments that have return_status = 'approved' but is_returned = 0
+UPDATE product_assignments 
+SET is_returned = 1, returned_at = NOW() 
+WHERE return_status = 'approved' AND is_returned = 0;
+
+-- Fix return functionality - ensure return_status column exists and is properly configured
+-- Check if return_status column exists, if not add it
+SET @column_exists = (
+    SELECT COUNT(*) 
+    FROM INFORMATION_SCHEMA.COLUMNS 
+    WHERE TABLE_NAME = 'product_assignments' 
+    AND COLUMN_NAME = 'return_status' 
+    AND TABLE_SCHEMA = 'product_management_system'
+);
+
+-- Add column if it doesn't exist
+SET @sql = IF(@column_exists = 0, 
+    'ALTER TABLE product_assignments ADD COLUMN return_status ENUM(''none'', ''requested'', ''approved'') DEFAULT ''none'';',
+    'SELECT ''Return status column already exists'' as message;'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Update existing records to have proper return_status
+UPDATE product_assignments 
+SET return_status = 'none' 
+WHERE return_status IS NULL;
+
+-- Fix products that had quantity issues after returns
+UPDATE products SET quantity = 1 WHERE product_id IN (6, 21, 26) AND quantity = 0;
+
+-- Display completion message
+SELECT 'Database setup completed successfully!' as message;
+
+-- Remove superadmin user
+DELETE FROM users WHERE username = 'superadmin';
+
+-- Create 3 admin users
+INSERT INTO users (username, full_name, email, password, role, is_super_admin, is_active) VALUES
+('admin1', 'Admin One', 'admin1@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE, TRUE),
+('admin2', 'Admin Two', 'admin2@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE),
+('admin3', 'Admin Three', 'admin3@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE);
+
+alter table products add column pr_no INT;
+alter table products add column po_number VARCHAR(50);
+alter table products add column inward_date DATE;
+alter table products add column inwarded_by INT REFERENCES users(user_id);
+
+ALTER TABLE products
+    ADD COLUMN version_number VARCHAR(50),
+    ADD COLUMN software_license_type VARCHAR(50),
+    ADD COLUMN license_start DATE,
+    ADD COLUMN renewal_frequency VARCHAR(50),
+    ADD COLUMN next_renewal_date DATE;
+   
+
+-- Add return_status column to product_assignments table
+ALTER TABLE product_assignments 
+ADD COLUMN return_status ENUM('none', 'requested', 'approved') DEFAULT 'none';
+
+-- Update existing returned items to 'approved' status
+UPDATE product_assignments 
+SET return_status = 'approved' 
+WHERE is_returned = 1;

@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Product Management System</title>
+    <title>Login - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-md w-full space-y-8">
             <div>
+                <img class="mx-auto h-25 w-25" src="/images/Marquardt_Logo.png" alt="Marquardt Logo">
                 <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    Sign in to your account
+                    Inventory Management System
                 </h2>
-                <p class="mt-2 text-center text-sm text-gray-600">
-                    Or
-                    <a href="/register" class="font-medium text-indigo-600 hover:text-indigo-500">
-                        register for a new account
-                    </a>
-                </p>
+                
             </div>
             
             <%- include('../partials/messages') %>
@@ -29,27 +26,67 @@
                     <div>
                         <label for="username" class="sr-only">Username</label>
                         <input id="username" name="username" type="text" required 
-                               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
+                               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 text-base" 
                                placeholder="Username">
                     </div>
-                    <div>
+                    <div class="relative">
                         <label for="password" class="sr-only">Password</label>
                         <input id="password" name="password" type="password" required 
-                               class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
+                               class="appearance-none rounded-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" 
                                placeholder="Password">
+                        <button type="button" 
+                                onclick="togglePassword('password', this)"
+                                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye" id="password_icon"></i>
+                        </button>
                     </div>
                 </div>
 
                 <div>
-                    <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-base font-medium rounded-md text-white bg-[#005670] hover:bg-[#004358] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#005670]">
                         <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                            <i class="fas fa-lock text-indigo-500 group-hover:text-indigo-400"></i>
+                            <i class="fas fa-lock text-[#009A9A] group-hover:text-[#009A9A]"></i>
                         </span>
-                        Sign in
+                        <span class="text-lg">Sign in</span>
                     </button>
                 </div>
+
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Or
+                    <a href="/register" class="font-medium hover:font-semibold text-[#009A9A] hover:text-[#009A9A] transition-all duration-200">
+                        register for a new account
+                    </a>
+                </p>
             </form>
         </div>
     </div>
+
+    <script>
+        // Password visibility toggle function
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(inputId + '_icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+                button.setAttribute('title', 'Hide password');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+                button.setAttribute('title', 'Show password');
+            }
+        }
+
+        // Initialize tooltips for password visibility buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButtons = document.querySelectorAll('[onclick^="togglePassword"]');
+            toggleButtons.forEach(button => {
+                button.setAttribute('title', 'Show password');
+            });
+        });
+    </script>
 </body>
 </html>

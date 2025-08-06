@@ -2,194 +2,88 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Dashboard - Product Management System</title>
+    <meta                 </div>
+            </div>
+        </div>
+        </div> <!-- End scrollable content area -->
+    </main>
+</body>
+</html>
+    <title>Employee Dashboard - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-64 p-6">
-        <%- include('../partials/messages') %>
-        
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Employee Dashboard</h1>
-            <p class="text-gray-600">Welcome back, <%= user.full_name %>!</p>
-        </div>
-        
-        <!-- Dashboard Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Records Card -->
-            <a href="/employee/records" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-history text-2xl text-blue-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Records
-                                </dt>
-                                <dd>
-                                    <div class="text-lg font-medium text-gray-900">
-                                        View History
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </a>
+    <main class="ml-0 md:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
             
-            <!-- Requests Card -->
-            <a href="/employee/requests" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-plus-circle text-2xl text-green-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Requests
-                                </dt>
-                                <dd>
-                                    <div class="text-lg font-medium text-gray-900">
-                                        Make Request
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </a>
-            
-            <!-- Stock Card -->
-            <a href="/employee/stock" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-boxes text-2xl text-purple-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Stock
-                                </dt>
-                                <dd>
-                                    <div class="text-lg font-medium text-gray-900">
-                                        View Stock
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </a>
-            
-            <!-- Account History Card -->
-            <a href="/employee/account" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-user-cog text-2xl text-orange-600"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Account
-                                </dt>
-                                <dd>
-                                    <div class="text-lg font-medium text-gray-900">
-                                        View Profile
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        
-        <!-- Recent Activity -->
-        <% if (typeof recentActivity !== 'undefined' && recentActivity && recentActivity.length > 0) { %>
-        <div class="bg-white shadow rounded-lg mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Recent Activity
-                </h3>
-                <div class="flow-root max-h-96 overflow-y-auto">
-                    <ul class="-mb-8">
-                        <% recentActivity.slice(0, 5).forEach((activity, index) => { %>
-                            <li>
-                                <div class="relative pb-8">
-                                    <% if (index !== recentActivity.slice(0, 5).length - 1) { %>
-                                        <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"></span>
-                                    <% } %>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                                                <i class="fas fa-box-open text-white text-xs"></i>
-                                            </span>
-                                        </div>
-                                        <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                                            <div>
-                                                <p class="text-sm text-gray-500">
-                                                    <span class="font-medium text-gray-900"><%= activity.performed_by_name %></span>
-                                                    <%= activity.action %> <%= activity.quantity %> units of
-                                                    <span class="font-medium text-gray-900"><%= activity.product_name %></span>
-                                                </p>
-                                                <% if (activity.notes) { %>
-                                                    <p class="text-xs text-gray-400"><%= activity.notes %></p>
-                                                <% } %>
-                                            </div>
-                                            <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                                                <%= new Date(activity.performed_at).toLocaleDateString() %>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                        <% }); %>
-                    </ul>
-                </div>
+            <div class="mb-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Employee Dashboard</h1>
+                <p class="text-gray-600">Welcome back, <%= user.full_name %>!</p>
             </div>
         </div>
-        <% } %>
         
-        <!-- Recent Requests -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Recent Requests
-                </h3>
-                <div class="text-gray-700">
-                    <% if (recentRequests && recentRequests.length > 0) { %>
-                        <ul class="divide-y divide-gray-200">
-                            <% recentRequests.forEach(request => { %>
-                                <li class="py-3 flex justify-between items-center">
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-900"><%= request.product_name %></p>
-                                        <p class="text-sm text-gray-500">Quantity: <%= request.quantity %></p>
-                                    </div>
-                                    <div>
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                            <%= request.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                                                request.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                                                'bg-yellow-100 text-yellow-800' %>">
-                                            <%= request.status.charAt(0).toUpperCase() + request.status.slice(1) %>
-                                        </span>
-                                        <p class="text-xs text-gray-400 mt-1"><%= new Date(request.requested_at).toLocaleDateString() %></p>
-                                    </div>
-                                </li>
-                            <% }); %>
-                        </ul>
-                    <% } else { %>
-                        <p>No recent requests to display.</p>
-                    <% } %>
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+            <!-- Dashboard Cards -->
+        <div class="flex justify-center items-start min-h-full">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 w-full max-w-md sm:max-w-2xl">
+            <!-- Employee Profile Card -->
+            <a href="/employee/account" class="group">
+                <div class="bg-white hover:bg-blue-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-blue-200 aspect-square">
+                    <div class="text-center h-full flex flex-col justify-center items-center">
+                        <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-1">
+                            <i class="fas fa-user text-lg text-blue-500"></i>
+                        </div>
+                        <h3 class="text-base font-medium text-gray-800">Employee Profile</h3>
+                        <p class="text-xs text-gray-500">View personal information</p>
+                    </div>
                 </div>
+            </a>
+
+            <!-- My Products Card -->
+            <a href="/employee/my-products" class="group">
+                <div class="bg-white hover:bg-orange-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-orange-200 aspect-square">
+                    <div class="text-center h-full flex flex-col justify-center items-center">
+                        <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mb-1">
+                            <i class="fas fa-laptop text-lg text-orange-500"></i>
+                        </div>
+                        <h3 class="text-base font-medium text-gray-800">My Products</h3>
+                        <p class="text-xs text-gray-500">Products I currently have</p>
+                    </div>
+                </div>
+            </a>
+            
+            <!-- View Stock Card -->
+            <a href="/employee/stock" class="group">
+                <div class="bg-white hover:bg-green-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-green-200 aspect-square">
+                    <div class="text-center h-full flex flex-col justify-center items-center">
+                        <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-1">
+                            <i class="fas fa-boxes text-lg text-green-500"></i>
+                        </div>
+                        <h3 class="text-base font-medium text-gray-800">View Stock</h3>
+                        <p class="text-xs text-gray-500">Browse available inventory</p>
+                    </div>
+                </div>
+            </a>
+
+            <!-- View Records Card -->
+            <a href="/employee/records" class="group">
+                <div class="bg-white hover:bg-purple-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-purple-200 aspect-square">
+                    <div class="text-center h-full flex flex-col justify-center items-center">
+                        <div class="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center mb-1">
+                            <i class="fas fa-history text-lg text-purple-500"></i>
+                        </div>
+                        <h3 class="text-base font-medium text-gray-800">View Records</h3>
+                        <p class="text-xs text-gray-500">Check assignment history</p>
+                    </div>
+                </div>
+            </a>
             </div>
         </div>
     </main>

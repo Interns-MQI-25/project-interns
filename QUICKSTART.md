@@ -1,4 +1,4 @@
-# 🏢 Product Management System - Quick Start Guide
+# 🏢 Marquardt India Pvt. Ltd. - Quick Start Guide
 
 > **Get up and running in minutes with this comprehensive setup guide!**
 
@@ -13,7 +13,7 @@ chmod +x setup.sh
 .\setup.sh
 ```
 
-2. For Windows(You doublee-click the files to directly execute)
+2. For Windows(You double-click the files to directly execute)
 ```ps1
 # Make the script executable and run for Windows(PowerShell)
 cd scripts
@@ -99,7 +99,7 @@ NODE_ENV=development
 ### 4. Initialize Application
 ```bash
 # Create admin account
-node fix-admin.js
+node create-admin.js
 
 # Setup database connection
 node setup-db.js
@@ -248,7 +248,7 @@ If you encounter any issues:
 
 ---
 
-**🎉 You're all set! The Product Management System is ready to use.**
+**🎉 You're all set! The Marquardt India system is ready to use.**
 
 **Access URL:** [http://localhost:3000](http://localhost:3000)  
 **Admin Login:** `admin` / `admin123`

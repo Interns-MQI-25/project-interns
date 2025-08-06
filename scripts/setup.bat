@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Product Management System Setup Script for Windows
+:: Marquardt India Pvt. Ltd. Setup Script for Windows
 
-echo Setting up Product Management System...
+echo Setting up Marquardt India Pvt. Ltd....
 echo.
 
 :: Install dependencies
@@ -48,11 +48,11 @@ if errorlevel 1 (
 )
 
 echo.
-echo Starting Product Management System...
+echo Starting Marquardt India Pvt. Ltd....
 
 :: Create admin account
 echo Creating admin account...
-call node fix-admin.js
+call node create-admin.js
 if errorlevel 1 (
     echo Warning: Failed to create admin account - you may need to do this manually
 )

@@ -164,11 +164,15 @@ INSERT INTO users (username, full_name, email, password, role, is_active) VALUES
 
 -- Insert departments
 INSERT INTO departments (department_name, description) VALUES 
-('IT', 'Information Technology Department'),
-('HR', 'Human Resources Department'),
-('Finance', 'Finance and Accounting Department'),
-('Marketing', 'Marketing and Sales Department'),
-('Operations', 'Operations and Logistics Department');
+('RDT-PU'),
+('RDA-PU'),
+('RDF-PU'),
+('RDL-PU'),
+('RDD-PU'),
+('RDE-PU'),
+('RDM-PU'),
+('RDS-PU'),
+('RDV-PU');
 
 -- Set admin user ID variable
 SET @admin_user_id = (SELECT user_id FROM users WHERE username = 'admin' LIMIT 1);

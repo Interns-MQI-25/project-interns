@@ -377,7 +377,7 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Monitor: Process Return Request Route
     router.post('/process-return', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
-        const { assignment_id, action } = req.body;
+        const { assignment_id, action, remarks } = req.body;
         
         try {
             const connection = await pool.getConnection();
@@ -397,20 +397,20 @@ module.exports = (pool, requireAuth, requireRole) => {
                     
                     const assignment = assignments[0];
                     
-                    // Update assignment as returned and approved
+                    // Update assignment as returned and approved with remarks
                     await connection.execute(
-                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", returned_at = NOW() WHERE assignment_id = ?',
-                        [assignment_id]
+                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", returned_at = NOW(), remarks = ? WHERE assignment_id = ?',
+                        [remarks || null, assignment_id]
                     );
                     
                     console.log(`Return approved: Assignment ${assignment_id}, Product ${assignment.product_id}, Quantity restored: ${assignment.quantity}`);
                     
                     req.flash('success', 'Return approved successfully. Product is now available for request.');
                 } else if (action === 'reject') {
-                    // Reset return status to none
+                    // Reset return status to none and save rejection remarks
                     await connection.execute(
-                        'UPDATE product_assignments SET return_status = "none" WHERE assignment_id = ?',
-                        [assignment_id]
+                        'UPDATE product_assignments SET return_status = "none", remarks = ? WHERE assignment_id = ?',
+                        [remarks || null, assignment_id]
                     );
                     
                     req.flash('success', 'Return request rejected.');

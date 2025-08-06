@@ -202,10 +202,10 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Employee: Request Product Route
     router.post('/request-product', requireAuth, requireRole(['employee']), async (req, res) => {
-        const { product_id, return_date, purpose } = req.body;
+        const { product_id, expected_return_date, purpose } = req.body;
 
         // Input validation
-        if (!product_id || !return_date) {
+        if (!product_id || !expected_return_date) {
             req.flash('error', 'Product and return date are required fields.');
             return res.redirect('/employee/stock');
         }
@@ -240,7 +240,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             const [result] = await pool.execute(
                 'INSERT INTO product_requests (employee_id, product_id, quantity, purpose, return_date) VALUES (?, ?, ?, ?, ?)',
-                [employee[0].employee_id, product_id, 1, purpose || null, return_date]
+                [employee[0].employee_id, product_id, 1, purpose || 'No purpose specified', expected_return_date]
             );
             
             // Log the product request activity
@@ -308,7 +308,7 @@ module.exports = (pool, requireAuth, requireRole) => {
     router.get('/my-products', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
             const [myProducts] = await pool.execute(`
-                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status,
+                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status, pa.remarks, pa.returned_at,
                        p.product_name, p.asset_type, p.model_number, p.serial_number,
                        u.full_name as monitor_name
                 FROM product_assignments pa
@@ -316,8 +316,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN employees e ON pa.employee_id = e.employee_id
                 JOIN users u ON pa.monitor_id = u.user_id
                 WHERE e.user_id = ? 
-                AND pa.is_returned = FALSE 
-                AND pa.return_status != 'approved'
                 ORDER BY pa.assigned_at DESC
             `, [req.session.user.user_id]);
             

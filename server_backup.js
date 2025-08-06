@@ -265,7 +265,8 @@ app.post('/login', async (req, res) => {
         
         req.session.user = {
             user_id: user.user_id,
-            username: user.username,
+            username: user.username,hai
+
             full_name: user.full_name,
             role: user.role
         };

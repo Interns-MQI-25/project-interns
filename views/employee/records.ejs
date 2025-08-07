@@ -48,7 +48,7 @@
                                     Requested Date
                                 </th>
                                 <th class="pl-2 pr-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                    Processed By
+                                    Processed Time
                                 </th>
                             </tr>
                         </thead>
@@ -74,10 +74,16 @@
                                             </span>
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                            <%= new Date(request.requested_at).toLocaleDateString() %>
+                                            <%= new Date(request.requested_at).toLocaleDateString() %><br>
+                                            <span class="text-xs text-gray-400"><%= new Date(request.requested_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></span>
                                         </td>
                                         <td class="pl-2 pr-4 py-4 text-sm text-gray-500 text-center">
-                                            <div class="break-words"><%= request.processed_by_name || '-' %></div>
+                                            <% if (request.processed_at) { %>
+                                                <%= new Date(request.processed_at).toLocaleDateString() %><br>
+                                                <span class="text-xs text-gray-400"><%= new Date(request.processed_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></span>
+                                            <% } else { %>
+                                                -
+                                            <% } %>
                                         </td>
                                     </tr>
                                 <% }); %>
@@ -145,7 +151,8 @@
                                             <div class="break-words"><%= assignment.monitor_name %></div>
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= new Date(assignment.assigned_at).toLocaleDateString() %>
+                                            <%= new Date(assignment.assigned_at).toLocaleDateString() %><br>
+                                            <span class="text-xs text-gray-400"><%= new Date(assignment.assigned_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></span>
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap">
                                             <% if (assignment.is_returned) { %>

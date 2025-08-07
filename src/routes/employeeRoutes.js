@@ -153,7 +153,7 @@ module.exports = (pool, requireAuth, requireRole) => {
     // Employee: Stock Route
     router.get('/stock', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
-            // Get all products with assignment information
+
             const [products] = await pool.execute(`
                 SELECT 
                     p.product_id,
@@ -165,10 +165,10 @@ module.exports = (pool, requireAuth, requireRole) => {
                     p.serial_number,
                     p.quantity,
                     p.added_at,
-                    CASE WHEN EXISTS(
-                        SELECT 1 FROM product_assignments pa 
-                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
-                    ) THEN 1 ELSE 0 END as is_assigned,
+                    COALESCE(
+                        (SELECT COUNT(*) FROM product_assignments pa 
+                         WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE), 0
+                    ) as assigned_quantity,
                     (
                         SELECT GROUP_CONCAT(
                             CONCAT(u.full_name, ' (Return: ', 
@@ -239,8 +239,8 @@ module.exports = (pool, requireAuth, requireRole) => {
             );
             
             const [result] = await pool.execute(
-                'INSERT INTO product_requests (employee_id, product_id, quantity, purpose) VALUES (?, ?, ?, ?)',
-                [employee[0].employee_id, product_id, 1, purpose || 'No purpose specified']
+                'INSERT INTO product_requests (employee_id, product_id, quantity, purpose, return_date) VALUES (?, ?, ?, ?, ?)',
+                [employee[0].employee_id, product_id, 1, purpose || 'No purpose specified', expected_return_date]
             );
             
             // Log the product request activity
@@ -321,7 +321,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN products p ON pa.product_id = p.product_id
                 JOIN employees e ON pa.employee_id = e.employee_id
                 JOIN users u ON pa.monitor_id = u.user_id
-                WHERE e.user_id = ? 
+                WHERE e.user_id = ? AND pa.is_returned = 0
                 ORDER BY pa.assigned_at DESC
             `, [req.session.user.user_id]);
             

@@ -66,11 +66,14 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             <% if (requests && requests.length > 0) { %>
                                 <% requests.forEach(request => { %>
-                                    <tr>
+                                    <tr class="<%= request.is_own_request ? 'bg-gray-100 opacity-60' : '' %>">
                                         <td class="px-4 py-4" style="max-width: 200px;">
-                                            <div class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-tight"><%= request.product_name %></div>
+                                            <div class="text-sm font-medium <%= request.is_own_request ? 'text-gray-500' : 'text-gray-900' %> break-words whitespace-normal leading-tight"><%= request.product_name %></div>
                                             <% if (request.purpose) { %>
                                                 <div class="text-xs text-gray-400 mt-1 break-words whitespace-normal">Purpose: <%= request.purpose %></div>
+                                            <% } %>
+                                            <% if (request.is_own_request) { %>
+                                                <div class="text-xs text-orange-500 mt-1 font-medium">Your Request</div>
                                             <% } %>
                                         </td>
                                         <td class="px-3 py-4 text-sm text-gray-500">
@@ -83,7 +86,8 @@
                                             <%= request.quantity %>
                                         </td>
                                         <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= new Date(request.requested_at).toLocaleDateString() %>
+                                            <%= new Date(request.requested_at).toLocaleDateString() %><br>
+                                            <span class="text-xs text-gray-400"><%= new Date(request.requested_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></span>
                                         </td>
                                         <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <% if (request.return_date) { %>
@@ -93,15 +97,19 @@
                                             <% } %>
                                         </td>
                                         <td class="px-3 py-4">
-                                            <input type="text" id="remarks_<%= request.request_id %>" placeholder="Add remarks..." class="w-full text-xs border border-gray-300 rounded px-2 py-1">
+                                            <input type="text" id="remarks_<%= request.request_id %>" placeholder="Add remarks..." class="w-full text-xs border border-gray-300 rounded px-2 py-1" <%= request.is_own_request ? 'disabled' : '' %>>
                                         </td>
                                         <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                            <button onclick="processRequest('<%= request.request_id %>', 'approved')" class="text-green-600 hover:text-green-900">
-                                                <i class="fas fa-check"></i> Approve
-                                            </button>
-                                            <button onclick="processRequest('<%= request.request_id %>', 'rejected')" class="text-red-600 hover:text-red-900">
-                                                <i class="fas fa-times"></i> Reject
-                                            </button>
+                                            <% if (request.is_own_request) { %>
+                                                <span class="text-gray-400 text-xs">Cannot approve own request</span>
+                                            <% } else { %>
+                                                <button onclick="processRequest('<%= request.request_id %>', 'approved')" class="text-green-600 hover:text-green-900">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                                <button onclick="processRequest('<%= request.request_id %>', 'rejected')" class="text-red-600 hover:text-red-900">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </button>
+                                            <% } %>
                                         </td>
                                     </tr>
                                 <% }); %>

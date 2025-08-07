@@ -346,3 +346,5 @@ ADD COLUMN return_status ENUM('none', 'requested', 'approved') DEFAULT 'none';
 UPDATE product_assignments 
 SET return_status = 'approved' 
 WHERE is_returned = 1;
+
+

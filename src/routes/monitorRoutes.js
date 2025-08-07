@@ -426,9 +426,9 @@ module.exports = (pool, requireAuth, requireRole) => {
                     
                     req.flash('success', 'Return approved successfully. Product is now available for request.');
                 } else if (action === 'reject') {
-                    // Reset return status to none and save rejection remarks
+                    // Set return status to rejected and save rejection remarks
                     await connection.execute(
-                        'UPDATE product_assignments SET return_status = "none", remarks = ? WHERE assignment_id = ?',
+                        'UPDATE product_assignments SET return_status = "rejected", remarks = ? WHERE assignment_id = ?',
                         [remarks || null, assignment_id]
                     );
                     

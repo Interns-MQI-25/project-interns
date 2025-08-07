@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 
 // Try to import ActivityLogger, fallback if not available
 let ActivityLogger;
@@ -12,6 +13,16 @@ try {
         logProductAssignment: () => Promise.resolve()
     };
 }
+
+// Import file upload utilities
+const { 
+    upload, 
+    saveFileAttachment, 
+    getProductAttachments, 
+    deleteFileAttachment,
+    getFileIcon,
+    formatFileSize 
+} = require('../utils/fileUpload');
 
 // Monitor routes module
 module.exports = (pool, requireAuth, requireRole) => {
@@ -461,7 +472,7 @@ module.exports = (pool, requireAuth, requireRole) => {
     });
 
     // Monitor: Add Product Route
-    router.post('/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
+    router.post('/add-product', requireAuth, requireRole(['monitor', 'admin']), upload.array('attachments', 10), async (req, res) => {
         const { 
             name, 
             product_category, 
@@ -489,6 +500,7 @@ module.exports = (pool, requireAuth, requireRole) => {
         
         try {
             console.log('Add product request body:', req.body); // Debug logging
+            console.log('Uploaded files:', req.files); // Debug logging
             
             const connection = await pool.getConnection();
             await connection.beginTransaction();
@@ -531,13 +543,33 @@ module.exports = (pool, requireAuth, requireRole) => {
                     next_calibration_date || null
                 ]);
                 
+                const productId = productResult.insertId;
+                
+                // Save file attachments if any
+                if (req.files && req.files.length > 0) {
+                    for (const file of req.files) {
+                        try {
+                            await saveFileAttachment(
+                                { execute: connection.execute.bind(connection) },
+                                productId,
+                                file,
+                                req.session.user.user_id,
+                                `Attached during product creation`
+                            );
+                        } catch (fileError) {
+                            console.error('Error saving file attachment:', fileError);
+                            // Continue with other files even if one fails
+                        }
+                    }
+                }
+                
                 // Add to stock history if table exists
                 try {
                     await connection.execute(`
                         INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) 
                         VALUES (?, 'add', ?, ?, ?)
                     `, [
-                        productResult.insertId, 
+                        productId, 
                         1, // Default quantity
                         req.session.user.user_id, 
                         'Initial stock added'
@@ -547,7 +579,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 }
                 
                 await connection.commit();
-                req.flash('success', 'Product added successfully to inventory');
+                req.flash('success', `Product added successfully to inventory${req.files && req.files.length > 0 ? ` with ${req.files.length} attachment(s)` : ''}`);
             } catch (error) {
                 await connection.rollback();
                 throw error;
@@ -559,7 +591,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             res.redirect(redirectPath);
         } catch (error) {
             console.error('Add product error:', error);
-            req.flash('error', 'Error adding product to inventory');
+            req.flash('error', 'Error adding product to inventory: ' + error.message);
             const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/inventory';
             res.redirect(redirectPath);
         }
@@ -641,6 +673,76 @@ module.exports = (pool, requireAuth, requireRole) => {
             res.json({ count: rows[0].count });
         } catch (err) {
             res.json({ count: 0 });
+        }
+    });
+
+    // Route: Download file attachment
+    router.get('/download-attachment/:attachmentId', requireAuth, async (req, res) => {
+        try {
+            const attachmentId = req.params.attachmentId;
+            
+            // Get attachment details
+            const [attachments] = await pool.execute(
+                'SELECT * FROM product_attachments WHERE attachment_id = ?',
+                [attachmentId]
+            );
+            
+            if (attachments.length === 0) {
+                return res.status(404).json({ error: 'File not found' });
+            }
+            
+            const attachment = attachments[0];
+            const filePath = attachment.file_path;
+            
+            // Check if file exists
+            const fs = require('fs');
+            if (!fs.existsSync(filePath)) {
+                return res.status(404).json({ error: 'File not found on server' });
+            }
+            
+            // Set headers for download
+            res.setHeader('Content-Disposition', `attachment; filename="${attachment.original_filename}"`);
+            res.setHeader('Content-Type', attachment.mime_type);
+            
+            // Send file
+            res.sendFile(path.resolve(filePath));
+            
+        } catch (error) {
+            console.error('Download error:', error);
+            res.status(500).json({ error: 'Error downloading file' });
+        }
+    });
+
+    // Route: View product attachments (API)
+    router.get('/api/product-attachments/:productId', requireAuth, async (req, res) => {
+        try {
+            const productId = req.params.productId;
+            const attachments = await getProductAttachments(pool, productId);
+            
+            // Add file icons and formatted sizes
+            const formattedAttachments = attachments.map(attachment => ({
+                ...attachment,
+                file_icon: getFileIcon(attachment.filename),
+                formatted_size: formatFileSize(attachment.file_size),
+                download_url: `/monitor/download-attachment/${attachment.attachment_id}`
+            }));
+            
+            res.json(formattedAttachments);
+        } catch (error) {
+            console.error('Error fetching attachments:', error);
+            res.status(500).json({ error: 'Error fetching attachments' });
+        }
+    });
+
+    // Route: Delete attachment
+    router.delete('/api/attachment/:attachmentId', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
+        try {
+            const attachmentId = req.params.attachmentId;
+            await deleteFileAttachment(pool, attachmentId, req.session.user.user_id);
+            res.json({ success: true, message: 'Attachment deleted successfully' });
+        } catch (error) {
+            console.error('Delete attachment error:', error);
+            res.status(500).json({ error: 'Error deleting attachment' });
         }
     });
 

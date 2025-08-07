@@ -16,7 +16,10 @@
     "express-flash": "^0.0.2",
     "express-mysql-session": "^3.0.0",
     "express-session": "^1.17.3",
-    "mysql2": "^3.6.0"
+    "fs-extra": "^11.3.1",
+    "multer": "^2.0.2",
+    "mysql2": "^3.6.0",
+    "path": "^0.12.7"
   },
   "engines": {
     "node": "20"

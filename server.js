@@ -60,15 +60,19 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const pool = mysql.createPool({
-    socketPath: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : undefined,
-    host: process.env.NODE_ENV === 'production' ? undefined : 'localhost',
-    user: process.env.NODE_ENV === 'production' ? process.env.DB_USER : 'root',
-    password: process.env.NODE_ENV === 'production' ? process.env.DB_PASSWORD : '',
-    database: process.env.NODE_ENV === 'production' ? process.env.DB_NAME : 'product_management_system',
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'Neha@012004',
+    database: process.env.DB_NAME || 'product_management_system',
+    port: process.env.DB_PORT || 3306,
+    // socketPath: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : undefined,
+    // host: process.env.NODE_ENV === 'production' ? undefined : 'localhost',
+    // user: process.env.NODE_ENV === 'production' ? process.env.DB_USER : 'root',
+    // password: process.env.NODE_ENV === 'production' ? process.env.DB_PASSWORD : '',
+    // database: process.env.NODE_ENV === 'production' ? process.env.DB_NAME : 'product_management_system',
     connectionLimit: 5,
-    acquireTimeout: 60000,
-    timeout: 60000,
-    reconnect: true
+    waitForConnections: true,
+    queueLimit: 0
 });
 app.locals.pool = pool;
 
@@ -97,6 +101,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use('/', commonRoutes(pool, requireAuth, requireRole));
 app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
 app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
+app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
 
 // Middleware to check authentication
 // const { requireAuth, requireRole } = require('./src/middleware/auth'); {
@@ -374,12 +379,6 @@ app.get('/admin/all-logs', requireAuth, requireRole(['admin']), async (req, res)
         res.status(500).json({ error: 'Failed to fetch logs', logs: [] });
     }
 });
-
-// Use route modules
-app.use('/', commonRoutes(pool, requireAuth, requireRole));
-app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
-app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
-app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
 
 app.get('/health', (req, res) => {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });

@@ -319,7 +319,7 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Monitor: Process Request Route
     router.post('/process-request', requireAuth, requireRole(['monitor']), async (req, res) => {
-        const { request_id, action } = req.body;
+        const { request_id, action, remarks } = req.body;
         
         try {
             // Get request details for logging
@@ -332,10 +332,10 @@ module.exports = (pool, requireAuth, requireRole) => {
                 WHERE pr.request_id = ?
             `, [request_id]);
             
-            // Simple update - just change the status
+            // Update with remarks
             await pool.execute(
-                'UPDATE product_requests SET status = ?, processed_by = ?, processed_at = NOW() WHERE request_id = ?',
-                [action, req.session.user.user_id, request_id]
+                'UPDATE product_requests SET status = ?, processed_by = ?, processed_at = NOW(), remarks = ? WHERE request_id = ?',
+                [action, req.session.user.user_id, remarks || null, request_id]
             );
             
             if (requestDetails.length > 0) {
@@ -360,8 +360,8 @@ module.exports = (pool, requireAuth, requireRole) => {
                     
                     // Create basic product assignment
                     await pool.execute(
-                        'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity, return_date) VALUES (?, ?, ?, ?, ?)',
-                        [request.product_id, request.employee_id, req.session.user.user_id, request.quantity, request.return_date]
+                        'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity) VALUES (?, ?, ?, ?)',
+                        [request.product_id, request.employee_id, req.session.user.user_id, request.quantity]
                     );
                 }
             }
@@ -378,6 +378,8 @@ module.exports = (pool, requireAuth, requireRole) => {
     // Monitor: Process Return Request Route
     router.post('/process-return', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
         const { assignment_id, action, remarks } = req.body;
+        
+        console.log('Process return request received:', { assignment_id, action, remarks });
         
         try {
             const connection = await pool.getConnection();
@@ -484,7 +486,9 @@ module.exports = (pool, requireAuth, requireRole) => {
             license_start_date,
             renewal_frequency_months,
             renewal_frequency_years,
-            next_renewal_date
+            next_renewal_date,
+            new_license_key,
+            new_version_number
         } = req.body;
         
         try {
@@ -516,8 +520,15 @@ module.exports = (pool, requireAuth, requireRole) => {
                         added_by,
                         calibration_required, 
                         calibration_frequency, 
-                        calibration_due_date
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        calibration_due_date,
+                        version_number,
+                        software_license_type,
+                        license_start,
+                        renewal_frequency,
+                        next_renewal_date,
+                        new_license_key,
+                        new_version_number
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `, [
                     name || null, 
                     product_category || null, 
@@ -528,7 +539,14 @@ module.exports = (pool, requireAuth, requireRole) => {
                     req.session.user.user_id,
                     requires_calibration === 'on' ? 1 : 0, 
                     calibrationFrequency, 
-                    next_calibration_date || null
+                    next_calibration_date || null,
+                    version_number || null,
+                    software_license_type || null,
+                    license_start_date || null,
+                    `${renewal_frequency_years || 0} years ${renewal_frequency_months || 0} months`,
+                    next_renewal_date || null,
+                    new_license_key || null,
+                    new_version_number || null
                 ]);
                 
                 // Add to stock history if table exists
@@ -604,9 +622,9 @@ module.exports = (pool, requireAuth, requireRole) => {
             // Create the product request
             await pool.execute(`
                 INSERT INTO product_requests 
-                (employee_id, product_id, return_date, purpose, status, requested_at, assigned_monitor_id) 
-                VALUES (?, ?, ?, ?, 'pending', NOW(), ?)
-            `, [employeeId, product_id, return_date, purpose || null, assignedMonitorId]);
+                (employee_id, product_id, purpose, status, requested_at) 
+                VALUES (?, ?, ?, 'pending', NOW())
+            `, [employeeId, product_id, purpose || null]);
             
             // Log the activity
             if (ActivityLogger && ActivityLogger.logRequest) {

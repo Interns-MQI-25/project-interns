@@ -347,4 +347,10 @@ UPDATE product_assignments
 SET return_status = 'approved' 
 WHERE is_returned = 1;
 
+-- Add remarks columns for rejection reasons
+ALTER TABLE product_requests ADD COLUMN IF NOT EXISTS remarks TEXT NULL;
+ALTER TABLE product_assignments ADD COLUMN IF NOT EXISTS return_remarks TEXT NULL;
 
+-- Add new license key and version fields for subscription software
+ALTER TABLE products ADD COLUMN IF NOT EXISTS new_license_key VARCHAR(255) NULL;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS new_version_number VARCHAR(50) NULL;

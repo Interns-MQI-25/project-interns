@@ -215,6 +215,10 @@
 
     <script>
         function processRequest(requestId, action) {
+            if (!requestId) {
+                alert('Error: Missing request ID. Cannot process request.');
+                return;
+            }
             const remarks = document.getElementById('remarks_' + requestId).value;
             const form = document.createElement('form');
             form.method = 'POST';
@@ -244,7 +248,21 @@
         }
         
         function processReturn(assignmentId, action) {
+            if (!assignmentId) {
+                alert('Error: Missing assignment ID. Cannot process return request.');
+                return;
+            }
+            
+            // Add confirmation dialog
+            const actionText = action === 'approve' ? 'approve' : 'reject';
+            if (!confirm(`Are you sure you want to ${actionText} this return request?`)) {
+                return;
+            }
+            
             const remarks = document.getElementById('return_remarks_' + assignmentId).value;
+            
+            console.log('Processing return:', { assignmentId, action, remarks });
+            
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/monitor/process-return';
@@ -274,4 +292,5 @@
     </script>
 
 </body>
+
 </html>

@@ -10,19 +10,13 @@
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
-        <!-- Fixed Header Section -->
-        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
-            <%- include('../partials/messages') %>
-            
-            <div class="mb-4">
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">My Products</h1>
-                <p class="text-gray-600">Welcome <%= user.full_name %>! Complete history of all products assigned to you</p>
-            </div>
-        </div>
+    <main class="ml-64 p-6">
+        <%- include('../partials/messages') %>
         
-        <!-- Scrollable Content Area -->
-        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">My Products</h1>
+            <p class="text-gray-600">Complete history of all products assigned to you</p>
+        </div>
 
         <!-- My Products Table -->
         <div class="bg-white shadow rounded-lg">
@@ -47,23 +41,23 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 30%">
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 35%">
                                         Product Name
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%">
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%">
                                         Issued On
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%">
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%">
                                         Expected Return
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 10%">
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 12%">
                                         Days Left
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 15%">
-                                        Status
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%">
+                                        Overdue
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 23%">
-                                        Remarks
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 18%">
+                                        Action
                                     </th>
                                 </tr>
                             </thead>
@@ -85,56 +79,46 @@
                                             <%= new Date(product.assigned_at).toLocaleDateString() %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <% if (product.return_date) { %>
-                                                <%= returnDate.toLocaleDateString() %>
-                                            <% } else { %>
-                                                <span class="text-gray-400">N/A</span>
-                                            <% } %>
+                                            <%= returnDate.toLocaleDateString() %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                                             <% if (product.is_returned) { %>
                                                 <span class="text-gray-500">Returned</span>
-                                            <% } else if (product.return_date && daysLeft < 0) { %>
+                                            <% } else if (daysLeft < 0) { %>
                                                 <span class="text-red-600 font-medium">Overdue by <%= Math.abs(daysLeft) %> days</span>
-                                            <% } else if (product.return_date && daysLeft === 0) { %>
+                                            <% } else if (daysLeft === 0) { %>
                                                 <span class="text-orange-600 font-medium">Due today</span>
-                                            <% } else if (product.return_date && daysLeft <= 3) { %>
+                                            <% } else if (daysLeft <= 3) { %>
                                                 <span class="text-yellow-600 font-medium"><%= daysLeft %> days left</span>
-                                            <% } else if (product.return_date) { %>
-                                                <span class="text-green-600"><%= daysLeft %> days left</span>
                                             <% } else { %>
-                                                <span class="text-gray-400">N/A</span>
+                                                <span class="text-green-600"><%= daysLeft %> days left</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <% if (!product.is_returned && daysLeft < 0) { %>
+                                                <span class="px-2 py-1 text-xs font-bold bg-red-100 text-red-800 rounded-full">
+                                                    <%= Math.abs(daysLeft) %>
+                                                </span>
+                                            <% } else { %>
+                                                <span class="text-gray-400">-</span>
                                             <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <% if (product.is_returned) { %>
-                                                <div class="flex flex-col space-y-1">
-                                                    <span class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                                                        ✓ Returned
-                                                    </span>
-                                                    <% if (product.returned_at) { %>
-                                                        <span class="text-xs text-gray-500">
-                                                            <%= new Date(product.returned_at).toLocaleDateString() %>
-                                                        </span>
-                                                    <% } %>
-                                                </div>
+                                                <span class="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                                                    Returned
+                                                </span>
                                             <% } else if (product.return_status === 'requested') { %>
                                                 <span class="px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                                                    ⏳ Return Requested
+                                                    Return Requested
                                                 </span>
                                             <% } else { %>
-                                                <span class="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                                                    📦 In Use
-                                                </span>
-                                            <% } %>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <% if (product.remarks && product.remarks !== 'null' && product.remarks.trim() !== '') { %>
-                                                <div class="bg-gray-50 p-2 rounded text-xs border-l-2 border-blue-400">
-                                                    <%= product.remarks %>
-                                                </div>
-                                            <% } else { %>
-                                                <span class="text-gray-400 text-sm">No remarks</span>
+                                                <form action="/employee/return-product" method="POST" style="display: inline;">
+                                                    <input type="hidden" name="assignment_id" value="<%= product.assignment_id %>">
+                                                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                                        Request Return
+                                                    </button>
+                                                </form>
                                             <% } %>
                                         </td>
                                     </tr>
@@ -145,7 +129,6 @@
                 <% } %>
             </div>
         </div>
-        </div> <!-- End scrollable content area -->
     </main>
 </body>
 </html>

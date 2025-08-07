@@ -54,7 +54,11 @@
                                             <% } %>
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-500">
-                                            <%= request.purpose || 'No purpose specified' %>
+                                            <% if (request.status === 'approved' || request.status === 'rejected') { %>
+                                                <%= request.remarks || (request.purpose || 'No purpose specified') %>
+                                            <% } else { %>
+                                                <%= request.purpose || 'No purpose specified' %>
+                                            <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= request.formatted_requested_at || 'N/A' %>
@@ -96,9 +100,10 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return Reason</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processed Date</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -111,28 +116,43 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= assignment.employee_name || 'Unknown' %>
                                         </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500">
+                                            <% if (assignment.return_status === 'requested' || assignment.return_status === 'approved' || assignment.return_status === 'rejected') { %>
+                                                <%= assignment.remarks || 'Return requested' %>
+                                            <% } else if (assignment.is_returned) { %>
+                                                <%= assignment.remarks || 'Product returned' %>
+                                            <% } else { %>
+                                                No return request
+                                            <% } %>
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= assignment.formatted_assigned_at || 'N/A' %>
+                                            <% if (assignment.return_status === 'requested' || assignment.return_status === 'approved' || assignment.return_status === 'rejected') { %>
+                                                <%= assignment.formatted_assigned_at || 'N/A' %>
+                                            <% } else { %>
+                                                <%= assignment.formatted_assigned_at || 'N/A' %>
+                                            <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <% if (assignment.is_returned) { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✓ Returned</span>
-                                            <% } else if (assignment.return_status === 'requested') { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ Return Requested</span>
+                                            <% if (assignment.is_returned && assignment.return_status === 'approved') { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✓ Approved</span>
                                             <% } else if (assignment.return_status === 'rejected') { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">✗ Return Rejected</span>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">✗ Rejected</span>
+                                            <% } else if (assignment.return_status === 'requested') { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ Pending</span>
+                                            <% } else if (assignment.is_returned) { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✓ Returned</span>
                                             <% } else { %>
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">📦 In Use</span>
                                             <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= assignment.formatted_returned_at || (assignment.returned_at ? new Date(assignment.returned_at).toLocaleDateString() : 'Not returned') %>
+                                            <%= assignment.formatted_returned_at || (assignment.returned_at ? new Date(assignment.returned_at).toLocaleDateString() : 'Not processed') %>
                                         </td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                         No assignment records found
                                     </td>
                                 </tr>

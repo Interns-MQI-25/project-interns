@@ -7,6 +7,42 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/responsive.css">
+    <style>
+        /* Custom styles for search and filter */
+        .search-filter-section {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        
+        .results-counter {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        .selected-counter {
+            font-size: 0.875rem;
+            color: #3b82f6;
+            font-weight: 500;
+        }
+        
+        /* Highlight filtered rows */
+        #employeesTable tbody tr:not([style*="display: none"]) {
+            background-color: white;
+        }
+        
+        /* Style for search input focus */
+        #searchInput:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Loading state for table */
+        .table-loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
@@ -36,8 +72,73 @@
                         <i class="fas fa-user-plus mr-2"></i>Create Employee
                     </button>
                 </div>
+
+                <!-- Search and Filter Section -->
+                <div class="mb-6 space-y-4 search-filter-section">
+                    <!-- Search Bar -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex-1">
+                            <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">Search Employees</label>
+                            <div class="relative">
+                                <input type="text" id="searchInput" placeholder="Search by name, username, or email..." 
+                                       class="block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="clearFiltersBtn" class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <i class="fas fa-times mr-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label for="departmentFilter" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                            <select id="departmentFilter" class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">All Departments</option>
+                                <option value="RDT-PU">RDT-PU</option>
+                                <option value="RDA-PU">RDA-PU</option>
+                                <option value="RDF-PU">RDF-PU</option>
+                                <option value="RDL-PU">RDL-PU</option>
+                                <option value="RDD-PU">RDD-PU</option>
+                                <option value="RDE-PU">RDE-PU</option>
+                                <option value="RDM-PU">RDM-PU</option>
+                                <option value="RDS-PU">RDS-PU</option>
+                                <option value="RDV-PU">RDV-PU</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="roleFilter" class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                            <select id="roleFilter" class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">All Roles</option>
+                                <option value="employee">Employee</option>
+                                <option value="monitor">Monitor</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="statusFilter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select id="statusFilter" class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Results Counter -->
+                    <div class="flex justify-between items-center text-sm">
+                        <span id="resultsCounter" class="results-counter">Showing all employees</span>
+                        <span id="selectedCounter" class="selected-counter">0 selected</span>
+                    </div>
+                </div>
+
                 <div class="overflow-x-auto w-full">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200" id="employeesTable">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -183,11 +284,15 @@
                             <select id="modal_department_id" name="department_id" required 
                                     class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 <option value="">Select Department</option>
-                                <option value="1">IT</option>
-                                <option value="2">HR</option>
-                                <option value="3">Finance</option>
-                                <option value="4">Marketing</option>
-                                <option value="5">Operations</option>
+                                <option value="1">RDT-PU</option>
+                                <option value="2">RDA-PU</option>
+                                <option value="3">RDF-PU</option>
+                                <option value="4">RDL-PU</option>
+                                <option value="5">RDD-PU</option>
+                                <option value="6">RDE-PU</option>
+                                <option value="7">RDM-PU</option>
+                                <option value="8">RDS-PU</option>
+                                <option value="9">RDV-PU</option>
                             </select>
                         </div>
                         <div>
@@ -197,6 +302,12 @@
                                 <option value="employee">Employee</option>
                                 <option value="monitor">Monitor</option>
                             </select>
+                        </div>
+                        <div id="monitor_end_date_field" class="hidden">
+                            <label for="modal_end_date" class="block text-sm font-medium text-gray-700">Monitor End Date</label>
+                            <input type="date" id="modal_end_date" name="end_date" 
+                                   min="<%= new Date().toISOString().split('T')[0] %>"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                     </div>
                     <div class="flex justify-end space-x-2 pt-4">
@@ -246,8 +357,12 @@
         });
 
         function getSelectedEmployees() {
-            const checkboxes = document.querySelectorAll('input[name="employee_ids"]:checked');
-            return Array.from(checkboxes).map(cb => cb.value);
+            // Only get visible (not filtered out) checked checkboxes
+            const checkboxes = document.querySelectorAll('#employeesTable tbody tr:not([style*="display: none"]) input[name="employee_ids"]:checked');
+            const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+            console.log('Selected checkboxes count:', checkboxes.length);
+            console.log('Selected employee IDs:', selectedIds);
+            return selectedIds;
         }
 
         // Status toggle now uses form submission instead of AJAX
@@ -260,21 +375,35 @@
                 return;
             }
             if (confirm(`Are you sure you want to deactivate ${selectedIds.length} employee(s)?`)) {
-                const formData = new FormData();
-                selectedIds.forEach(id => formData.append('employee_ids', id));
+                console.log('Sending deactivate request with IDs:', selectedIds);
+                
                 fetch('/admin/bulk-deactivate-employees', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        employee_ids: selectedIds
+                    })
                 })
-                .then(res => {
-                    if (!res.ok) throw new Error('Failed to deactivate');
-                    return res.json ? res.json() : res.text();
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.json();
                 })
-                .then(() => {
-                    location.reload();
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message || 'Employees deactivated successfully');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to deactivate employees'));
+                    }
                 })
-                .catch(() => {
-                    alert('Error updating employee status');
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error: ' + (error.error || error.message || 'Failed to deactivate employees'));
                 });
             }
         });
@@ -286,21 +415,35 @@
                 return;
             }
             if (confirm(`Are you sure you want to activate ${selectedIds.length} employee(s)?`)) {
-                const formData2 = new FormData();
-                selectedIds.forEach(id => formData2.append('employee_ids', id));
+                console.log('Sending activate request with IDs:', selectedIds);
+                
                 fetch('/admin/bulk-activate-employees', {
                     method: 'POST',
-                    body: formData2
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        employee_ids: selectedIds
+                    })
                 })
-                .then(res => {
-                    if (!res.ok) throw new Error('Failed to activate');
-                    return res.json ? res.json() : res.text();
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.json();
                 })
-                .then(() => {
-                    location.reload();
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message || 'Employees activated successfully');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to activate employees'));
+                    }
                 })
-                .catch(() => {
-                    alert('Error updating employee status');
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error: ' + (error.error || error.message || 'Failed to activate employees'));
                 });
             }
         });
@@ -329,7 +472,200 @@
             toggleButtons.forEach(button => {
                 button.setAttribute('title', 'Show password');
             });
+            
+            // Initialize search and filter functionality
+            initializeSearchAndFilter();
+            
+            // Initialize role change handler for monitor end date
+            initializeRoleChangeHandler();
         });
+
+        // Handle role change to show/hide monitor end date field
+        function initializeRoleChangeHandler() {
+            const roleSelect = document.getElementById('modal_role');
+            const endDateField = document.getElementById('monitor_end_date_field');
+            const endDateInput = document.getElementById('modal_end_date');
+
+            function toggleEndDateField() {
+                if (roleSelect.value === 'monitor') {
+                    endDateField.classList.remove('hidden');
+                    endDateInput.setAttribute('required', 'required');
+                } else {
+                    endDateField.classList.add('hidden');
+                    endDateInput.removeAttribute('required');
+                    endDateInput.value = ''; // Clear the value when hidden
+                }
+            }
+
+            // Initial check
+            toggleEndDateField();
+
+            // Listen for changes
+            roleSelect.addEventListener('change', toggleEndDateField);
+        }
+
+        // Search and Filter Functionality
+        function initializeSearchAndFilter() {
+            const searchInput = document.getElementById('searchInput');
+            const departmentFilter = document.getElementById('departmentFilter');
+            const roleFilter = document.getElementById('roleFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+            const resultsCounter = document.getElementById('resultsCounter');
+            const selectedCounter = document.getElementById('selectedCounter');
+            const selectAllCheckbox = document.getElementById('selectAll');
+
+            // Store original table rows
+            const tableBody = document.querySelector('#employeesTable tbody');
+            const allRows = Array.from(tableBody.querySelectorAll('tr'));
+            
+            // Debounce function for search input
+            let searchTimeout;
+            function debounceSearch() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(filterEmployees, 300);
+            }
+            
+            // Function to filter and display results
+            function filterEmployees() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const selectedDepartment = departmentFilter.value.toLowerCase();
+                const selectedRole = roleFilter.value.toLowerCase();
+                const selectedStatus = statusFilter.value.toLowerCase();
+
+                let visibleRows = 0;
+
+                allRows.forEach(row => {
+                    // Skip the "no employees" row if it exists
+                    if (row.querySelector('td[colspan]')) {
+                        row.style.display = 'none';
+                        return;
+                    }
+
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length < 7) return;
+
+                    const fullName = cells[1].textContent.toLowerCase();
+                    const username = cells[2].textContent.toLowerCase();
+                    const email = cells[3].textContent.toLowerCase();
+                    const department = cells[4].textContent.toLowerCase();
+                    const role = cells[5].textContent.toLowerCase();
+                    const status = cells[6].textContent.toLowerCase();
+
+                    // Check search term (matches name, username, or email)
+                    const matchesSearch = !searchTerm || 
+                        fullName.includes(searchTerm) || 
+                        username.includes(searchTerm) || 
+                        email.includes(searchTerm);
+
+                    // Check filters
+                    const matchesDepartment = !selectedDepartment || department.includes(selectedDepartment);
+                    const matchesRole = !selectedRole || role.includes(selectedRole);
+                    const matchesStatus = !selectedStatus || status.includes(selectedStatus);
+
+                    // Show/hide row based on all criteria
+                    if (matchesSearch && matchesDepartment && matchesRole && matchesStatus) {
+                        row.style.display = '';
+                        visibleRows++;
+                    } else {
+                        row.style.display = 'none';
+                        // Uncheck hidden rows
+                        const checkbox = row.querySelector('input[name="employee_ids"]');
+                        if (checkbox) {
+                            checkbox.checked = false;
+                        }
+                    }
+                });
+
+                // Update results counter
+                updateResultsCounter(visibleRows, allRows.length - 1); // -1 to exclude header or no-data row
+                updateSelectedCounter();
+                
+                // Update select all checkbox
+                updateSelectAllState();
+            }
+
+            function updateResultsCounter(visible, total) {
+                if (visible === total) {
+                    resultsCounter.textContent = `Showing all ${total} employees`;
+                } else {
+                    resultsCounter.textContent = `Showing ${visible} of ${total} employees`;
+                }
+            }
+
+            function updateSelectedCounter() {
+                const visibleChecked = document.querySelectorAll('#employeesTable tbody tr:not([style*="display: none"]) input[name="employee_ids"]:checked');
+                selectedCounter.textContent = `${visibleChecked.length} selected`;
+            }
+
+            function updateSelectAllState() {
+                const visibleCheckboxes = document.querySelectorAll('#employeesTable tbody tr:not([style*="display: none"]) input[name="employee_ids"]');
+                const visibleChecked = document.querySelectorAll('#employeesTable tbody tr:not([style*="display: none"]) input[name="employee_ids"]:checked');
+                
+                if (visibleCheckboxes.length === 0) {
+                    selectAllCheckbox.indeterminate = false;
+                    selectAllCheckbox.checked = false;
+                } else if (visibleChecked.length === visibleCheckboxes.length) {
+                    selectAllCheckbox.indeterminate = false;
+                    selectAllCheckbox.checked = true;
+                } else if (visibleChecked.length > 0) {
+                    selectAllCheckbox.indeterminate = true;
+                    selectAllCheckbox.checked = false;
+                } else {
+                    selectAllCheckbox.indeterminate = false;
+                    selectAllCheckbox.checked = false;
+                }
+            }
+
+            function clearAllFilters() {
+                searchInput.value = '';
+                departmentFilter.value = '';
+                roleFilter.value = '';
+                statusFilter.value = '';
+                filterEmployees();
+            }
+
+            // Event listeners
+            searchInput.addEventListener('input', debounceSearch);
+            departmentFilter.addEventListener('change', filterEmployees);
+            roleFilter.addEventListener('change', filterEmployees);
+            statusFilter.addEventListener('change', filterEmployees);
+            clearFiltersBtn.addEventListener('click', clearAllFilters);
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+F or Cmd+F to focus search (prevent default browser search)
+                if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+                // Escape to clear search when search input is focused
+                if (e.key === 'Escape' && document.activeElement === searchInput) {
+                    clearAllFilters();
+                }
+            });
+
+            // Update select all functionality to work with filtered results
+            selectAllCheckbox.addEventListener('change', function() {
+                const visibleCheckboxes = document.querySelectorAll('#employeesTable tbody tr:not([style*="display: none"]) input[name="employee_ids"]');
+                visibleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateSelectedCounter();
+            });
+
+            // Update selected counter when individual checkboxes change
+            document.addEventListener('change', function(e) {
+                if (e.target.name === 'employee_ids') {
+                    updateSelectedCounter();
+                    updateSelectAllState();
+                }
+            });
+
+            // Initial setup
+            updateResultsCounter(allRows.length - 1, allRows.length - 1);
+            updateSelectedCounter();
+        }
     </script>
 </body>
 </html>

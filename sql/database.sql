@@ -1,21 +1,22 @@
 -- Marquardt India Pvt. Ltd. Database Schema
+-- Comprehensive Database Setup Script
+-- This file merges all SQL components for complete database setup
 
 -- Create database
 CREATE DATABASE IF NOT EXISTS product_management_system;
 USE product_management_system;
 
 -- Drop existing tables in correct order to handle foreign key constraints
--- DROP TABLE IF EXISTS product_assignments;
--- DROP TABLE IF EXISTS product_requests;
--- DROP TABLE IF EXISTS stock_history;
--- DROP TABLE IF EXISTS registration_requests;
--- DROP TABLE IF EXISTS admin_assignments;
--- DROP TABLE IF EXISTS admin_assignments;
--- DROP TABLE IF EXISTS monitor_assignments;
--- DROP TABLE IF EXISTS employees;
--- DROP TABLE IF EXISTS products;
--- DROP TABLE IF EXISTS departments;
--- DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS product_assignments;
+DROP TABLE IF EXISTS product_requests;
+DROP TABLE IF EXISTS stock_history;
+DROP TABLE IF EXISTS registration_requests;
+DROP TABLE IF EXISTS admin_assignments;
+DROP TABLE IF EXISTS monitor_assignments;
+DROP TABLE IF EXISTS employees;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS departments;
+DROP TABLE IF EXISTS users;
 
 -- Create users table
 CREATE TABLE users (
@@ -88,13 +89,13 @@ CREATE TABLE registration_requests (
     FOREIGN KEY (processed_by) REFERENCES users(user_id)
 );
 
--- Create products table
+-- Create products table with all additional fields
 CREATE TABLE products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
     item_number INT,
-    asset_type VARCHAR(50) ,
-    product_category VARCHAR(100) ,
-    product_name VARCHAR(500) ,
+    asset_type VARCHAR(50),
+    product_category VARCHAR(100),
+    product_name VARCHAR(500),
     model_number VARCHAR(100),
     serial_number VARCHAR(100),
     is_available BOOLEAN DEFAULT TRUE,
@@ -104,7 +105,19 @@ CREATE TABLE products (
     calibration_required BOOLEAN DEFAULT FALSE,
     calibration_frequency VARCHAR(50),
     calibration_due_date DATE,
-    FOREIGN KEY (added_by) REFERENCES users(user_id)
+    pr_no INT,
+    po_number VARCHAR(50),
+    inward_date DATE,
+    inwarded_by INT,
+    version_number VARCHAR(50),
+    software_license_type VARCHAR(50),
+    license_start DATE,
+    renewal_frequency VARCHAR(50),
+    next_renewal_date DATE,
+    new_license_key VARCHAR(255) NULL,
+    new_version_number VARCHAR(50) NULL,
+    FOREIGN KEY (added_by) REFERENCES users(user_id),
+    FOREIGN KEY (inwarded_by) REFERENCES users(user_id)
 );
 
 -- Create stock_history table
@@ -120,7 +133,7 @@ CREATE TABLE stock_history (
     FOREIGN KEY (performed_by) REFERENCES users(user_id)
 );
 
--- Create product_requests table
+-- Create product_requests table with all additional fields
 CREATE TABLE product_requests (
     request_id INT AUTO_INCREMENT PRIMARY KEY,
     employee_id INT NOT NULL,
@@ -132,12 +145,15 @@ CREATE TABLE product_requests (
     processed_by INT,
     processed_at TIMESTAMP NULL,
     return_date TIMESTAMP NULL,
+    assigned_monitor_id INT NULL,
+    remarks TEXT NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id),
-    FOREIGN KEY (processed_by) REFERENCES users(user_id)
+    FOREIGN KEY (processed_by) REFERENCES users(user_id),
+    FOREIGN KEY (assigned_monitor_id) REFERENCES employees(employee_id)
 );
 
--- Create product_assignments table
+-- Create product_assignments table with all additional fields
 CREATE TABLE product_assignments (
     assignment_id INT AUTO_INCREMENT PRIMARY KEY,
     product_id INT NOT NULL,
@@ -150,6 +166,8 @@ CREATE TABLE product_assignments (
     returned_at TIMESTAMP NULL,
     returned_to INT,
     return_status ENUM('none', 'requested', 'approved') DEFAULT 'none',
+    remarks TEXT NULL,
+    return_remarks TEXT NULL,
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
     FOREIGN KEY (monitor_id) REFERENCES users(user_id),
@@ -157,27 +175,27 @@ CREATE TABLE product_assignments (
 );
 
 -- Insert admin users with correct password hashes
-INSERT INTO users (username, full_name, email, password, role, is_active) VALUES
-('admin', 'System Administrator', 'admin@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE),
-('test', 'Test User', 'test@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE),
-('GuddiS', 'Somling Guddi', 'guddi.somling@marquardt.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE);
+INSERT INTO users (username, full_name, email, password, role, is_super_admin, is_active) VALUES
+('admin', 'System Administrator', 'admin@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE, TRUE),
+('test', 'Test User', 'test@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE),
+('GuddiS', 'Somling Guddi', 'guddi.somling@marquardt.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE);
 
--- Insert departments
+-- Insert departments with updated Marquardt structure
 INSERT INTO departments (department_name, description) VALUES 
-('RDT-PU'),
-('RDA-PU'),
-('RDF-PU'),
-('RDL-PU'),
-('RDD-PU'),
-('RDE-PU'),
-('RDM-PU'),
-('RDS-PU'),
-('RDV-PU');
+('RDT-PU', 'Functional Test'),
+('RDA-PU', 'Advanced Technology'),
+('RDF-PU', 'Functional Safety & Cyber Security'),
+('RDL-PU', 'Low Volume / Customer Sample'),
+('RDD-PU', 'Product Development'),
+('RDE-PU', 'Electronics Engineering'),
+('RDM-PU', 'Mechanical Engineering'),
+('RDS-PU', 'Software Engineering'),
+('RDV-PU', 'Value Analysis & Value Engineering');
 
 -- Set admin user ID variable
 SET @admin_user_id = (SELECT user_id FROM users WHERE username = 'admin' LIMIT 1);
 
--- Insert products
+-- Insert comprehensive product catalog
 INSERT INTO products (
     item_number,
     asset_type,
@@ -273,84 +291,31 @@ CREATE INDEX idx_product_assignments_returned ON product_assignments(is_returned
 CREATE INDEX idx_registration_requests_status ON registration_requests(status);
 CREATE INDEX idx_monitor_assignments_active ON monitor_assignments(is_active);
 
--- Add is_active column to users table
-ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
-
--- Update existing users to be active
-UPDATE users SET is_active = TRUE;
-ALTER TABLE product_requests ADD COLUMN return_date TIMESTAMP NULL;
-
+-- Data consistency fixes
 -- Fix any assignments that have return_status = 'approved' but is_returned = 0
 UPDATE product_assignments 
 SET is_returned = 1, returned_at = NOW() 
 WHERE return_status = 'approved' AND is_returned = 0;
 
--- Fix return functionality - ensure return_status column exists and is properly configured
--- Check if return_status column exists, if not add it
-SET @column_exists = (
-    SELECT COUNT(*) 
-    FROM INFORMATION_SCHEMA.COLUMNS 
-    WHERE TABLE_NAME = 'product_assignments' 
-    AND COLUMN_NAME = 'return_status' 
-    AND TABLE_SCHEMA = 'product_management_system'
-);
-
--- Add column if it doesn't exist
-SET @sql = IF(@column_exists = 0, 
-    'ALTER TABLE product_assignments ADD COLUMN return_status ENUM(''none'', ''requested'', ''approved'') DEFAULT ''none'';',
-    'SELECT ''Return status column already exists'' as message;'
-);
-
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
--- Update existing records to have proper return_status
+-- Ensure returned_at is set for all returned items that don't have a timestamp
 UPDATE product_assignments 
-SET return_status = 'none' 
-WHERE return_status IS NULL;
+SET returned_at = NOW() 
+WHERE is_returned = 1 AND returned_at IS NULL;
 
 -- Fix products that had quantity issues after returns
-UPDATE products SET quantity = 1 WHERE product_id IN (6, 21, 26) AND quantity = 0;
+UPDATE products SET quantity = 1 WHERE quantity = 0 AND is_available = TRUE;
+
+-- Sample data for testing (optional - can be removed for production)
+-- Create a sample employee user for testing
+INSERT INTO users (username, full_name, email, password, role) 
+VALUES ('john.doe', 'John Doe', 'john.doe@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'employee');
+
+-- Get the user ID and create employee record
+SET @sample_user_id = LAST_INSERT_ID();
+INSERT INTO employees (user_id, department_id, is_active) 
+VALUES (@sample_user_id, 1, TRUE);
 
 -- Display completion message
-SELECT 'Database setup completed successfully!' as message;
-
--- Remove superadmin user
-DELETE FROM users WHERE username = 'superadmin';
-
--- Create 3 admin users
-INSERT INTO users (username, full_name, email, password, role, is_super_admin, is_active) VALUES
-('admin1', 'Admin One', 'admin1@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE, TRUE),
-('admin2', 'Admin Two', 'admin2@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE),
-('admin3', 'Admin Three', 'admin3@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE);
-
-alter table products add column pr_no INT;
-alter table products add column po_number VARCHAR(50);
-alter table products add column inward_date DATE;
-alter table products add column inwarded_by INT REFERENCES users(user_id);
-
-ALTER TABLE products
-    ADD COLUMN version_number VARCHAR(50),
-    ADD COLUMN software_license_type VARCHAR(50),
-    ADD COLUMN license_start DATE,
-    ADD COLUMN renewal_frequency VARCHAR(50),
-    ADD COLUMN next_renewal_date DATE;
-   
-
--- Add return_status column to product_assignments table
-ALTER TABLE product_assignments 
-ADD COLUMN return_status ENUM('none', 'requested', 'approved') DEFAULT 'none';
-
--- Update existing returned items to 'approved' status
-UPDATE product_assignments 
-SET return_status = 'approved' 
-WHERE is_returned = 1;
-
--- Add remarks columns for rejection reasons
-ALTER TABLE product_requests ADD COLUMN IF NOT EXISTS remarks TEXT NULL;
-ALTER TABLE product_assignments ADD COLUMN IF NOT EXISTS return_remarks TEXT NULL;
-
--- Add new license key and version fields for subscription software
-ALTER TABLE products ADD COLUMN IF NOT EXISTS new_license_key VARCHAR(255) NULL;
-ALTER TABLE products ADD COLUMN IF NOT EXISTS new_version_number VARCHAR(50) NULL;
+SELECT 'Comprehensive database setup completed successfully!' as message;
+SELECT 'All SQL components have been merged and applied.' as status;
+SELECT 'Database includes: users, departments, products, assignments, requests, and all additional features.' as features;

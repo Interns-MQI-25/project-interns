@@ -23,11 +23,31 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             try {
                 const [assignmentResults] = await pool.execute(`
-                    SELECT pa.*, p.product_name, u.full_name as monitor_name
+                    SELECT pa.*, p.product_name, u.full_name as monitor_name,
+                           CASE 
+                               WHEN pa.return_status = 'requested' THEN 'Return request submitted'
+                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN 'Return approved and completed'
+                               WHEN pa.return_status = 'none' AND pa.remarks IS NOT NULL THEN 'Return request rejected'
+                               ELSE 'Product assigned for use'
+                           END as return_purpose,
+                           CASE 
+                               WHEN pa.return_status = 'requested' THEN 'pending'
+                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN 'approved'
+                               WHEN pa.return_status = 'none' AND pa.remarks IS NOT NULL THEN 'rejected'
+                               ELSE 'assigned'
+                           END as return_request_status,
+                           CASE 
+                               WHEN pa.return_status = 'requested' THEN pa.assigned_at
+                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN pa.returned_at
+                               WHEN pa.return_status = 'none' AND pa.remarks IS NOT NULL THEN pa.assigned_at
+                               ELSE NULL
+                           END as return_requested_date,
+                           returned_user.full_name as returned_processed_by_name
                     FROM product_assignments pa
                     JOIN products p ON pa.product_id = p.product_id
                     JOIN users u ON pa.monitor_id = u.user_id
                     JOIN employees e ON pa.employee_id = e.employee_id
+                    LEFT JOIN users returned_user ON pa.returned_to = returned_user.user_id
                     WHERE e.user_id = ?
                     ORDER BY pa.assigned_at DESC
                 `, [req.session.user.user_id]);

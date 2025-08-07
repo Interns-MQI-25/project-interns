@@ -317,6 +317,103 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    router.get('/request', requireAuth, requireRole(['monitor']), async (req, res) => {
+        res.render('monitor/request');
+    });
+
+    // Monitor: Reports Route
+    router.get('/reports', requireAuth, requireRole(['monitor']), async (req, res) => {
+        try {
+            const currentUserId = req.session.user.user_id;
+            
+            // Get current monitor's employee_id
+            const [currentMonitor] = await pool.execute(
+                'SELECT employee_id FROM employees WHERE user_id = ?', 
+                [currentUserId]
+            );
+            
+            if (currentMonitor.length === 0) {
+                return res.render('monitor/reports', { 
+                    user: req.session.user, 
+                    monthlyStats: [],
+                    recentActivity: [],
+                    topProducts: [],
+                    error: 'Monitor employee record not found'
+                });
+            }
+            
+            // Get monthly assignment statistics
+            const [monthlyStats] = await pool.execute(`
+                SELECT 
+                    YEAR(assigned_at) as year,
+                    MONTH(assigned_at) as month,
+                    MONTHNAME(assigned_at) as month_name,
+                    COUNT(*) as total_assignments,
+                    SUM(CASE WHEN is_returned = 1 THEN 1 ELSE 0 END) as returned_items,
+                    SUM(CASE WHEN is_returned = 0 THEN 1 ELSE 0 END) as active_assignments
+                FROM product_assignments 
+                WHERE monitor_id = ?
+                AND assigned_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                GROUP BY YEAR(assigned_at), MONTH(assigned_at)
+                ORDER BY YEAR(assigned_at) DESC, MONTH(assigned_at) DESC
+            `, [currentUserId]);
+            
+            // Get recent activity (last 20 actions)
+            const [recentActivity] = await pool.execute(`
+                SELECT 
+                    pa.*,
+                    p.product_name,
+                    p.asset_type,
+                    u.full_name as employee_name,
+                    d.department_name,
+                    CASE 
+                        WHEN pa.is_returned = 1 THEN 'Returned'
+                        ELSE 'Assigned'
+                    END as status
+                FROM product_assignments pa
+                JOIN products p ON pa.product_id = p.product_id
+                JOIN employees e ON pa.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                JOIN departments d ON e.department_id = d.department_id
+                WHERE pa.monitor_id = ?
+                ORDER BY pa.assigned_at DESC
+                LIMIT 20
+            `, [currentUserId]);
+            
+            // Get most requested products
+            const [topProducts] = await pool.execute(`
+                SELECT 
+                    p.product_name,
+                    p.asset_type,
+                    p.product_category,
+                    COUNT(pa.assignment_id) as assignment_count,
+                    SUM(CASE WHEN pa.is_returned = 0 THEN 1 ELSE 0 END) as currently_assigned
+                FROM product_assignments pa
+                JOIN products p ON pa.product_id = p.product_id
+                WHERE pa.monitor_id = ?
+                GROUP BY pa.product_id, p.product_name, p.asset_type, p.product_category
+                ORDER BY assignment_count DESC
+                LIMIT 10
+            `, [currentUserId]);
+            
+            res.render('monitor/reports', { 
+                user: req.session.user, 
+                monthlyStats: monthlyStats || [],
+                recentActivity: recentActivity || [],
+                topProducts: topProducts || []
+            });
+        } catch (error) {
+            console.error('Monitor reports error:', error);
+            res.render('monitor/reports', { 
+                user: req.session.user, 
+                monthlyStats: [],
+                recentActivity: [],
+                topProducts: [],
+                error: 'Error loading reports data'
+            });
+        }
+    });
+
     // Monitor: Process Request Route
     router.post('/process-request', requireAuth, requireRole(['monitor']), async (req, res) => {
         const { request_id, action, remarks } = req.body;
@@ -508,7 +605,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                     }
                 }
                 
-                // Insert product with correct field mapping
+                // Insert product with basic required fields only
                 const [productResult] = await connection.execute(`
                     INSERT INTO products (
                         product_name, 
@@ -520,15 +617,8 @@ module.exports = (pool, requireAuth, requireRole) => {
                         added_by,
                         calibration_required, 
                         calibration_frequency, 
-                        calibration_due_date,
-                        version_number,
-                        software_license_type,
-                        license_start,
-                        renewal_frequency,
-                        next_renewal_date,
-                        new_license_key,
-                        new_version_number
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        calibration_due_date
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `, [
                     name || null, 
                     product_category || null, 
@@ -539,14 +629,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                     req.session.user.user_id,
                     requires_calibration === 'on' ? 1 : 0, 
                     calibrationFrequency, 
-                    next_calibration_date || null,
-                    version_number || null,
-                    software_license_type || null,
-                    license_start_date || null,
-                    `${renewal_frequency_years || 0} years ${renewal_frequency_months || 0} months`,
-                    next_renewal_date || null,
-                    new_license_key || null,
-                    new_version_number || null
+                    next_calibration_date || null
                 ]);
                 
                 // Add to stock history if table exists
@@ -573,12 +656,12 @@ module.exports = (pool, requireAuth, requireRole) => {
                 connection.release();
             }
             
-            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/inventory';
+            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
             res.redirect(redirectPath);
         } catch (error) {
             console.error('Add product error:', error);
             req.flash('error', 'Error adding product to inventory');
-            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/inventory';
+            const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
             res.redirect(redirectPath);
         }
     });

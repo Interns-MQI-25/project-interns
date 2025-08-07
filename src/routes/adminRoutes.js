@@ -222,7 +222,46 @@ module.exports = (pool, requireAuth, requireRole) => {
     // Inventory
     router.get('/inventory', requireAuth, requireRole(['admin']), async (req, res) => {
         try {
-            const [products] = await pool.execute('SELECT * FROM products ORDER BY product_name');
+            const [products] = await pool.execute(`
+                SELECT 
+                    p.*,
+                    u.full_name as added_by_name,
+                    COALESCE((
+                        SELECT COUNT(*) 
+                        FROM product_assignments pa 
+                        WHERE pa.product_id = p.product_id
+                    ), 0) as total_assignments,
+                    COALESCE((
+                        SELECT SUM(pa.quantity) 
+                        FROM product_assignments pa 
+                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
+                    ), 0) as currently_assigned,
+                    CASE 
+                        WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date < CURDATE() THEN 'Overdue'
+                        WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'Due Soon'
+                        WHEN p.calibration_due_date IS NOT NULL THEN 'Current'
+                        ELSE 'Not Required'
+                    END as calibration_status,
+                    CASE 
+                        WHEN p.calibration_required = 1 AND p.calibration_frequency IS NOT NULL 
+                        THEN DATE_ADD(p.added_at, INTERVAL CAST(p.calibration_frequency AS UNSIGNED) YEAR)
+                        ELSE NULL
+                    END as next_calibration_date,
+                    GROUP_CONCAT(
+                        CONCAT(emp_user.full_name, ' (', dept.department_name, ')')
+                        ORDER BY pa.assigned_at DESC 
+                        SEPARATOR '; '
+                    ) as assigned_to_details
+                FROM products p
+                LEFT JOIN users u ON p.added_by = u.user_id
+                LEFT JOIN product_assignments pa ON p.product_id = pa.product_id AND pa.is_returned = FALSE
+                LEFT JOIN employees emp ON pa.employee_id = emp.employee_id
+                LEFT JOIN users emp_user ON emp.user_id = emp_user.user_id
+                LEFT JOIN departments dept ON emp.department_id = dept.department_id
+                GROUP BY p.product_id
+                ORDER BY p.asset_type, p.product_category, p.product_name
+            `);
+            
             res.render('admin/inventory', { 
                 user: req.session.user, 
                 products 

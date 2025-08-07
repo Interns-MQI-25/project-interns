@@ -257,7 +257,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 let myProducts = [];
                 try {
                     [myProducts] = await pool.execute(`
-                        SELECT pa.assignment_id, pa.product_id, pa.quantity, pa.assigned_at, pa.is_returned, pa.return_status, pa.return_date,
+                        SELECT pa.assignment_id, pa.product_id, pa.quantity, pa.assigned_at, pa.is_returned, pa.return_date,
                                p.product_name,
                                u.full_name as monitor_name
                         FROM product_assignments pa

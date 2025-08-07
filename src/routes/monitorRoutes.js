@@ -16,6 +16,57 @@ try {
 // Monitor routes module
 module.exports = (pool, requireAuth, requireRole) => {
     
+    // Monitor: Dashboard Route
+    router.get('/dashboard', requireAuth, requireRole(['monitor']), async (req, res) => {
+        try {
+            // Get basic stats for the dashboard
+            const [pendingRequests] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
+            );
+            
+            const [approvedToday] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE status = "approved" AND DATE(processed_at) = CURDATE()'
+            );
+            
+            const [totalProducts] = await pool.execute(
+                'SELECT COUNT(*) as count FROM products'
+            );
+            
+            // Get recent activity
+            const [recentActivity] = await pool.execute(`
+                SELECT 'request' as type, pr.requested_at as date, p.product_name,
+                       u.full_name as employee_name, pr.status
+                FROM product_requests pr
+                JOIN products p ON pr.product_id = p.product_id
+                JOIN employees e ON pr.employee_id = e.employee_id
+                JOIN users u ON e.user_id = u.user_id
+                ORDER BY pr.requested_at DESC
+                LIMIT 10
+            `);
+            
+            res.render('monitor/dashboard', { 
+                user: req.session.user,
+                stats: {
+                    pendingRequests: pendingRequests[0].count,
+                    approvedToday: approvedToday[0].count,
+                    totalProducts: totalProducts[0].count
+                },
+                recentActivity: recentActivity || []
+            });
+        } catch (error) {
+            console.error('Monitor dashboard error:', error);
+            res.render('monitor/dashboard', { 
+                user: req.session.user,
+                stats: {
+                    pendingRequests: 0,
+                    approvedToday: 0,
+                    totalProducts: 0
+                },
+                recentActivity: []
+            });
+        }
+    });
+    
     // Monitor: Approvals Route
     router.get('/approvals', requireAuth, requireRole(['monitor']), async (req, res) => {
         try {
@@ -38,7 +89,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             const currentMonitorEmployeeId = currentMonitor[0].employee_id;
             
-            // Get pending product requests assigned to this monitor OR unassigned legacy requests
+            // Get all pending product requests
             const [requests] = await pool.execute(`
                 SELECT pr.*, p.product_name, u.full_name as employee_name, d.department_name,
                        requestor.full_name as requestor_name, requestor.role as requestor_role
@@ -48,10 +99,9 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN users u ON e.user_id = u.user_id
                 JOIN departments d ON e.department_id = d.department_id
                 JOIN users requestor ON e.user_id = requestor.user_id
-                WHERE pr.status = 'pending' 
-                AND (pr.assigned_monitor_id = ? OR pr.assigned_monitor_id IS NULL)
+                WHERE pr.status = 'pending'
                 ORDER BY pr.requested_at ASC
-            `, [currentMonitorEmployeeId]);
+            `);
             
             // Get pending return requests
             let returnRequests = [];
@@ -222,7 +272,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 ORDER BY pa.assigned_at DESC
             `, [currentUserId]);
             
-            // Get product request history (all requests handled by this monitor)
+            // Get product request history (all requests processed by this monitor)
             const [productRequests] = await pool.execute(`
                 SELECT 
                     pr.*,
@@ -239,17 +289,16 @@ module.exports = (pool, requireAuth, requireRole) => {
                 JOIN users u ON e.user_id = u.user_id
                 JOIN departments d ON e.department_id = d.department_id
                 JOIN users requestor ON e.user_id = requestor.user_id
-                LEFT JOIN employees monitor_emp ON pr.assigned_monitor_id = monitor_emp.employee_id
-                LEFT JOIN users monitor_user ON monitor_emp.user_id = monitor_user.user_id
-                WHERE pr.assigned_monitor_id = ? OR pr.processed_by = ?
+                LEFT JOIN users monitor_user ON pr.processed_by = monitor_user.user_id
+                WHERE pr.processed_by = ?
                 ORDER BY pr.requested_at DESC
-            `, [currentMonitorEmployeeId, currentUserId]);
+            `, [currentUserId]);
             
             // Get statistics for the template
             const [totalProducts] = await pool.execute('SELECT COUNT(*) as count FROM products');
             const [totalAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ?', [currentUserId]);
             const [activeAssignments] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = FALSE', [currentUserId]);
-            const [pendingRequests] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending" AND (assigned_monitor_id = ? OR assigned_monitor_id IS NULL)', [currentMonitorEmployeeId]);
+            const [pendingRequests] = await pool.execute('SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"');
             const [returnedItems] = await pool.execute('SELECT COUNT(*) as count FROM product_assignments WHERE monitor_id = ? AND is_returned = TRUE', [currentUserId]);
             
             res.render('monitor/records', { 
@@ -311,8 +360,8 @@ module.exports = (pool, requireAuth, requireRole) => {
                     
                     // Create basic product assignment
                     await pool.execute(
-                        'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity, return_date) VALUES (?, ?, ?, ?, ?)',
-                        [request.product_id, request.employee_id, req.session.user.user_id, request.quantity, request.return_date]
+                        'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity) VALUES (?, ?, ?, ?)',
+                        [request.product_id, request.employee_id, req.session.user.user_id, request.quantity]
                     );
                 }
             }
@@ -329,6 +378,8 @@ module.exports = (pool, requireAuth, requireRole) => {
     // Monitor: Process Return Request Route
     router.post('/process-return', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
         const { assignment_id, action, remarks } = req.body;
+        
+        console.log('Process return request received:', { assignment_id, action, remarks });
         
         try {
             const connection = await pool.getConnection();
@@ -348,19 +399,19 @@ module.exports = (pool, requireAuth, requireRole) => {
                     
                     const assignment = assignments[0];
                     
-                    // Update assignment as returned and approved
+                    // Update assignment as returned and approved with remarks
                     await connection.execute(
-                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", returned_at = NOW() WHERE assignment_id = ?',
-                        [assignment_id]
+                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", returned_at = NOW(), remarks = ? WHERE assignment_id = ?',
+                        [remarks || null, assignment_id]
                     );
                     
                     console.log(`Return approved: Assignment ${assignment_id}, Product ${assignment.product_id}, Quantity restored: ${assignment.quantity}`);
                     
                     req.flash('success', 'Return approved successfully. Product is now available for request.');
                 } else if (action === 'reject') {
-                    // Reset return status to none with remarks
+                    // Reset return status to none and save rejection remarks
                     await connection.execute(
-                        'UPDATE product_assignments SET return_status = "none", return_remarks = ? WHERE assignment_id = ?',
+                        'UPDATE product_assignments SET return_status = "none", remarks = ? WHERE assignment_id = ?',
                         [remarks || null, assignment_id]
                     );
                     
@@ -571,9 +622,9 @@ module.exports = (pool, requireAuth, requireRole) => {
             // Create the product request
             await pool.execute(`
                 INSERT INTO product_requests 
-                (employee_id, product_id, return_date, purpose, status, requested_at, assigned_monitor_id) 
-                VALUES (?, ?, ?, ?, 'pending', NOW(), ?)
-            `, [employeeId, product_id, return_date, purpose || null, assignedMonitorId]);
+                (employee_id, product_id, purpose, status, requested_at) 
+                VALUES (?, ?, ?, 'pending', NOW())
+            `, [employeeId, product_id, purpose || null]);
             
             // Log the activity
             if (ActivityLogger && ActivityLogger.logRequest) {

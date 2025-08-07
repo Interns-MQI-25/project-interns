@@ -23,10 +23,14 @@
         <div class="bg-white shadow rounded-lg mb-8">
             <div class="px-4 py-5 sm:p-6">
                 <div class="mb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Request Status
-                    </h3>
+                    <button onclick="toggleSection('requestStatus')" class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-2 hover:bg-gray-50">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            Request Status
+                        </h3>
+                        <i id="requestStatusIcon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
+                    </button>
                 </div>
+                <div id="requestStatusContent" class="block">
                 <div class="max-h-96 overflow-y-auto">
                     <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -43,7 +47,7 @@
                                 <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
                                     Requested Date
                                 </th>
-                                <th class="pl-2 pr-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                <th class="pl-2 pr-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                                     Processed By
                                 </th>
                             </tr>
@@ -52,8 +56,8 @@
                             <% if (typeof requests !== 'undefined' && requests && requests.length > 0) { %>
                                 <% requests.forEach(request => { %>
                                     <tr>
-                                        <td class="px-4 py-4">
-                                            <div class="text-sm font-medium text-gray-900 break-words leading-tight"><%= request.product_name %></div>
+                                        <td class="px-4 py-4" style="max-width: 250px;">
+                                            <div class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-tight"><%= request.product_name %></div>
                                         </td>
                                         <td class="px-2 py-4 text-sm text-gray-500">
                                             <div class="break-words"><%= request.purpose || '-' %></div>
@@ -72,7 +76,7 @@
                                         <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             <%= new Date(request.requested_at).toLocaleDateString() %>
                                         </td>
-                                        <td class="pl-2 pr-4 py-4 text-sm text-gray-500 text-right">
+                                        <td class="pl-2 pr-4 py-4 text-sm text-gray-500 text-center">
                                             <div class="break-words"><%= request.processed_by_name || '-' %></div>
                                         </td>
                                     </tr>
@@ -87,6 +91,7 @@
                         </tbody>
                     </table>
                 </div>
+                </div>
             </div>
         </div>
         
@@ -94,10 +99,14 @@
         <div class="bg-white shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
                 <div class="mb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Product Assignments
-                    </h3>
+                    <button onclick="toggleSection('productAssignments')" class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-2 hover:bg-gray-50">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            Product Assignments
+                        </h3>
+                        <i id="productAssignmentsIcon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
+                    </button>
                 </div>
+                <div id="productAssignmentsContent" class="block">
                 <div class="max-h-96 overflow-y-auto">
                     <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -126,8 +135,8 @@
                             <% if (typeof assignments !== 'undefined' && assignments && assignments.length > 0) { %>
                                 <% assignments.forEach(assignment => { %>
                                     <tr>
-                                        <td class="px-4 py-4">
-                                            <div class="text-sm font-medium text-gray-900 break-words leading-tight"><%= assignment.product_name %></div>
+                                        <td class="px-4 py-4" style="max-width: 250px;">
+                                            <div class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-tight"><%= assignment.product_name %></div>
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= assignment.quantity %>
@@ -190,9 +199,29 @@
                         </tbody>
                     </table>
                 </div>
+                </div>
             </div>
         </div>
     </main>
+
+    <script>
+        function toggleSection(sectionId) {
+            const content = document.getElementById(sectionId + 'Content');
+            const icon = document.getElementById(sectionId + 'Icon');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                content.classList.add('block');
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                content.classList.remove('block');
+                content.classList.add('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            }
+        }
+    </script>
 
 </body>
 </html>

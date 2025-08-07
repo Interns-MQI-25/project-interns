@@ -11,13 +11,19 @@
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-0 lg:ml-64 p-4 sm:p-6">
-        <%- include('../partials/messages') %>
-        
-        <div class="mb-8">
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Assignment Records & Request History</h1>
-            <p class="text-gray-600">View all product assignments and request history</p>
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <div class="mb-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Assignment Records & Request History</h1>
+                <p class="text-gray-600">View all product assignments and request history</p>
+            </div>
         </div>
+        
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
         
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
@@ -105,33 +111,39 @@
         <!-- Recent Assignments Table -->
         <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
             <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Product Request History</h3>
+                <div class="mb-4">
+                    <button onclick="toggleSection('productRequestHistory')" class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-2 hover:bg-gray-50">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Product Request History</h3>
+                        <i id="productRequestHistoryIcon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
+                    </button>
+                </div>
+                <div id="productRequestHistoryContent" class="block">
                 <div class="overflow-x-auto w-full">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="pr-0 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 40%">
                                     Product
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="pl-0 pr-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Category
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Requestor
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Type
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Quantity
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Requested Date
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Processed Date
                                 </th>
                             </tr>
@@ -140,15 +152,15 @@
                             <% if (productRequests && productRequests.length > 0) { %>
                                 <% productRequests.forEach(request => { %>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <%= request.product_name || 'N/A' %>
+                                        <td class="pr-0 py-4 text-sm font-medium text-gray-900" style="max-width: 200px;">
+                                            <div class="break-words whitespace-normal"><%= request.product_name || 'N/A' %></div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="pl-0 pr-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                                 <%= request.asset_type || 'General' %>
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div class="flex items-center">
                                                 <%= request.employee_name || 'Unknown' %>
                                                 <% if (request.requestor_role === 'monitor') { %>
@@ -158,20 +170,20 @@
                                                 <% } %>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <% if (request.requestor_role === 'monitor') { %>
                                                 <span class="text-blue-600 font-medium">Monitor Request</span>
                                             <% } else { %>
                                                 <span class="text-gray-600">Employee Request</span>
                                             <% } %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= request.quantity || 1 %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= request.requested_at ? new Date(request.requested_at).toLocaleDateString() : 'N/A' %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-1 py-4 whitespace-nowrap">
                                             <% if (request.status === 'approved') { %>
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                                     Approved
@@ -186,14 +198,14 @@
                                                 </span>
                                             <% } %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= request.processed_at ? new Date(request.processed_at).toLocaleDateString() : 'N/A' %>
                                         </td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    <td colspan="8" class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                         <div class="text-center py-8">
                                             <i class="fas fa-clipboard-list text-gray-400 text-4xl mb-4"></i>
                                             <p class="text-gray-500">No product request history found</p>
@@ -205,13 +217,20 @@
                         </tbody>
                     </table>
                 </div>
+                </div>
             </div>
         </div>
         
         <!-- Recent Assignments Table -->
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Product Assignment History</h3>
+                <div class="mb-4">
+                    <button onclick="toggleSection('productAssignmentHistory')" class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-2 hover:bg-gray-50">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Product Assignment History</h3>
+                        <i id="productAssignmentHistoryIcon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
+                    </button>
+                </div>
+                <div id="productAssignmentHistoryContent" class="block">
                 <div class="overflow-x-auto w-full">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -243,8 +262,8 @@
                             <% if (assignments && assignments.length > 0) { %>
                                 <% assignments.forEach(assignment => { %>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <%= assignment.product_name || 'N/A' %>
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900" style="max-width: 200px;">
+                                            <div class="break-words whitespace-normal"><%= assignment.product_name || 'N/A' %></div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -284,8 +303,29 @@
                         </tbody>
                     </table>
                 </div>
+                </div>
             </div>
         </div>
+        </div> <!-- End scrollable content area -->
     </main>
+
+    <script>
+        function toggleSection(sectionId) {
+            const content = document.getElementById(sectionId + 'Content');
+            const icon = document.getElementById(sectionId + 'Icon');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                content.classList.add('block');
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                content.classList.remove('block');
+                content.classList.add('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            }
+        }
+    </script>
 </body>
 </html>

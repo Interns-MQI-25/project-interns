@@ -23,7 +23,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             try {
                 const [assignmentResults] = await pool.execute(`
-                    SELECT pa.*, p.product_name, u.full_name as monitor_name, pa.return_date, pa.assignment_id, pa.is_returned, pa.return_status, pa.return_remarks
+                    SELECT pa.*, p.product_name, u.full_name as monitor_name
                     FROM product_assignments pa
                     JOIN products p ON pa.product_id = p.product_id
                     JOIN users u ON pa.monitor_id = u.user_id
@@ -74,10 +74,74 @@ module.exports = (pool, requireAuth, requireRole) => {
                 return res.redirect('/employee/dashboard');
             }
 
-            res.render('employee/account', { user: req.session.user, employee: employeeDetails[0] });
+            res.render('employee/account', { 
+                user: req.session.user, 
+                employee: employeeDetails[0],
+                messages: req.flash()
+            });
         } catch (error) {
             console.error('Account error:', error);
             res.render('error', { message: 'Error loading account details' });
+        }
+    });
+
+    // Employee: Change Password Route
+    router.post('/change-password', requireAuth, requireRole(['employee']), async (req, res) => {
+        const { current_password, new_password, confirm_password } = req.body;
+        
+        try {
+            // Validate input
+            if (!current_password || !new_password || !confirm_password) {
+                req.flash('error', 'All password fields are required');
+                return res.redirect('/employee/account');
+            }
+            
+            if (new_password !== confirm_password) {
+                req.flash('error', 'New password and confirmation do not match');
+                return res.redirect('/employee/account');
+            }
+            
+            if (new_password.length < 6) {
+                req.flash('error', 'New password must be at least 6 characters long');
+                return res.redirect('/employee/account');
+            }
+            
+            // Get current user details
+            const [users] = await pool.execute(
+                'SELECT password FROM users WHERE user_id = ?',
+                [req.session.user.user_id]
+            );
+            
+            if (users.length === 0) {
+                req.flash('error', 'User not found');
+                return res.redirect('/employee/account');
+            }
+            
+            // Verify current password
+            const bcrypt = require('bcryptjs');
+            const isValidPassword = await bcrypt.compare(current_password, users[0].password);
+            
+            if (!isValidPassword) {
+                req.flash('error', 'Current password is incorrect');
+                return res.redirect('/employee/account');
+            }
+            
+            // Hash new password
+            const hashedNewPassword = await bcrypt.hash(new_password, 10);
+            
+            // Update password in database
+            await pool.execute(
+                'UPDATE users SET password = ?, updated_at = NOW() WHERE user_id = ?',
+                [hashedNewPassword, req.session.user.user_id]
+            );
+            
+            req.flash('success', 'Password changed successfully');
+            res.redirect('/employee/account');
+            
+        } catch (error) {
+            console.error('Change password error:', error);
+            req.flash('error', 'Error changing password. Please try again.');
+            res.redirect('/employee/account');
         }
     });
 
@@ -103,7 +167,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                     p.added_at,
                     CASE WHEN EXISTS(
                         SELECT 1 FROM product_assignments pa 
-                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE AND pa.return_status != 'approved'
+                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
                     ) THEN 1 ELSE 0 END as is_assigned,
                     (
                         SELECT GROUP_CONCAT(
@@ -114,11 +178,11 @@ module.exports = (pool, requireAuth, requireRole) => {
                         FROM product_assignments pa
                         JOIN employees e ON pa.employee_id = e.employee_id
                         JOIN users u ON e.user_id = u.user_id
-                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE AND pa.return_status != 'approved'
+                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
                         LIMIT 3
                     ) as current_users
                 FROM products p
-                WHERE p.is_available = 1
+                WHERE p.quantity > 0
                 ORDER BY p.asset_type, p.product_category, p.product_name
             `);
             
@@ -138,10 +202,10 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Employee: Request Product Route
     router.post('/request-product', requireAuth, requireRole(['employee']), async (req, res) => {
-        const { product_id, return_date, purpose } = req.body;
+        const { product_id, expected_return_date, purpose } = req.body;
 
         // Input validation
-        if (!product_id || !return_date) {
+        if (!product_id || !expected_return_date) {
             req.flash('error', 'Product and return date are required fields.');
             return res.redirect('/employee/stock');
         }
@@ -175,8 +239,8 @@ module.exports = (pool, requireAuth, requireRole) => {
             );
             
             const [result] = await pool.execute(
-                'INSERT INTO product_requests (employee_id, product_id, quantity, purpose, return_date) VALUES (?, ?, ?, ?, ?)',
-                [employee[0].employee_id, product_id, 1, purpose || null, return_date]
+                'INSERT INTO product_requests (employee_id, product_id, quantity, purpose) VALUES (?, ?, ?, ?)',
+                [employee[0].employee_id, product_id, 1, purpose || 'No purpose specified']
             );
             
             // Log the product request activity
@@ -211,32 +275,38 @@ module.exports = (pool, requireAuth, requireRole) => {
 
         if (!assignment_id) {
             req.flash('error', 'Invalid request.');
-            return res.redirect('/employee/records');
+            return res.redirect('/employee/my-products');
         }
 
         try {
             const [assignments] = await pool.execute(
-                'SELECT * FROM product_assignments WHERE assignment_id = ? AND is_returned = 0 AND return_status = "none"',
+                'SELECT * FROM product_assignments WHERE assignment_id = ? AND is_returned = 0',
                 [assignment_id]
             );
 
             if (assignments.length === 0) {
-                req.flash('error', 'Assignment not found, already returned, or return already requested.');
-                return res.redirect('/employee/records');
+                req.flash('error', 'Assignment not found or already returned.');
+                return res.redirect('/employee/my-products');
             }
 
-            // Mark return as requested (pending approval)
+            // Check if return is already requested
+            if (assignments[0].return_status === 'requested') {
+                req.flash('error', 'Return request already submitted.');
+                return res.redirect('/employee/my-products');
+            }
+
+            // Mark return as requested (needs monitor approval)
             await pool.execute(
-                'UPDATE product_assignments SET return_status = "requested" WHERE assignment_id = ?',
-                [assignment_id]
+                'UPDATE product_assignments SET return_status = ? WHERE assignment_id = ?',
+                ['requested', assignment_id]
             );
 
-            req.flash('success', 'Return request submitted. Waiting for monitor/admin approval.');
-            res.redirect('/employee/records');
+            req.flash('success', 'Return request submitted successfully. Waiting for monitor approval.');
+            res.redirect('/employee/my-products');
         } catch (error) {
             console.error('Return request error:', error);
-            req.flash('error', 'Error submitting return request.');
-            res.redirect('/employee/records');
+            req.flash('error', `Error submitting return request: ${error.message}`);
+            res.redirect('/employee/my-products');
         }
     });
 
@@ -244,14 +314,14 @@ module.exports = (pool, requireAuth, requireRole) => {
     router.get('/my-products', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
             const [myProducts] = await pool.execute(`
-                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status,
+                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status, pa.returned_at, pa.remarks,
                        p.product_name, p.asset_type, p.model_number, p.serial_number,
                        u.full_name as monitor_name
                 FROM product_assignments pa
                 JOIN products p ON pa.product_id = p.product_id
                 JOIN employees e ON pa.employee_id = e.employee_id
                 JOIN users u ON pa.monitor_id = u.user_id
-                WHERE e.user_id = ?
+                WHERE e.user_id = ? 
                 ORDER BY pa.assigned_at DESC
             `, [req.session.user.user_id]);
             

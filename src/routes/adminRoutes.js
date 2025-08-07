@@ -707,7 +707,7 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Admin: Create Employee Route
     router.post('/create-employee', requireAuth, requireRole(['admin']), async (req, res) => {
-        const { full_name, username, email, password, department_id, role } = req.body;
+        const { full_name, username, email, password, department_id, role, end_date } = req.body;
         
         try {
             const connection = await pool.getConnection();
@@ -724,6 +724,25 @@ module.exports = (pool, requireAuth, requireRole) => {
                     req.flash('error', 'Username or email already exists');
                     res.redirect('/admin/employees');
                     return;
+                }
+                
+                // Validate end date for monitor role
+                if (role === 'monitor') {
+                    if (!end_date) {
+                        req.flash('error', 'End date is required for monitor role');
+                        res.redirect('/admin/employees');
+                        return;
+                    }
+                    
+                    const endDate = new Date(end_date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    if (endDate <= today) {
+                        req.flash('error', 'End date must be in the future');
+                        res.redirect('/admin/employees');
+                        return;
+                    }
                 }
                 
                 // Hash password
@@ -743,6 +762,21 @@ module.exports = (pool, requireAuth, requireRole) => {
                     INSERT INTO employees (user_id, department_id, is_active) 
                     VALUES (?, ?, 1)
                 `, [userId, department_id]);
+                
+                // If monitor role, create monitor assignment with end date
+                if (role === 'monitor') {
+                    const [employee] = await connection.execute(
+                        'SELECT employee_id FROM employees WHERE user_id = ?',
+                        [userId]
+                    );
+                    
+                    if (employee.length > 0) {
+                        await connection.execute(`
+                            INSERT INTO monitor_assignments (employee_id, assigned_by, start_date, end_date) 
+                            VALUES (?, ?, CURDATE(), ?)
+                        `, [employee[0].employee_id, req.session.user.user_id, end_date]);
+                    }
+                }
                 
                 await connection.commit();
                 req.flash('success', 'Employee created successfully');
@@ -833,10 +867,23 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Admin: Bulk Deactivate Employees Route
     router.post('/bulk-deactivate-employees', requireAuth, requireRole(['admin']), async (req, res) => {
+        console.log('Bulk deactivate request received');
+        console.log('Request body:', req.body);
+        console.log('Content-Type:', req.get('Content-Type'));
+        
         const { employee_ids } = req.body;
         
+        console.log('Extracted employee_ids:', employee_ids);
+        console.log('Type of employee_ids:', typeof employee_ids);
+        console.log('Is array:', Array.isArray(employee_ids));
+        
         if (!employee_ids || employee_ids.length === 0) {
-            req.flash('error', 'No employees selected');
+            const message = 'No employees selected';
+            console.log('Error: No employee_ids found');
+            if (req.headers.accept && req.headers.accept.includes('application/json')) {
+                return res.status(400).json({ error: message });
+            }
+            req.flash('error', message);
             return res.redirect('/admin/employees');
         }
         
@@ -861,7 +908,12 @@ module.exports = (pool, requireAuth, requireRole) => {
                 );
                 
                 await connection.commit();
-                req.flash('success', `${employeeIdArray.length} employee(s) deactivated successfully`);
+                const successMessage = `${employeeIdArray.length} employee(s) deactivated successfully`;
+                
+                if (req.headers.accept && req.headers.accept.includes('application/json')) {
+                    return res.json({ success: true, message: successMessage });
+                }
+                req.flash('success', successMessage);
             } catch (error) {
                 await connection.rollback();
                 throw error;
@@ -871,18 +923,38 @@ module.exports = (pool, requireAuth, requireRole) => {
             
         } catch (error) {
             console.error('Bulk deactivate error:', error);
-            req.flash('error', 'Error deactivating employees');
+            const errorMessage = 'Error deactivating employees';
+            if (req.headers.accept && req.headers.accept.includes('application/json')) {
+                return res.status(500).json({ error: errorMessage });
+            }
+            req.flash('error', errorMessage);
         }
         
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+            return res.json({ success: true });
+        }
         res.redirect('/admin/employees');
     });
 
     // Admin: Bulk Activate Employees Route
     router.post('/bulk-activate-employees', requireAuth, requireRole(['admin']), async (req, res) => {
+        console.log('Bulk activate request received');
+        console.log('Request body:', req.body);
+        console.log('Content-Type:', req.get('Content-Type'));
+        
         const { employee_ids } = req.body;
         
+        console.log('Extracted employee_ids:', employee_ids);
+        console.log('Type of employee_ids:', typeof employee_ids);
+        console.log('Is array:', Array.isArray(employee_ids));
+        
         if (!employee_ids || employee_ids.length === 0) {
-            req.flash('error', 'No employees selected');
+            const message = 'No employees selected';
+            console.log('Error: No employee_ids found');
+            if (req.headers.accept && req.headers.accept.includes('application/json')) {
+                return res.status(400).json({ error: message });
+            }
+            req.flash('error', message);
             return res.redirect('/admin/employees');
         }
         
@@ -907,7 +979,12 @@ module.exports = (pool, requireAuth, requireRole) => {
                 );
                 
                 await connection.commit();
-                req.flash('success', `${employeeIdArray.length} employee(s) activated successfully`);
+                const successMessage = `${employeeIdArray.length} employee(s) activated successfully`;
+                
+                if (req.headers.accept && req.headers.accept.includes('application/json')) {
+                    return res.json({ success: true, message: successMessage });
+                }
+                req.flash('success', successMessage);
             } catch (error) {
                 await connection.rollback();
                 throw error;
@@ -917,9 +994,16 @@ module.exports = (pool, requireAuth, requireRole) => {
             
         } catch (error) {
             console.error('Bulk activate error:', error);
-            req.flash('error', 'Error activating employees');
+            const errorMessage = 'Error activating employees';
+            if (req.headers.accept && req.headers.accept.includes('application/json')) {
+                return res.status(500).json({ error: errorMessage });
+            }
+            req.flash('error', errorMessage);
         }
         
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+            return res.json({ success: true });
+        }
         res.redirect('/admin/employees');
     });
 

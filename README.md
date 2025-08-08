@@ -370,7 +370,8 @@ gcloud app logs tail -s default
 ## 📞 Support
 
 - **Repository**: [GitHub Issues](https://github.com/Interns-MQI-25/project-interns/issues)
-- **Production App**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
+- **Production App**: [https://mqi-interns-467405.uc.r.appspot.com/](https://mqi-interns-467405.uc.r.appspot.com/)
+- **Live Link**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
 - **Documentation**: This README and deployment guide
 
 ## 📝 License
@@ -397,6 +398,7 @@ This project is part of the **MQI Internship Program 2025**.
 
 **🎉 Ready to get started?**
 
-**Local Development**: [http://localhost:3000](http://localhost:3000)  
-**Production**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)  
-**Admin Login**: `admin` / `admin123`
+- **Local Development**: [http://localhost:3000](http://localhost:3000)
+- **Production App**: [https://mqi-interns-467405.uc.r.appspot.com/](https://mqi-interns-467405.uc.r.appspot.com/)
+- **Live Link**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
+- **Admin Login**: `admin` / `admin123`

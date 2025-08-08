@@ -228,13 +228,21 @@ module.exports = (pool, requireAuth, requireRole) => {
                 console.error('Failed to send user confirmation email:', emailError);
             }
             
-            // Send email notification to admin
+            // Send email notification to all admins
             try {
-                await sendNewRegistrationNotification(
-                    process.env.ADMIN_EMAIL || 'admin@marquardt.com',
-                    full_name,
-                    email
+                // Fetch all admin emails
+                const [admins] = await pool.execute(
+                    'SELECT email FROM users WHERE role = "admin" AND is_active = TRUE'
                 );
+                
+                if (admins.length > 0) {
+                    const adminEmails = admins.map(admin => admin.email);
+                    await sendNewRegistrationNotification(
+                        adminEmails,
+                        full_name,
+                        email
+                    );
+                }
             } catch (emailError) {
                 console.error('Failed to send admin notification email:', emailError);
             }

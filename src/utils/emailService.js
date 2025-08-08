@@ -44,11 +44,11 @@ const sendRegistrationRejectionEmail = async (userEmail, userName) => {
     return transporter.sendMail(mailOptions);
 };
 
-// Send notification to admin about new registration
-const sendNewRegistrationNotification = async (adminEmail, userName, userEmail) => {
+// Send notification to all admins about new registration
+const sendNewRegistrationNotification = async (adminEmails, userName, userEmail) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
-        to: adminEmail,
+        to: adminEmails.join(','),
         subject: 'New Registration Request - Inventory Management System',
         html: `
             <h2>New Registration Request</h2>

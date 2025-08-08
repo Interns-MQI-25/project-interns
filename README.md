@@ -1,241 +1,402 @@
-# Marquardt India Pvt. Ltd.
+# 🏢 Marquardt India Pvt. Ltd. - Asset Management System
 
-A comprehensive web application for managing product inventory and employee requests with role-based access control.
+> **A comprehensive web-based asset management system with role-based access control, email notifications, and file attachment capabilities.**
 
-## Features
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0+-blue.svg)](https://www.mysql.com/)
+[![Express.js](https://img.shields.io/badge/Express.js-4.x-lightgrey.svg)](https://expressjs.com/)
+[![Deployed on GCP](https://img.shields.io/badge/Deployed-Google%20Cloud-4285F4.svg)](https://mqi-ims.uc.r.appspot.com)
 
-### For Employees
-- Submit product requests for projects
-- View request history and status
-- Browse available stock
-- View assigned product records
-- Account management
+## 🚀 Live Application
 
-### For Monitors
-- Approve/reject product requests
-- Add new products to inventory
-- Assign products to employees
-- Process product returns
-- View assignment records and reports
-- Manage stock levels
+**Production URL**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
 
-### For Admins
-- Manage employee accounts
-- Process registration requests
-- Assign/unassign monitor roles
-- View comprehensive system history
-- Manage stock and generate reports
-- Full system oversight
+## 📋 Overview
 
-## Technology Stack
+This system provides comprehensive asset management capabilities for Marquardt India, featuring:
+- **Role-based access control** (Employees, Monitors, Admins)
+- **Product request workflow** with approval system
+- **Email notifications** for registration and approvals
+- **File attachment system** for product documentation
+- **Real-time inventory tracking**
+- **Responsive web interface**
 
-- **Frontend**: EJS templates, CSS, JavaScript
-- **Backend**: Node.js, Express.js
-- **Database**: MySQL
+## ✨ Key Features
+
+### 👥 User Roles & Capabilities
+
+#### 📊 **Employees**
+- ✅ Submit product requests for projects
+- ✅ View request history and status
+- ✅ Browse available stock with file attachments
+- ✅ View assigned product records
+- ✅ Account management and password changes
+- ✅ Download product documentation
+
+#### 🔍 **Monitors** (Maximum 4 active)
+- ✅ Approve/reject product requests
+- ✅ Add new products with file uploads
+- ✅ Assign products to employees
+- ✅ Process product returns
+- ✅ Generate assignment reports
+- ✅ Manage file attachments
+- ✅ View comprehensive stock analytics
+
+#### 👑 **Administrators**
+- ✅ Manage all employee accounts
+- ✅ Process registration requests with email notifications
+- ✅ Assign/unassign monitor roles
+- ✅ View system-wide history and reports
+- ✅ Complete file management capabilities
+- ✅ Multi-admin email notifications
+- ✅ Advanced user management (reactivate/delete)
+
+### 🔧 Advanced Features
+
+- **📧 Email Notifications**: Email SMTP integration for registration workflow
+- **📎 File Attachments**: Upload/download product documentation (images, PDFs, docs)
+- **🔐 Security**: bcryptjs password hashing, session management, SQL injection protection
+- **📱 Responsive Design**: Mobile-friendly interface with Tailwind CSS
+- **🏗️ Cloud Deployment**: Google App Engine with Cloud SQL
+- **📊 Analytics**: Comprehensive reporting and activity tracking
+
+## 🛠️ Technology Stack
+
+- **Frontend**: HTML5, Tailwind CSS, JavaScript (ES6+), EJS Templates
+- **Backend**: Node.js 20+, Express.js 4.x
+- **Database**: MySQL 8.0 with connection pooling
 - **Authentication**: Express sessions with bcryptjs
-- **Additional**: Font Awesome icons, responsive design
+- **Email Service**: Nodemailer with Gmail SMTP
+- **File Handling**: Multer for file uploads
+- **Cloud Platform**: Google App Engine + Cloud SQL
+- **Icons**: Font Awesome
+- **Security**: Parameterized queries, XSS protection
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Node.js (v14 or higher)
-- MySQL (v8.0 or higher)
-- npm or yarn package manager
+### Option 1: Automated Setup (Recommended)
 
-## Installation
+```bash
+# Clone the repository
+git clone https://github.com/Interns-MQI-25/project-interns.git
+cd project-interns
 
-1. **Clone the repository**
+# Run setup script
+chmod +x scripts/setup.sh
+./scripts/setup.sh
+```
+
+### Option 2: Manual Setup
+
+#### Prerequisites
+- **Node.js** 20+ ([Download](https://nodejs.org/))
+- **MySQL** 8.0+ ([Download](https://dev.mysql.com/downloads/))
+- **npm** or **yarn** package manager
+
+#### Installation Steps
+
+1. **Clone and Install Dependencies**
    ```bash
-   git clone <repository-url>
-   cd product-management-system
-   ```
-
-2. **Install dependencies**
-   ```bash
+   git clone https://github.com/Interns-MQI-25/project-interns.git
+   cd project-interns
    npm install
    ```
 
-3. **Set up the database**
+2. **Database Setup**
    ```bash
    # Login to MySQL
    mysql -u root -p
    
-   # Create database and tables
-   source database.sql
-   
-   # Insert sample data (optional)
-   source sample_data.sql
+   # Create database and import schema
+   CREATE DATABASE IF NOT EXISTS product_management_system;
+   USE product_management_system;
+   SOURCE sql/database.sql;
+   EXIT;
    ```
 
-4. **Configure environment variables**
-   Edit `.env` file with your database credentials:
+3. **Environment Configuration**
+   
+   Create `.env` file:
    ```env
+   # Database Configuration
    DB_HOST=localhost
-   DB_USER=root
+   DB_USER=your_mysql_username
    DB_PASSWORD=your_mysql_password
    DB_NAME=product_management_system
    DB_PORT=3306
    
+   # Application Settings
    SESSION_SECRET=your_session_secret_key_here
    PORT=3000
    NODE_ENV=development
+   
+   # Email Configuration (Optional for local)
+   EMAIL_USER=your-email@gmail.com
+   EMAIL_PASS=your-gmail-app-password
    ```
-e
-5. **Start the application**
+
+4. **Start the Application**
    ```bash
-   # Development mode
+   # Development mode (with auto-reload)
    npm run dev
    
    # Production mode
    npm start
    ```
 
-6. **Access the application**
-   Open your browser and navigate to `http://localhost:3000`
+5. **Access the System**
+   
+   🌐 **Open your browser**: [http://localhost:3000](http://localhost:3000)
 
-## Default Login Credentials
-
-After running the sample data script:
+## 🔑 Default Login Credentials
 
 ### Admin Account
-- **Username**: admin
-- **Password**: admin123
+- **Username**: `admin`
+- **Password**: `admin123`
+- **Email**: `admin@company.com`
 
-### Employee Accounts
-- **Username**: john.doe | **Password**: password123
-- **Username**: jane.smith | **Password**: password123
-- **Username**: mike.wilson | **Password**: password123
-- **Username**: sarah.johnson | **Password**: password123
+### Sample Employee Accounts
+- **john.doe** / `password123` (Monitor)
+- **jane.smith** / `password123`
+- **mike.wilson** / `password123` (Monitor)
+- **sarah.johnson** / `password123`
 
-Note: John Doe and Mike Wilson are also assigned as monitors in the sample data.
-- Track status of their requests
-- Access personal account history
+> ⚠️ **Important**: Change default passwords immediately after first login!
 
-### 2. Monitors
-- View information of all employees
-- Approve or reject product requests
-- Manage product inventory (add, assign, return)
-- View request history and generate reports
+## 📁 Project Structure
 
-**Note:**
- Limited to 4 monitors assigned by admins for specific durations
+```
+project-interns/
+├── 📄 app.yaml                    # Google App Engine configuration
+├── 📄 server.js                   # Main application entry point
+├── 📄 package.json                # Dependencies and scripts
+├── 📁 src/                        # Application source code
+│   ├── 📁 routes/                 # Express routes
+│   │   ├── adminRoutes.js         # Admin functionality
+│   │   ├── employeeRoutes.js      # Employee functionality
+│   │   ├── monitorRoutes.js       # Monitor functionality
+│   │   └── commonRoutes.js        # Authentication & common routes
+│   ├── 📁 middleware/             # Custom middleware
+│   └── 📁 utils/                  # Utility functions
+│       ├── emailService.js        # Email notification service
+│       └── fileUpload.js          # File upload handling
+├── 📁 views/                      # EJS templates
+│   ├── 📁 auth/                   # Login/Register pages
+│   ├── 📁 employee/               # Employee dashboard
+│   ├── 📁 monitor/                # Monitor dashboard
+│   ├── 📁 admin/                  # Admin dashboard
+│   └── 📁 partials/               # Reusable components
+├── 📁 public/                     # Static assets
+│   ├── 📁 css/                    # Stylesheets
+│   ├── 📁 js/                     # Client-side JavaScript
+│   └── 📁 images/                 # Images and icons
+├── 📁 sql/                        # Database files
+│   └── database.sql               # Database schema and sample data
+├── 📁 uploads/                    # File upload storage
+│   └── products/                  # Product attachments
+└── 📄 .env                        # Environment variables
+```
 
-### 3. Admins
-- Complete system oversight and management
-- Manage employees (add, remove, edit)
-- Assign/unassign monitor roles
-- Approve new employee registrations
-- Access comprehensive system reports and history
-
-## Authentication Flow
-
-### Registration Process
-1. **Login Page (Sign-in/Sign-up)**
-   - Users enter email and password
-   - New employees can register for an account
-
-2. **Registration Page**
-   - Required fields: name, email, password, department
-   - Default role: Employee
-   - Registration request sent to admins for approval
-
-3. **Admin Approval Process**
-   - **If Accepted:** User can login with registered credentials
-   - **If Rejected:** User account is marked as invalid
-   - **Notification:** Users informed via email about approval status
-
-## System Pages
-
-### Login Interface
-- **Sign-in Fields:**
-  - Username
-  - Password
-
-- **Sign-up Fields:**
-  - Full name
-  - Username (must be unique)
-  - Email
-  - Password
-
-
-## Dashboard Interfaces
-
-### Employee Dashboard
-**Main Cards:**
-1. **Records** - View product assignment history
-2. **Requests** - Submit product requests
-3. **Stock** - Browse available inventory
-4. **Account History** - Manage profile and settings
-
-**Detailed Pages:**
-- **Records:** Complete history of assigned products
-- **Requests:** Product request submission interface
-- **Stock:** Available products with quantity information
-- **Account History:** User ID, password change, logout options
-
-### Monitor Dashboard
-**Main Cards:**
-1. **Records** - Employee assignment history
-2. **Approvals** - Process product requests
-3. **Stock** - Inventory management
-4. **Account History** - Profile management
-
-**Additional Features:**
-- **Add Products** - Add new items to inventory
-- **Assign Products** - Allocate products to employees
-- **Return Products** - Process product returns
-- **Reports** - Generate assignment and stock reports
-- **Stock Management** - Complete inventory oversight
-
-> **Note:** Only monitors have authority for product addition, assignment, and return operations.
-
-### Admin Dashboard
-**Management Cards:**
-
-#### 1. Manage Employees
-- **Create/Edit/Delete:** Manual employee management
-- **Bulk Operations:** Checkbox selection for multiple users
-- **New Employee Requests:** Process registration approvals
-
-#### 2. Manage Monitors
-- **Assignment:** Select 4 monitors from employee pool
-- **Duration Control:** Set specific assignment periods
-- **Monitor List:** View active monitors with details
-- **History Tracking:** Permanent record of monitor activities
-
-#### 3. Stock Management
-- **Inventory History:** Complete product tracking
-- **Available Stock:** Current inventory status
-- **Comprehensive Reports:** Detailed analytics including:
-  - Total products vs. assigned vs. returned
-  - Employee-specific assignment/return statistics
-  - Monitor-specific activity reports
-
-#### 4. System History
-- **Product Assignments:** Who received what products
-- **Request Approvals:** Monitor approval tracking
-- **Return Processing:** Product return history
-
-## Key Features
+## 🔄 User Workflows
 
 ### Employee Registration Flow
 ```
-User Registration → Admin Review → Approval/Rejection → Email Notification
+User Registration → Email Confirmation → Admin Review → Approval/Rejection → Email Notification → Login Access
 ```
 
-### Monitor Assignment
-- **Limit:** Maximum 4 monitors at any time
-- **Selection:** Chosen from existing employees
-- **Duration:** Fixed-term assignments set by admins
-- **Responsibilities:** Product management and request approvals
+### Product Request Flow
+```
+Employee Request → Monitor Review → Approval/Rejection → Product Assignment → Email Notification
+```
 
-### Inventory Management
-- **Addition:** Monitor-controlled product entry
-- **Assignment:** Monitor-to-employee allocation
-- **Returns:** Monitor-processed product returns
-- **Tracking:** Complete audit trail maintained
+### File Management Flow
+```
+Monitor Upload → File Validation → Storage → Database Record → Employee Access
+```
 
-### Reporting System
-- **Employee Reports:** Individual assignment/return history
-- **Monitor Reports:** Activity and approval statistics
-- **Stock Reports:** Inventory levels and movement
-- **System Reports:** Comprehensive administrative overview
+## 📊 Database Schema
+
+### Core Tables
+- **`users`** - User accounts and authentication
+- **`employees`** - Employee details and department mapping
+- **`departments`** - Organizational departments
+- **`products`** - Product catalog and inventory
+- **`product_requests`** - Employee product requests
+- **`product_assignments`** - Approved product assignments
+- **`product_attachments`** - File attachments for products
+- **`registration_requests`** - Pending user registrations
+- **`stock_history`** - Inventory movement tracking
+- **`monitor_assignments`** - Monitor role assignments
+
+## 🌐 API Endpoints
+
+### Authentication
+- `GET /login` - Login page
+- `POST /login` - Process login
+- `GET /register` - Registration page
+- `POST /register` - Process registration with email notifications
+- `GET /logout` - User logout
+
+### Employee Routes
+- `GET /employee/dashboard` - Employee dashboard
+- `GET /employee/records` - Assignment history
+- `GET /employee/requests` - Request management
+- `GET /employee/stock` - Available stock with file access
+- `POST /employee/request-product` - Submit product request
+- `GET /employee/download-attachment/:id` - Download files
+
+### Monitor Routes
+- `GET /monitor/dashboard` - Monitor dashboard
+- `GET /monitor/approvals` - Pending requests
+- `GET /monitor/stock` - Inventory management
+- `POST /monitor/add-product` - Add products with file uploads
+- `POST /monitor/process-request` - Approve/reject requests
+- `DELETE /monitor/api/attachment/:id` - Delete attachments
+
+### Admin Routes
+- `GET /admin/dashboard` - Admin dashboard with analytics
+- `GET /admin/employees` - Employee management
+- `GET /admin/registration-requests` - Registration approvals
+- `POST /admin/process-registration` - Approve/reject/reactivate/delete
+- `DELETE /admin/api/attachment/:id` - Full file management
+
+## 📧 Email Service Configuration
+
+### Gmail SMTP Setup
+1. **Enable 2-Factor Authentication** on Gmail
+2. **Generate App Password**:
+   - Google Account → Security → 2-Step Verification → App passwords
+   - Generate password for "Mail"
+3. **Configure Environment Variables**:
+   ```env
+   EMAIL_USER=your-email@gmail.com
+   EMAIL_PASS=your-16-character-app-password
+   ```
+
+### Email Features
+- ✅ Registration confirmation to users
+- ✅ Multi-admin notifications for new registrations
+- ✅ Approval/rejection notifications
+- ✅ HTML email templates with branding
+
+## 📎 File Attachment System
+
+### Supported File Types
+- **Images**: JPG, JPEG, PNG, GIF, WebP
+- **Documents**: PDF, DOC, DOCX, XLS, XLSX, CSV, TXT
+- **Limits**: 10MB per file, maximum 10 files per upload
+
+### User Permissions
+- **Monitors**: Upload files during product creation
+- **Admins**: Full file management (upload, view, delete)
+- **Employees**: View and download only
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**Database Connection Error:**
+```bash
+# Check MySQL service
+sudo systemctl status mysql
+
+# Verify credentials in .env
+# Ensure database exists
+mysql -u root -p -e "SHOW DATABASES;"
+```
+
+**Port Already in Use:**
+```bash
+# Find process using port 3000
+lsof -ti:3000
+
+# Kill the process
+kill -9 <PID>
+
+# Or use different port
+PORT=3001 npm start
+```
+
+**Email Service Issues:**
+- Verify Gmail 2FA is enabled
+- Check app password is correct (16 characters)
+- Ensure EMAIL_USER and EMAIL_PASS are set
+
+**File Upload Problems:**
+- Check file size (max 10MB)
+- Verify file type is supported
+- Ensure uploads directory exists and is writable
+
+## 🚀 Deployment
+
+For production deployment on Google Cloud Platform, see:
+📖 **[GCP_DEPLOYMENT_GUIDE.md](./GCP_DEPLOYMENT_GUIDE.md)**
+
+### Quick Deploy to GCP
+```bash
+# Deploy to App Engine
+gcloud app deploy app.yaml
+
+# View logs
+gcloud app logs tail -s default
+```
+
+## 🔒 Security Features
+
+- ✅ **Password Hashing**: bcryptjs with salt rounds
+- ✅ **Session Management**: Secure Express sessions
+- ✅ **SQL Injection Protection**: Parameterized queries
+- ✅ **XSS Protection**: EJS template escaping
+- ✅ **File Validation**: Type and size restrictions
+- ✅ **Role-based Access Control**: Granular permissions
+- ✅ **HTTPS Enforcement**: Cloud deployment security
+
+## 📈 Performance Features
+
+- ✅ **Database Connection Pooling**: Efficient MySQL connections
+- ✅ **Auto-scaling**: Google App Engine scaling
+- ✅ **Caching**: Session-based user state caching
+- ✅ **Optimized Queries**: Indexed database operations
+- ✅ **Responsive Design**: Mobile-optimized interface
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📞 Support
+
+- **Repository**: [GitHub Issues](https://github.com/Interns-MQI-25/project-interns/issues)
+- **Production App**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
+- **Documentation**: This README and deployment guide
+
+## 📝 License
+
+This project is part of the **MQI Internship Program 2025**.
+
+## 📋 Changelog
+
+### Version 2.0.0 (Current)
+- ✅ Email notification system with Gmail SMTP
+- ✅ File attachment system for products
+- ✅ Multi-admin support for notifications
+- ✅ Enhanced registration management
+- ✅ Google Cloud Platform deployment
+- ✅ Comprehensive security improvements
+
+### Version 1.0.0
+- ✅ Initial release with role-based access
+- ✅ Product management workflow
+- ✅ Responsive web interface
+- ✅ Database schema and migrations
+
+---
+
+**🎉 Ready to get started?**
+
+**Local Development**: [http://localhost:3000](http://localhost:3000)  
+**Production**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)  
+**Admin Login**: `admin` / `admin123`

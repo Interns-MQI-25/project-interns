@@ -125,7 +125,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                         JOIN employees e ON pa.employee_id = e.employee_id
                         JOIN users u ON e.user_id = u.user_id
                         JOIN departments d ON e.department_id = d.department_id
-                        WHERE pa.return_status = 'R' AND e.employee_id != ?
+                        WHERE pa.remarks = 'RETURN_REQUESTED' AND e.employee_id != ?
                         ORDER BY pa.assigned_at ASC
                     `, [currentMonitorEmployeeId]);
                     returnRequests = returnResults || [];
@@ -142,8 +142,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                         JOIN departments d ON e.department_id = d.department_id
                         WHERE pa.is_returned = 0 
                         AND e.employee_id != ?
-                        AND pa.return_date IS NOT NULL 
-                        AND pa.return_date <= CURDATE()
+                        AND pa.remarks = 'RETURN_REQUESTED'
                         ORDER BY pa.assigned_at ASC
                     `, [currentMonitorEmployeeId]);
                     returnRequests = returnResults || [];
@@ -296,7 +295,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             const currentMonitorEmployeeId = currentMonitor[0].employee_id;
             
-            // Get all assignment records (all transactions)
+            // Get all assignment records (live view of all transactions)
             const [records] = await pool.execute(`
                 SELECT 
                     pa.*,
@@ -316,7 +315,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 ORDER BY pa.assigned_at DESC
             `);
             
-            // Get all product request history (all transactions)
+            // Get all product request history (live view of all transactions)
             const [productRequests] = await pool.execute(`
                 SELECT 
                     pr.*,
@@ -557,9 +556,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             if (action === 'approve') {
                 // For approval, get assignment details and mark as returned
                 const [assignments] = await pool.execute(
-                    hasReturnStatusColumn 
-                        ? 'SELECT * FROM product_assignments WHERE assignment_id = ? AND return_status = "R"'
-                        : 'SELECT * FROM product_assignments WHERE assignment_id = ? AND is_returned = 0',
+                    'SELECT * FROM product_assignments WHERE assignment_id = ? AND remarks = "RETURN_REQUESTED"',
                     [assignment_id]
                 );
                 
@@ -572,38 +569,23 @@ module.exports = (pool, requireAuth, requireRole) => {
                 const assignment = assignments[0];
                 
                 // Update assignment as returned with remarks
-                if (hasReturnStatusColumn) {
-                    await pool.execute(
-                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", returned_at = NOW(), remarks = ? WHERE assignment_id = ?',
-                        [remarks || null, assignment_id]
-                    );
-                } else {
-                    await pool.execute(
-                        'UPDATE product_assignments SET is_returned = 1, returned_at = NOW(), remarks = ? WHERE assignment_id = ?',
-                        [remarks || null, assignment_id]
-                    );
-                }
+                await pool.execute(
+                    'UPDATE product_assignments SET is_returned = 1, returned_at = NOW(), remarks = ? WHERE assignment_id = ?',
+                    [remarks || null, assignment_id]
+                );
                 
                 console.log(`Return approved: Assignment ${assignment_id}, Product ${assignment.product_id}`);
                 req.flash('success', 'Return approved successfully. Product is now available for request.');
                 
             } else if (action === 'reject') {
-                // For rejection, update status to rejected and save rejection remarks
-                if (hasReturnStatusColumn) {
-                    // Set return status to rejected and save rejection remarks
-                    await pool.execute(
-                        'UPDATE product_assignments SET return_status = ?, return_remarks = ? WHERE assignment_id = ?',
-                        ['X', remarks || 'Return request rejected', assignment_id]
-                    );
-                } else {
-                    // If no return_status column, just update remarks
-                    await pool.execute(
-                        'UPDATE product_assignments SET remarks = ? WHERE assignment_id = ?',
-                        [remarks || 'Return request rejected', assignment_id]
-                    );
-                }
+                // For rejection, update remarks with rejection reason
+                const rejectionRemark = 'RETURN_REJECTED: ' + (remarks || 'Return request rejected');
+                await pool.execute(
+                    'UPDATE product_assignments SET remarks = ? WHERE assignment_id = ?',
+                    [rejectionRemark, assignment_id]
+                );
                 
-                console.log(`Return rejected: Assignment ${assignment_id}`);
+                console.log(`Return rejected: Assignment ${assignment_id}, Remarks: ${rejectionRemark}`);
                 req.flash('success', 'Return request rejected.');
             }
             
@@ -793,12 +775,12 @@ module.exports = (pool, requireAuth, requireRole) => {
             // Randomly assign to one of the other monitors
             const randomMonitor = otherMonitors[Math.floor(Math.random() * otherMonitors.length)];
             
-            // Create the product request with return date
+            // Create the product request with return date and default quantity
             await pool.execute(`
                 INSERT INTO product_requests 
-                (employee_id, product_id, purpose, return_date, status, requested_at) 
-                VALUES (?, ?, ?, ?, 'pending', NOW())
-            `, [employeeId, product_id, purpose || null, return_date]);
+                (employee_id, product_id, quantity, purpose, return_date, status, requested_at) 
+                VALUES (?, ?, ?, ?, ?, 'pending', NOW())
+            `, [employeeId, product_id, 1, purpose || null, return_date]);
             
             // Log the activity
             if (ActivityLogger && ActivityLogger.logRequest) {
@@ -876,113 +858,21 @@ module.exports = (pool, requireAuth, requireRole) => {
     router.post('/return-product', requireAuth, requireRole(['monitor']), async (req, res) => {
         const { assignment_id } = req.body;
         
-        console.log('Return product request received:', { assignment_id, user: req.session.user.user_id });
-        
         try {
-            // Validate input
             if (!assignment_id) {
-                console.error('Missing assignment_id');
                 req.flash('error', 'Missing assignment ID');
                 return res.redirect('/monitor/my-products');
             }
             
-            // First verify the assignment exists and belongs to the current user
-            const [assignmentCheck] = await pool.execute(`
-                SELECT pa.assignment_id, pa.is_returned, e.user_id
-                FROM product_assignments pa
-                JOIN employees e ON pa.employee_id = e.employee_id
-                WHERE pa.assignment_id = ?
-            `, [assignment_id]);
-            
-            if (assignmentCheck.length === 0) {
-                console.error('Assignment not found:', assignment_id);
-                req.flash('error', 'Assignment not found');
-                return res.redirect('/monitor/my-products');
-            }
-            
-            const assignment = assignmentCheck[0];
-            
-            // Verify the assignment belongs to the current user
-            if (assignment.user_id !== req.session.user.user_id) {
-                console.error('Assignment does not belong to current user');
-                req.flash('error', 'You can only request return for your own products');
-                return res.redirect('/monitor/my-products');
-            }
-            
-            // Check if already returned
-            if (assignment.is_returned) {
-                console.error('Assignment already returned:', assignment_id);
-                req.flash('error', 'This product has already been returned');
-                return res.redirect('/monitor/my-products');
-            }
-            
-            // Check if return_status column exists
-            let hasReturnStatusColumn = false;
-            try {
-                const [columnCheck] = await pool.execute(`
-                    SELECT COLUMN_NAME 
-                    FROM INFORMATION_SCHEMA.COLUMNS 
-                    WHERE TABLE_NAME = 'product_assignments' 
-                    AND COLUMN_NAME = 'return_status' 
-                    AND TABLE_SCHEMA = DATABASE()
-                `);
-                hasReturnStatusColumn = columnCheck.length > 0;
-                console.log('return_status column exists:', hasReturnStatusColumn);
-            } catch (schemaError) {
-                console.warn('Could not check schema:', schemaError.message);
-            }
-            
-            // Update the assignment based on column availability
-            if (hasReturnStatusColumn) {
-                // Check if return_remarks column also exists
-                let hasReturnRemarksColumn = false;
-                try {
-                    const [remarksColumnCheck] = await pool.execute(`
-                        SELECT COLUMN_NAME 
-                        FROM INFORMATION_SCHEMA.COLUMNS 
-                        WHERE TABLE_NAME = 'product_assignments' 
-                        AND COLUMN_NAME = 'return_remarks' 
-                        AND TABLE_SCHEMA = DATABASE()
-                    `);
-                    hasReturnRemarksColumn = remarksColumnCheck.length > 0;
-                } catch (remarksSchemaError) {
-                    console.warn('Could not check return_remarks column:', remarksSchemaError.message);
-                }
-                
-                if (hasReturnRemarksColumn) {
-                    // Update with both return_status and clear return_remarks
-                    await pool.execute(
-                        'UPDATE product_assignments SET return_status = ?, return_remarks = NULL WHERE assignment_id = ?',
-                        ['R', assignment_id]
-                    );
-                } else {
-                    // Update only return_status
-                    await pool.execute(
-                        'UPDATE product_assignments SET return_status = ? WHERE assignment_id = ?',
-                        ['R', assignment_id]
-                    );
-                }
-                console.log('Updated return_status to request for assignment:', assignment_id);
-            } else {
-                // Fallback: update remarks field
-                await pool.execute(
-                    'UPDATE product_assignments SET remarks = ? WHERE assignment_id = ?',
-                    ['Return requested - awaiting approval', assignment_id]
-                );
-                console.log('Updated remarks for assignment (no return_status column):', assignment_id);
-            }
+            // Simply update remarks field to indicate return request
+            await pool.execute(
+                'UPDATE product_assignments SET remarks = ? WHERE assignment_id = ?',
+                ['RETURN_REQUESTED', assignment_id]
+            );
             
             req.flash('success', 'Return request submitted successfully. Awaiting approval from another monitor.');
-            console.log('Return request submitted successfully for assignment:', assignment_id);
-            
         } catch (error) {
             console.error('Return product error:', error);
-            console.error('Error details:', {
-                assignment_id,
-                user_id: req.session.user.user_id,
-                errorMessage: error.message,
-                errorStack: error.stack
-            });
             req.flash('error', `Error submitting return request: ${error.message}`);
         }
         
@@ -1030,7 +920,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 ORDER BY pr.requested_at DESC
             `, [currentMonitorEmployeeId]);
             
-            // Get monitor's own assignment history
+            // Get monitor's own assignment history (all assignments - current and returned)
             const [myAssignments] = await pool.execute(`
                 SELECT 
                     pa.*,

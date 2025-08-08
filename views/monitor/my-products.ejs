@@ -121,11 +121,11 @@
                                                         </span>
                                                     <% } %>
                                                 </div>
-                                            <% } else if (product.return_status === 'R') { %>
+                                            <% } else if (product.remarks === 'RETURN_REQUESTED') { %>
                                                 <span class="px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
                                                     ⏳ Return Requested
                                                 </span>
-                                            <% } else if (product.return_status === 'X') { %>
+                                            <% } else if (product.remarks && product.remarks.startsWith('RETURN_REJECTED')) { %>
                                                 <span class="px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
                                                     ❌ Return Rejected
                                                 </span>
@@ -136,10 +136,10 @@
                                             <% } %>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <% if (product.return_status === 'X' && product.return_remarks && product.return_remarks !== 'null' && product.return_remarks.trim() !== '') { %>
+                                            <% if (product.remarks && product.remarks.startsWith('RETURN_REJECTED')) { %>
                                                 <div class="bg-red-50 p-2 rounded text-xs border-l-2 border-red-400">
                                                     <strong>Rejection Reason:</strong><br>
-                                                    <%= product.return_remarks %>
+                                                    <%= product.remarks.replace('RETURN_REJECTED: ', '') %>
                                                 </div>
                                             <% } else if (product.remarks && product.remarks !== 'null' && product.remarks.trim() !== '') { %>
                                                 <div class="bg-gray-50 p-2 rounded text-xs border-l-2 border-blue-400">
@@ -152,9 +152,9 @@
                                         <td class="px-6 py-4 text-sm text-gray-500">
                                             <% if (product.is_returned) { %>
                                                 <span class="text-gray-400">Returned</span>
-                                            <% } else if (product.return_status === 'R') { %>
+                                            <% } else if (product.remarks === 'RETURN_REQUESTED') { %>
                                                 <span class="text-orange-600">Pending Approval</span>
-                                            <% } else if (product.return_status === 'X') { %>
+                                            <% } else if (product.remarks && product.remarks.startsWith('RETURN_REJECTED')) { %>
                                                 <form action="/monitor/return-product" method="POST" onsubmit="return confirm('Your previous return request was rejected. Do you want to request return again?');">
                                                     <input type="hidden" name="assignment_id" value="<%= product.assignment_id %>" />
                                                     <button type="submit" class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-sm text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">

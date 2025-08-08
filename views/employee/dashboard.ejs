@@ -2,29 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta                 </div>
-            </div>
-        </div>
-        </div> <!-- End scrollable content area -->
-    </main>
-</body>
-</html>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Dashboard - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-0 md:ml-64 flex flex-col h-screen">
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
         <!-- Fixed Header Section -->
         <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
             <%- include('../partials/messages') %>
             
-            <div class="mb-4">
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Employee Dashboard</h1>
-                <p class="text-gray-600">Welcome back, <%= user.full_name %>!</p>
+            <div class="mb-4 flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Employee Dashboard</h1>
+                    <p class="text-gray-600">Welcome back, <%= user.full_name %>!</p>
+                </div>
             </div>
         </div>
         
@@ -54,7 +49,7 @@
                             <i class="fas fa-laptop text-lg text-orange-500"></i>
                         </div>
                         <h3 class="text-base font-medium text-gray-800">My Products</h3>
-                        <p class="text-xs text-gray-500">Products I currently have</p>
+                        <p class="text-xs text-gray-500"><span id="dashboardActiveProducts">0</span> Active Products</p>
                     </div>
                 </div>
             </a>
@@ -80,12 +75,48 @@
                             <i class="fas fa-history text-lg text-purple-500"></i>
                         </div>
                         <h3 class="text-base font-medium text-gray-800">View Records</h3>
-                        <p class="text-xs text-gray-500">Check assignment history</p>
+                        <p class="text-xs text-gray-500"><span id="dashboardPendingRequests">0</span> Pending Requests</p>
                     </div>
                 </div>
             </a>
             </div>
         </div>
+        </div> <!-- End scrollable content area -->
     </main>
+    
+    <script>
+        // Function to update dashboard stats
+        async function updateDashboardStats() {
+            try {
+                // Update active products count
+                const activeProductsResponse = await fetch('/employee/api/active-products-count');
+                if (activeProductsResponse.ok) {
+                    const activeProductsData = await activeProductsResponse.json();
+                    const dashboardActiveProducts = document.getElementById('dashboardActiveProducts');
+                    if (dashboardActiveProducts) {
+                        dashboardActiveProducts.textContent = activeProductsData.count;
+                    }
+                }
+
+                // Update pending requests count
+                const pendingRequestsResponse = await fetch('/employee/api/pending-requests-count');
+                if (pendingRequestsResponse.ok) {
+                    const pendingRequestsData = await pendingRequestsResponse.json();
+                    const dashboardPendingRequests = document.getElementById('dashboardPendingRequests');
+                    if (dashboardPendingRequests) {
+                        dashboardPendingRequests.textContent = pendingRequestsData.count;
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating dashboard stats:', error);
+            }
+        }
+        
+        // Update stats every 30 seconds
+        setInterval(updateDashboardStats, 30000);
+        
+        // Update stats when page loads
+        document.addEventListener('DOMContentLoaded', updateDashboardStats);
+    </script>
 </body>
 </html>

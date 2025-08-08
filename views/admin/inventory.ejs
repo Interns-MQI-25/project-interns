@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/responsive.css">
-    <!-- SheetJS for Excel export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-50">
@@ -31,7 +30,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Search Bar -->
                     <div class="relative">
-                        <input type="text" id="searchInput" placeholder="Search products, models, serial numbers..." 
+                        <input type="text" id="searchInput" placeholder="Search products, models, serial numbers, assigned employees..." 
                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-search text-gray-400"></i>
@@ -76,6 +75,17 @@
                             <option value="Due Soon">Due Soon</option>
                             <option value="Overdue">Overdue</option>
                             <option value="Not Required">Not Required</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Assignment Status Filter -->
+                    <div>
+                        <select id="assignmentFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Assignment Status</option>
+                            <option value="assigned">Currently Assigned</option>
+                            <option value="available">Available</option>
                         </select>
                     </div>
                 </div>
@@ -167,6 +177,12 @@
                                                 Calibration
                                             </th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Next Calibration Date
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Assigned To
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Added By
                                             </th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -183,7 +199,11 @@
                                                 data-asset-type="<%= product.asset_type || '' %>"
                                                 data-serial="<%= product.serial_number || '' %>"
                                                 data-calibration="<%= product.calibration_required ? (product.calibration_status || 'Current') : 'Not Required' %>"
-                                                data-added-by="<%= product.added_by_name || 'System' %>">
+                                                data-added-by="<%= product.added_by_name || 'System' %>"
+                                                data-assigned-to="<%= product.assigned_to_details || '' %>"
+                                                data-total-stock="<%= (product.quantity || 0) + (product.currently_assigned || 0) %>"
+                                                data-assigned-count="<%= product.currently_assigned || 0 %>"
+                                                data-available-count="<%= product.quantity || 0 %>">
                                                 <td class="px-6 py-4 max-w-32">
                                                     <div class="text-sm font-medium text-gray-900 break-words leading-tight">
                                                         <%= product.product_name %>
@@ -229,11 +249,38 @@
                                                                 Current
                                                             </span>
                                                         <% } %>
-                                                        <div class="text-xs text-gray-400">
-                                                            <%= product.calibration_frequency || 'N/A' %>
-                                                        </div>
                                                     <% } else { %>
                                                         <span class="text-gray-400">Not Required</span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <% if (product.calibration_required && product.next_calibration_date) { %>
+                                                        <div class="text-sm text-gray-900">
+                                                            <%= new Date(product.next_calibration_date).toLocaleDateString() %>
+                                                        </div>
+                                                        <div class="text-xs text-gray-500">
+                                                            (Every <%= product.calibration_frequency || 'N/A' %> years)
+                                                        </div>
+                                                    <% } else { %>
+                                                        <span class="text-gray-400">N/A</span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="px-6 py-4 text-sm text-gray-500">
+                                                    <% if (product.assigned_to_details) { %>
+                                                        <div class="max-w-xs">
+                                                            <% const assignments = product.assigned_to_details.split('; '); %>
+                                                            <% assignments.forEach((assignment, index) => { %>
+                                                                <div class="mb-1">
+                                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                                        <%= assignment %>
+                                                                    </span>
+                                                                </div>
+                                                            <% }); %>
+                                                        </div>
+                                                    <% } else { %>
+                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                            Available
+                                                        </span>
                                                     <% } %>
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -302,6 +349,7 @@
             const assetTypeFilter = document.getElementById('assetTypeFilter').value;
             const categoryFilter = document.getElementById('categoryFilter').value;
             const calibrationFilter = document.getElementById('calibrationFilter').value;
+            const assignmentFilter = document.getElementById('assignmentFilter').value;
 
             const productRows = document.querySelectorAll('.product-row');
             const modelCategories = document.querySelectorAll('.model-category');
@@ -321,6 +369,7 @@
                     const serial = row.dataset.serial.toLowerCase();
                     const calibration = row.dataset.calibration;
                     const addedBy = row.dataset.addedBy.toLowerCase();
+                    const assignedTo = row.dataset.assignedTo.toLowerCase();
 
                     // Search filter
                     const matchesSearch = !searchTerm || 
@@ -329,7 +378,8 @@
                         category.includes(searchTerm) ||
                         assetType.includes(searchTerm) ||
                         serial.includes(searchTerm) ||
-                        addedBy.includes(searchTerm);
+                        addedBy.includes(searchTerm) ||
+                        assignedTo.includes(searchTerm);
 
                     // Asset type filter
                     const matchesAssetType = !assetTypeFilter || assetType === assetTypeFilter.toLowerCase();
@@ -340,7 +390,12 @@
                     // Calibration filter
                     const matchesCalibration = !calibrationFilter || calibration === calibrationFilter;
 
-                    const isVisible = matchesSearch && matchesAssetType && matchesCategory && matchesCalibration;
+                    // Assignment filter
+                    const matchesAssignment = !assignmentFilter || 
+                        (assignmentFilter === 'assigned' && assignedTo.length > 0) ||
+                        (assignmentFilter === 'available' && assignedTo.length === 0);
+
+                    const isVisible = matchesSearch && matchesAssetType && matchesCategory && matchesCalibration && matchesAssignment;
                     
                     row.style.display = isVisible ? '' : 'none';
                     if (isVisible) {
@@ -374,20 +429,28 @@
             let totalStock = 0, totalAssigned = 0, totalAvailable = 0;
             
             visibleRows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                const stock = parseInt(cells[3].textContent.trim()) || 0;
-                const assigned = parseInt(cells[4].textContent.trim()) || 0;
-                const available = parseInt(cells[5].textContent.trim()) || 0;
+                // Use data attributes instead of parsing HTML content
+                const stock = parseInt(row.dataset.totalStock) || 0;
+                const assigned = parseInt(row.dataset.assignedCount) || 0;
+                const available = parseInt(row.dataset.availableCount) || 0;
                 
                 totalStock += stock;
                 totalAssigned += assigned;
                 totalAvailable += available;
             });
             
-            summary.querySelector('.total-stock').textContent = totalStock;
-            summary.querySelector('.total-assigned').textContent = totalAssigned;
-            summary.querySelector('.total-available').textContent = totalAvailable;
-            summary.querySelector('.product-count').textContent = visibleRows.length;
+            // Update only if we found the summary elements
+            if (summary) {
+                const totalStockEl = summary.querySelector('.total-stock');
+                const totalAssignedEl = summary.querySelector('.total-assigned');
+                const totalAvailableEl = summary.querySelector('.total-available');
+                const productCountEl = summary.querySelector('.product-count');
+                
+                if (totalStockEl) totalStockEl.textContent = totalStock;
+                if (totalAssignedEl) totalAssignedEl.textContent = totalAssigned;
+                if (totalAvailableEl) totalAvailableEl.textContent = totalAvailable;
+                if (productCountEl) productCountEl.textContent = visibleRows.length;
+            }
         }
 
         function updateResultsSummary(totalVisible, visibleModels) {
@@ -406,6 +469,7 @@
             document.getElementById('assetTypeFilter').value = '';
             document.getElementById('categoryFilter').value = '';
             document.getElementById('calibrationFilter').value = '';
+            document.getElementById('assignmentFilter').value = '';
             filterProducts();
         }
 
@@ -452,150 +516,144 @@
             // Get all visible product rows
             const visibleRows = document.querySelectorAll('.product-row:not([style*="display: none"])');
             
-            if (visibleRows.length === 0) {
-                alert('No products to export. Please adjust your filters.');
-                return;
-            }
-
             // Prepare data for export
             const data = [];
             
             // Add headers
             data.push([
-                'Model Number',
                 'Product Name',
-                'Category',
+                'Product Category', 
+                'Model Number',
                 'Asset Type',
                 'Serial Number',
                 'Total Stock',
                 'Currently Assigned',
                 'Available',
                 'Calibration Status',
-                'Calibration Frequency',
-                'Description',
+                'Next Calibration Date',
+                'Assigned To',
                 'Added By',
-                'Added Date'
+                'Added Date',
+                'Description'
             ]);
 
             // Add data rows
             visibleRows.forEach(row => {
                 const cells = row.querySelectorAll('td');
-                const model = row.dataset.model || 'No Model';
-                const productName = row.dataset.productName;
-                const category = row.dataset.category;
-                const assetType = row.dataset.assetType;
-                const serial = row.dataset.serial || 'N/A';
-                const totalStock = cells[3].textContent.trim();
-                const assigned = cells[4].textContent.trim();
-                const available = cells[5].textContent.trim();
-                const calibration = row.dataset.calibration;
-                const addedBy = row.dataset.addedBy;
                 
-                // Extract calibration frequency from the UI
+                // Extract product details from first cell
+                const productDetailsCell = cells[0];
+                const productName = productDetailsCell.querySelector('.text-sm.font-medium').textContent.trim();
+                const productCategory = productDetailsCell.querySelector('.text-sm.text-gray-500').textContent.trim();
+                const description = productDetailsCell.querySelector('.text-xs.text-gray-400') ? 
+                    productDetailsCell.querySelector('.text-xs.text-gray-400').textContent.trim().replace('...', '') : '';
+
+                // Extract other data
+                const modelNumber = row.dataset.model || '';
+                const assetType = cells[1].querySelector('span').textContent.trim();
+                const serialNumber = cells[2].textContent.trim();
+                const totalStock = cells[3].querySelector('span').textContent.trim();
+                const currentlyAssigned = cells[4].querySelector('span').textContent.trim();
+                const available = cells[5].querySelector('span').textContent.trim();
+                
+                // Extract calibration info
                 const calibrationCell = cells[6];
-                const calibrationFreq = calibrationCell.querySelector('.text-xs') ? 
-                    calibrationCell.querySelector('.text-xs').textContent.trim() : 'N/A';
+                let calibrationStatus = '';
                 
-                // Extract description from the UI
-                const productCell = cells[0];
-                const descriptionElement = productCell.querySelector('.text-xs.text-gray-400');
-                const description = descriptionElement ? 
-                    descriptionElement.textContent.replace('...', '').trim() : '';
-                
-                // Extract added date
-                const addedDate = cells[8].textContent.trim();
+                const calibrationSpan = calibrationCell.querySelector('span');
+                if (calibrationSpan) {
+                    calibrationStatus = calibrationSpan.textContent.trim();
+                } else {
+                    calibrationStatus = calibrationCell.textContent.trim();
+                }
+
+                // Extract next calibration date
+                const nextCalibrationCell = cells[7];
+                let nextCalibrationDate = '';
+                if (nextCalibrationCell) {
+                    const dateDiv = nextCalibrationCell.querySelector('.text-sm.text-gray-900');
+                    if (dateDiv) {
+                        nextCalibrationDate = dateDiv.textContent.trim();
+                    } else {
+                        nextCalibrationDate = nextCalibrationCell.textContent.trim();
+                    }
+                }
+
+                // Extract assigned to info (now column 8)
+                const assignedCell = cells[8];
+                const assignedSpans = assignedCell.querySelectorAll('span');
+                let assignedTo = '';
+                if (assignedSpans.length > 0) {
+                    assignedTo = Array.from(assignedSpans).map(span => span.textContent.trim()).join('; ');
+                }
+
+                const addedBy = cells[9].textContent.trim();
+                const addedDate = cells[10].textContent.trim();
 
                 data.push([
-                    model,
                     productName,
-                    category,
+                    productCategory,
+                    modelNumber,
                     assetType,
-                    serial,
+                    serialNumber,
                     totalStock,
-                    assigned,
+                    currentlyAssigned,
                     available,
-                    calibration,
-                    calibrationFreq,
-                    description,
+                    calibrationStatus,
+                    nextCalibrationDate,
+                    assignedTo,
                     addedBy,
-                    addedDate
+                    addedDate,
+                    description
                 ]);
             });
 
             // Create workbook and worksheet
-            const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(data);
-
+            const wb = XLSX.utils.book_new();
+            
             // Set column widths
             const colWidths = [
-                { wch: 15 }, // Model Number
-                { wch: 25 }, // Product Name
-                { wch: 15 }, // Category
-                { wch: 12 }, // Asset Type
-                { wch: 15 }, // Serial Number
-                { wch: 12 }, // Total Stock
-                { wch: 15 }, // Currently Assigned
-                { wch: 10 }, // Available
-                { wch: 15 }, // Calibration Status
-                { wch: 15 }, // Calibration Frequency
-                { wch: 30 }, // Description
-                { wch: 15 }, // Added By
-                { wch: 12 }  // Added Date
+                {wch: 25}, // Product Name
+                {wch: 20}, // Product Category
+                {wch: 15}, // Model Number
+                {wch: 15}, // Asset Type
+                {wch: 15}, // Serial Number
+                {wch: 12}, // Total Stock
+                {wch: 15}, // Currently Assigned
+                {wch: 12}, // Available
+                {wch: 15}, // Calibration Status
+                {wch: 15}, // Next Calibration Date
+                {wch: 30}, // Assigned To
+                {wch: 15}, // Added By
+                {wch: 12}, // Added Date
+                {wch: 40}  // Description
             ];
             ws['!cols'] = colWidths;
 
-            // Style the header row
-            const headerRange = XLSX.utils.decode_range(ws['!ref']);
-            for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-                if (!ws[cellAddress]) continue;
-                ws[cellAddress].s = {
-                    font: { bold: true },
-                    fill: { fgColor: { rgb: "E5E7EB" } },
-                    alignment: { horizontal: "center" }
-                };
-            }
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, "Inventory");
 
-            // Add the worksheet to the workbook
-            XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+            // Generate filename with current date
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const filename = `Marquardt_Inventory_${dateStr}.xlsx`;
 
-            // Generate filename with current date and applied filters
-            const currentDate = new Date().toISOString().split('T')[0];
-            const searchTerm = document.getElementById('searchInput').value;
-            const assetTypeFilter = document.getElementById('assetTypeFilter').value;
-            const categoryFilter = document.getElementById('categoryFilter').value;
-            const calibrationFilter = document.getElementById('calibrationFilter').value;
-            
-            let filename = `Inventory_${currentDate}`;
-            
-            // Add filter info to filename if any filters are applied
-            const activeFilters = [];
-            if (searchTerm) activeFilters.push(`Search-${searchTerm.substring(0, 10)}`);
-            if (assetTypeFilter) activeFilters.push(`Asset-${assetTypeFilter}`);
-            if (categoryFilter) activeFilters.push(`Category-${categoryFilter}`);
-            if (calibrationFilter) activeFilters.push(`Calibration-${calibrationFilter}`);
-            
-            if (activeFilters.length > 0) {
-                filename += `_Filtered_${activeFilters.join('_')}`;
-            }
-            
-            filename += '.xlsx';
-
-            // Save the file
+            // Save file
             XLSX.writeFile(wb, filename);
-
-            // Show success message
-            const resultsSummary = document.getElementById('resultsSummary');
-            const originalText = resultsSummary.textContent;
-            const originalClass = resultsSummary.className;
             
-            resultsSummary.textContent = `✓ Exported ${visibleRows.length} products to ${filename}`;
-            resultsSummary.className = 'mt-2 text-sm text-green-600';
+            // Show success message
+            const summary = document.getElementById('resultsSummary');
+            const originalText = summary.textContent;
+            const originalClass = summary.className;
+            
+            summary.textContent = `✓ Exported ${data.length - 1} products to ${filename}`;
+            summary.className = 'mt-2 text-sm text-green-600';
             
             // Reset message after 3 seconds
             setTimeout(() => {
-                resultsSummary.textContent = originalText;
-                resultsSummary.className = originalClass;
+                summary.textContent = originalText;
+                summary.className = originalClass;
             }, 3000);
         }
 
@@ -611,6 +669,7 @@
             document.getElementById('assetTypeFilter').addEventListener('change', filterProducts);
             document.getElementById('categoryFilter').addEventListener('change', filterProducts);
             document.getElementById('calibrationFilter').addEventListener('change', filterProducts);
+            document.getElementById('assignmentFilter').addEventListener('change', filterProducts);
 
             // Initial results summary
             const totalProducts = document.querySelectorAll('.product-row').length;

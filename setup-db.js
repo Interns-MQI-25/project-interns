@@ -172,11 +172,15 @@ async function setupDatabase() {
         // Insert departments
         await dbConnection.execute(`
             INSERT IGNORE INTO departments (department_name, description) VALUES 
-            ('IT', 'Information Technology Department'),
-            ('HR', 'Human Resources Department'),
-            ('Finance', 'Finance and Accounting Department'),
-            ('Marketing', 'Marketing and Sales Department'),
-            ('Operations', 'Operations and Logistics Department')
+            ('RDT-PU', 'Functional Test'),
+            ('RDA-PU', 'Advanced Technology'),
+            ('RDF-PU', 'Functional Safety & Cyber Security'),
+            ('RDL-PU', 'Low Volume / Customer Sample'),
+            ('RDD-PU', 'Product Development'),
+            ('RDE-PU', 'Electronics Engineering'),
+            ('RDM-PU', 'Mechanical Engineering'),
+            ('RDS-PU', 'Software Engineering'),
+            ('RDV-PU', 'Value Analysis & Value Engineering')
         `);
         
         console.log('✅ Departments inserted');

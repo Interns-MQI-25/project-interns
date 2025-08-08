@@ -69,6 +69,14 @@
                     Stock
                 </a>
             <% } else if (user.role === 'monitor') { %>
+                <a href="/monitor/my-products" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-laptop mr-3"></i>
+                    My Products
+                </a>
+                <a href="/monitor/my-history" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-user-clock mr-3"></i>
+                    My History
+                </a>
                 <a href="/monitor/approvals" class="sidebar-link group flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="approvals">
                     <div class="flex items-center">
                         <i class="fas fa-check-circle mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>

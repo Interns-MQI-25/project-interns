@@ -31,11 +31,31 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             try {
                 const [assignmentResults] = await pool.execute(`
-                    SELECT pa.*, p.product_name, u.full_name as monitor_name, pa.return_date, pa.assignment_id, pa.is_returned, pa.return_status
+                    SELECT pa.*, p.product_name, u.full_name as monitor_name,
+                           CASE 
+                               WHEN pa.return_status = 'requested' THEN 'Return request submitted'
+                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN 'Return approved and completed'
+                               WHEN pa.return_status = 'rejected' THEN 'Return request rejected'
+                               ELSE 'Product assigned for use'
+                           END as return_purpose,
+                           CASE 
+                               WHEN pa.return_status = 'requested' THEN 'pending'
+                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN 'approved'
+                               WHEN pa.return_status = 'rejected' THEN 'rejected'
+                               ELSE 'assigned'
+                           END as return_request_status,
+                           CASE 
+                               WHEN pa.return_status = 'requested' THEN pa.assigned_at
+                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN pa.returned_at
+                               WHEN pa.return_status = 'rejected' THEN pa.assigned_at
+                               ELSE NULL
+                           END as return_requested_date,
+                           returned_user.full_name as returned_processed_by_name
                     FROM product_assignments pa
                     JOIN products p ON pa.product_id = p.product_id
                     JOIN users u ON pa.monitor_id = u.user_id
                     JOIN employees e ON pa.employee_id = e.employee_id
+                    LEFT JOIN users returned_user ON pa.returned_to = returned_user.user_id
                     WHERE e.user_id = ?
                     ORDER BY pa.assigned_at DESC
                 `, [req.session.user.user_id]);
@@ -161,7 +181,7 @@ module.exports = (pool, requireAuth, requireRole) => {
     // Employee: Stock Route
     router.get('/stock', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
-            // Get all products with assignment information
+
             const [products] = await pool.execute(`
                 SELECT 
                     p.product_id,
@@ -173,10 +193,10 @@ module.exports = (pool, requireAuth, requireRole) => {
                     p.serial_number,
                     p.quantity,
                     p.added_at,
-                    CASE WHEN EXISTS(
-                        SELECT 1 FROM product_assignments pa 
-                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE AND pa.return_status != 'approved'
-                    ) THEN 1 ELSE 0 END as is_assigned,
+                    COALESCE(
+                        (SELECT COUNT(*) FROM product_assignments pa 
+                         WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE), 0
+                    ) as assigned_quantity,
                     (
                         SELECT GROUP_CONCAT(
                             CONCAT(u.full_name, ' (Return: ', 
@@ -186,11 +206,11 @@ module.exports = (pool, requireAuth, requireRole) => {
                         FROM product_assignments pa
                         JOIN employees e ON pa.employee_id = e.employee_id
                         JOIN users u ON e.user_id = u.user_id
-                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE AND pa.return_status != 'approved'
+                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
                         LIMIT 3
                     ) as current_users
                 FROM products p
-                WHERE p.is_available = 1
+                WHERE p.quantity > 0
                 ORDER BY p.asset_type, p.product_category, p.product_name
             `);
             
@@ -283,32 +303,38 @@ module.exports = (pool, requireAuth, requireRole) => {
 
         if (!assignment_id) {
             req.flash('error', 'Invalid request.');
-            return res.redirect('/employee/records');
+            return res.redirect('/employee/my-products');
         }
 
         try {
             const [assignments] = await pool.execute(
-                'SELECT * FROM product_assignments WHERE assignment_id = ? AND is_returned = 0 AND return_status = "none"',
+                'SELECT * FROM product_assignments WHERE assignment_id = ? AND is_returned = 0',
                 [assignment_id]
             );
 
             if (assignments.length === 0) {
-                req.flash('error', 'Assignment not found, already returned, or return already requested.');
-                return res.redirect('/employee/records');
+                req.flash('error', 'Assignment not found or already returned.');
+                return res.redirect('/employee/my-products');
             }
 
-            // Mark return as requested (pending approval)
+            // Check if return is already requested
+            if (assignments[0].return_status === 'requested') {
+                req.flash('error', 'Return request already submitted.');
+                return res.redirect('/employee/my-products');
+            }
+
+            // Mark return as requested (needs monitor approval) and clear any previous rejection remarks
             await pool.execute(
-                'UPDATE product_assignments SET return_status = "requested" WHERE assignment_id = ?',
+                'UPDATE product_assignments SET return_status = "requested", return_remarks = NULL WHERE assignment_id = ?',
                 [assignment_id]
             );
 
-            req.flash('success', 'Return request submitted. Waiting for monitor/admin approval.');
-            res.redirect('/employee/records');
+            req.flash('success', 'Return request submitted successfully. Waiting for monitor approval.');
+            res.redirect('/employee/my-products');
         } catch (error) {
             console.error('Return request error:', error);
-            req.flash('error', 'Error submitting return request.');
-            res.redirect('/employee/records');
+            req.flash('error', `Error submitting return request: ${error.message}`);
+            res.redirect('/employee/my-products');
         }
     });
 
@@ -316,14 +342,14 @@ module.exports = (pool, requireAuth, requireRole) => {
     router.get('/my-products', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
             const [myProducts] = await pool.execute(`
-                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status, pa.remarks, pa.returned_at,
+                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status, pa.returned_at, pa.remarks,
                        p.product_name, p.asset_type, p.model_number, p.serial_number,
                        u.full_name as monitor_name
                 FROM product_assignments pa
                 JOIN products p ON pa.product_id = p.product_id
                 JOIN employees e ON pa.employee_id = e.employee_id
                 JOIN users u ON pa.monitor_id = u.user_id
-                WHERE e.user_id = ? 
+                WHERE e.user_id = ? AND pa.is_returned = 0
                 ORDER BY pa.assigned_at DESC
             `, [req.session.user.user_id]);
             
@@ -340,61 +366,93 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
-    // Route: Download file attachment (Employee)
-    router.get('/download-attachment/:attachmentId', requireAuth, requireRole(['employee']), async (req, res) => {
+    // API endpoint to get active products count for dashboard
+    router.get('/api/active-products-count', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
-            const attachmentId = req.params.attachmentId;
+            const currentUserId = req.session.user.user_id;
             
-            // Get attachment details
-            const [attachments] = await pool.execute(
-                'SELECT * FROM product_attachments WHERE attachment_id = ?',
-                [attachmentId]
+            // Get current employee's employee_id
+            const [currentEmployee] = await pool.execute(
+                'SELECT employee_id FROM employees WHERE user_id = ?', 
+                [currentUserId]
             );
             
-            if (attachments.length === 0) {
-                return res.status(404).json({ error: 'File not found' });
+            if (currentEmployee.length === 0) {
+                return res.json({ count: 0 });
             }
             
-            const attachment = attachments[0];
-            const filePath = attachment.file_path;
+            const currentEmployeeId = currentEmployee[0].employee_id;
             
-            // Check if file exists
-            const fs = require('fs');
-            if (!fs.existsSync(filePath)) {
-                return res.status(404).json({ error: 'File not found on server' });
-            }
+            // Count active products (not returned)
+            const [activeProducts] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_assignments WHERE employee_id = ? AND is_returned = FALSE',
+                [currentEmployeeId]
+            );
             
-            // Set headers for download
-            res.setHeader('Content-Disposition', `attachment; filename="${attachment.original_filename}"`);
-            res.setHeader('Content-Type', attachment.mime_type);
-            
-            // Send file
-            res.sendFile(path.resolve(filePath));
-            
+            res.json({ count: activeProducts[0].count });
         } catch (error) {
-            console.error('Download error:', error);
-            res.status(500).json({ error: 'Error downloading file' });
+            console.error('Error fetching active products count:', error);
+            res.json({ count: 0 });
         }
     });
 
-    // Route: View product attachments (API - Employee)
-    router.get('/api/product-attachments/:productId', requireAuth, requireRole(['employee']), async (req, res) => {
+    // API endpoint to get pending requests count for dashboard
+    router.get('/api/pending-requests-count', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
-            const productId = req.params.productId;
-            const attachments = await getProductAttachments(pool, productId);
+            const currentUserId = req.session.user.user_id;
             
-            // Add file icons and formatted sizes
-            const formattedAttachments = attachments.map(attachment => ({
-                ...attachment,
-                file_icon: getFileIcon(attachment.filename),
-                formatted_size: formatFileSize(attachment.file_size),
-                download_url: `/employee/download-attachment/${attachment.attachment_id}`
-            }));
+            // Get current employee's employee_id
+            const [currentEmployee] = await pool.execute(
+                'SELECT employee_id FROM employees WHERE user_id = ?', 
+                [currentUserId]
+            );
             
-            res.json(formattedAttachments);
+            if (currentEmployee.length === 0) {
+                return res.json({ count: 0 });
+            }
+            
+            const currentEmployeeId = currentEmployee[0].employee_id;
+            
+            // Count pending requests
+            const [pendingRequests] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE employee_id = ? AND status = "pending"',
+                [currentEmployeeId]
+            );
+            
+            res.json({ count: pendingRequests[0].count });
         } catch (error) {
-            console.error('Error fetching attachments:', error);
-            res.status(500).json({ error: 'Error fetching attachments' });
+            console.error('Error fetching pending requests count:', error);
+            res.json({ count: 0 });
+        }
+    });
+
+    // API endpoint to get total requests count for dashboard
+    router.get('/api/total-requests-count', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            const currentUserId = req.session.user.user_id;
+            
+            // Get current employee's employee_id
+            const [currentEmployee] = await pool.execute(
+                'SELECT employee_id FROM employees WHERE user_id = ?', 
+                [currentUserId]
+            );
+            
+            if (currentEmployee.length === 0) {
+                return res.json({ count: 0 });
+            }
+            
+            const currentEmployeeId = currentEmployee[0].employee_id;
+            
+            // Count all requests
+            const [totalRequests] = await pool.execute(
+                'SELECT COUNT(*) as count FROM product_requests WHERE employee_id = ?',
+                [currentEmployeeId]
+            );
+            
+            res.json({ count: totalRequests[0].count });
+        } catch (error) {
+            console.error('Error fetching total requests count:', error);
+            res.json({ count: 0 });
         }
     });
 

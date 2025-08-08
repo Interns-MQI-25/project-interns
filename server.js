@@ -72,8 +72,8 @@ const dbConfig = process.env.NODE_ENV === 'production' ? {
 } : {
     // Development: Use standard TCP connection
     host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'sigma',
-    password: process.env.DB_PASSWORD || 'sigma',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'Neha@012004',
     database: process.env.DB_NAME || 'product_management_system',
     port: process.env.DB_PORT || 3306,
     connectionLimit: 5,

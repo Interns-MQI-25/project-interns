@@ -144,49 +144,49 @@
                         </div>
                         
                         <div id="modelDiv">
-                            <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
-                            <input type="text" id="model" name="model" placeholder="Enter Model no. mentioned on the product e.g., Dell Inspiron 15" 
+                            <label for="model" class="block text-sm font-medium text-gray-700">Model *</label>
+                            <input type="text" id="model" name="model" required placeholder="Enter Model no. mentioned on the product e.g., Dell Inspiron 15" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label for="serial" class="block text-sm font-medium text-gray-700">Product Serial Number</label>
-                            <input type="text" id="serial" name="serial" placeholder="Enter Unique Serial no mentioned on the product" 
+                            <label for="serial" class="block text-sm font-medium text-gray-700">Product Serial Number *</label>
+                            <input type="text" id="serial" name="serial" required placeholder="Enter Unique Serial no mentioned on the product" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
 
                         <div>
-                            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date</label>
-                            <input type="date" id="purchase_date" name="purchase_date"
+                            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date *</label>
+                            <input type="date" id="purchase_date" name="purchase_date" required
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
 
                         <div>
-                            <label for="pr_no" class="block text-sm font-medium text-gray-700">PR No</label>
-                            <input type="text" id="pr_no" name="pr_no" placeholder="Enter SAP Purchase Request Number"
+                            <label for="pr_no" class="block text-sm font-medium text-gray-700">PR No *</label>
+                            <input type="text" id="pr_no" name="pr_no" required placeholder="Enter SAP Purchase Request Number"
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label for="po_number" class="block text-sm font-medium text-gray-700">PO Number</label>
-                            <input type="text" id="po_number" name="po_number" placeholder="Enter SAP Purchase Order Number"
+                            <label for="po_number" class="block text-sm font-medium text-gray-700">PO Number *</label>
+                            <input type="text" id="po_number" name="po_number" required placeholder="Enter SAP Purchase Order Number"
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
 
                         <div>
-                            <label for="inward_date" class="block text-sm font-medium text-gray-700">Inward Date</label>
-                            <input type="date" id="inward_date" name="inward_date"
+                            <label for="inward_date" class="block text-sm font-medium text-gray-700">Inward Date *</label>
+                            <input type="date" id="inward_date" name="inward_date" required
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
 
                         <div>
                             <label for="inwarded_by" class="block text-sm font-medium text-gray-700">Inwarded By</label>
                             <input type="text" id="inwarded_by" name="inwarded_by" 
-                                   value="<%= user && user.full_name ? user.full_name : '' %>" readonly
+                                   value="<%= user && user.full_name ? user.full_name : '' %><%= user && user.department_name ? ' - ' + user.department_name : '' %>" readonly
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-700 cursor-not-allowed">
                         </div>
                     </div>

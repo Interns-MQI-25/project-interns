@@ -7,6 +7,10 @@ env_variables:
   DB_PASSWORD: 'sigma'
   DB_NAME: 'product_management_system'
   SESSION_SECRET: 'pms-production-secret-key-2025-change-me-in-production'
+  EMAIL_USER: 'your-email@gmail.com'
+  EMAIL_PASS: 'your-app-password'
+  ADMIN_EMAIL: 'admin@marquardt.com'
+
 
 beta_settings:
   cloud_sql_instances: mqi-interns-467405:us-central1:product-management-db

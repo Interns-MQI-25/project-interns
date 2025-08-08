@@ -9,11 +9,12 @@ Before deploying, ensure you have:
 1.  **Google Cloud Platform Account**
     *   Create an account at [console.cloud.google.com](https://console.cloud.google.com)
     *   Create a new project or select an existing one. This guide assumes the project ID is `mqi-interns-467308`.
+    *   **Note**: Deployment scripts use `mqi-ims`. Ensure consistency.
 
 2.  **Google Cloud CLI**
     *   Install from: https://cloud.google.com/sdk/docs/install
     *   Authenticate: `gcloud auth login`
-    *   Set project: `gcloud config set project mqi-interns-467308`
+    *   Set project: `gcloud config set project mqi-ims`
 
 3.  **Billing Account**
     *   Enable billing for your GCP project. This is required for App Engine and Cloud SQL.
@@ -40,24 +41,34 @@ gcloud services enable sqladmin.googleapis.com
 gcloud services enable secretmanager.googleapis.com
 
 # 2. Create Cloud SQL instance
-gcloud sql instances create asset-db \
+gcloud sql instances create product-management-db  \
     --database-version=MYSQL_8_0 \
     --tier=db-f1-micro \
     --region=us-central1
 
 # 3. Create database
-gcloud sql databases create product_management_system --instance=asset-db
-
+gcloud sql databases create product_management_system --instance=product-management-db 
+gcloud sql users create sigma --instance=product-management-db  --password=sigma
+gcloud sql users set-password sigma --instance=product-management-db  --password=sigma
+ 
 # 4. Import schema
-gcloud sql import sql asset-db database.sql --database=product_management_system --user=root
+## The import command requires the SQL file to be in a Google Cloud Storage bucket.
+##
+## Step 4a: Create a Cloud Storage bucket (only needs to be done once).
+## Replace 'rdt-pu-db' with a globally unique name.
+gcloud storage buckets create gs://rdt-pu-db
+## Step 4b: Copy the local SQL file to the bucket.
+gcloud storage cp sql/database.sql gs://rdt-pu-db/
+## Step 4c: Import from the bucket.
+gcloud sql import sql product-management-db  gs://rdt-pu-db/database.sql --database=product_management_system
 
 # 5. Create Secrets in Secret Manager
 echo -n "sigma" | gcloud secrets create db-password --data-file=- --replication-policy="automatic"
 echo -n "replace-with-a-long-random-string-for-sessions" | gcloud secrets create session-secret --data-file=- --replication-policy="automatic"
 
 # 6. Grant App Engine permission to access secrets
-PROJECT_NUMBER=$(gcloud projects describe mqi-interns-467308 --format='get(projectNumber)')
-gcloud projects add-iam-policy-binding mqi-interns-467308 \
+PROJECT_NUMBER=$(gcloud projects describe mqi-ims --format='get(projectNumber)')
+gcloud projects add-iam-policy-binding mqi-ims \
     --member="serviceAccount:${PROJECT_NUMBER}@appspot.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor"
 
@@ -65,7 +76,7 @@ gcloud projects add-iam-policy-binding mqi-interns-467308 \
 gcloud app create --region=us-central1
 
 # 8. Deploy
-gcloud app deploy app.yaml
+gcloud app deploy app.yaml --project=mqi-ims
 ```
 
 ## 🔧 Configuration Files
@@ -106,7 +117,7 @@ The `app.yaml` file references these secrets:
 ```yaml
 env_variables:
   NODE_ENV: production
-  DB_HOST: /cloudsql/mqi-interns-467308:us-central1:asset-db
+  DB_HOST: /cloudsql/mqi-interns-467308:us-central1:product-management-db 
   DB_USER: app_user
   DB_NAME: product_management_system
   # Secrets loaded from Secret Manager
@@ -134,7 +145,7 @@ gcloud app logs read -s default
 ### Common Issues
 
 1.  **Database connection fails**
-    - Check that the Cloud SQL instance `asset-db` is running.
+    - Check that the Cloud SQL instance `product-management-db ` is running.
     - Verify the App Engine service account has the `Cloud SQL Client` and `Secret Manager Secret Accessor` roles in IAM.
     - Ensure the secrets `db-password` and `session-secret` exist in Secret Manager.
 
@@ -148,7 +159,7 @@ gcloud app logs read -s default
 gcloud app versions list
 
 # Access Cloud SQL
-gcloud sql connect asset-db --user=root
+gcloud sql connect product-management-db  --user=root
 
 # Update environment variables by redeploying
 gcloud app deploy app.yaml --quiet

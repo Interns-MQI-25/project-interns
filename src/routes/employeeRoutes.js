@@ -456,5 +456,63 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // Route: Download file attachment (Employee)
+    router.get('/download-attachment/:attachmentId', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            const attachmentId = req.params.attachmentId;
+            
+            // Get attachment details
+            const [attachments] = await pool.execute(
+                'SELECT * FROM product_attachments WHERE attachment_id = ?',
+                [attachmentId]
+            );
+            
+            if (attachments.length === 0) {
+                return res.status(404).json({ error: 'File not found' });
+            }
+            
+            const attachment = attachments[0];
+            const filePath = attachment.file_path;
+            
+            // Check if file exists
+            const fs = require('fs');
+            if (!fs.existsSync(filePath)) {
+                return res.status(404).json({ error: 'File not found on server' });
+            }
+            
+            // Set headers for download
+            res.setHeader('Content-Disposition', `attachment; filename="${attachment.original_filename}"`);
+            res.setHeader('Content-Type', attachment.mime_type);
+            
+            // Send file
+            res.sendFile(path.resolve(filePath));
+            
+        } catch (error) {
+            console.error('Download error:', error);
+            res.status(500).json({ error: 'Error downloading file' });
+        }
+    });
+
+    // Route: View product attachments (API - Employee)
+    router.get('/api/product-attachments/:productId', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            const productId = req.params.productId;
+            const attachments = await getProductAttachments(pool, productId);
+            
+            // Add file icons and formatted sizes
+            const formattedAttachments = attachments.map(attachment => ({
+                ...attachment,
+                file_icon: getFileIcon(attachment.filename),
+                formatted_size: formatFileSize(attachment.file_size),
+                download_url: `/employee/download-attachment/${attachment.attachment_id}`
+            }));
+            
+            res.json(formattedAttachments);
+        } catch (error) {
+            console.error('Error fetching attachments:', error);
+            res.status(500).json({ error: 'Error fetching attachments' });
+        }
+    });
+
     return router;
 };

@@ -33,6 +33,7 @@ const commonRoutes = require('./src/routes/commonRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const employeeRoutes = require('./src/routes/employeeRoutes');
 const monitorRoutes = require('./src/routes/monitorRoutes');
+const resetPasswordRoutes = require('./src/routes/resetPassword');
 
 // Try to import ActivityLogger, fallback if not available
 let ActivityLogger;
@@ -114,6 +115,7 @@ app.use('/', commonRoutes(pool, requireAuth, requireRole));
 app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
 app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
 app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
+app.use('/reset', resetPasswordRoutes(pool));
 
 // Middleware to check authentication
 // const { requireAuth, requireRole } = require('./src/middleware/auth'); {
@@ -254,7 +256,7 @@ app.post('/login', async (req, res) => {
         
         const testHash = await bcrypt.hash('password', 10);
         const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
-        const vennuHash = await bcrypt.hash('Vennu@123', 10);
+        // const vennuHash = await bcrypt.hash('Vennu@123', 10);
 
         await pool.execute('CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE, full_name VARCHAR(100), email VARCHAR(100), password VARCHAR(255), role VARCHAR(20) DEFAULT "admin", is_active BOOLEAN DEFAULT TRUE)');
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['test', 'Test User', 'test@example.com', testHash, 'admin', 1]);

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const path = require('path');
+const { sendRegistrationApprovalEmail, sendRegistrationRejectionEmail } = require('../utils/emailService');
 
 // Import file upload utilities
 const { 
@@ -835,6 +836,38 @@ module.exports = (pool, requireAuth, requireRole) => {
                         INSERT INTO employees (user_id, department_id, is_active) 
                         VALUES (?, ?, 1)
                     `, [userId, request.department_id]);
+                    
+                    // Send approval email
+                    try {
+                        await sendRegistrationApprovalEmail(request.email, request.full_name);
+                    } catch (emailError) {
+                        console.error('Failed to send approval email:', emailError);
+                    }
+                } else if (action === 'reject') {
+                    // Send rejection email
+                    try {
+                        await sendRegistrationRejectionEmail(request.email, request.full_name);
+                    } catch (emailError) {
+                        console.error('Failed to send rejection email:', emailError);
+                    }
+                } else if (action === 'reactivate') {
+                    // Reactivate rejected request (set back to pending)
+                    await connection.execute(
+                        'UPDATE registration_requests SET status = "pending", processed_at = NULL WHERE request_id = ?',
+                        [request_id]
+                    );
+                    req.flash('success', 'Registration request reactivated successfully');
+                    await connection.commit();
+                    return res.redirect('/admin/registration-requests');
+                } else if (action === 'delete') {
+                    // Delete the registration request
+                    await connection.execute(
+                        'DELETE FROM registration_requests WHERE request_id = ?',
+                        [request_id]
+                    );
+                    req.flash('success', 'Registration request deleted successfully');
+                    await connection.commit();
+                    return res.redirect('/admin/registration-requests');
                 }
                 
                 // Update request status

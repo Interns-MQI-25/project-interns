@@ -1,4 +1,4 @@
-# 🏢 Marquardt India Pvt. Ltd. - Asset Management System
+# 🏢 Marquardt India Pvt. Ltd. - Inventory Management System
 
 > **A comprehensive web-based asset management system with role-based access control, email notifications, and file attachment capabilities.**
 

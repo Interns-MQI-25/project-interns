@@ -9,7 +9,9 @@
 
 ## 🚀 Live Application
 
-**Production URL**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
+**Production URL**: 
+- Version 1.0.2: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
+- Version 1.0.0: [https://mqi-interns-467405.uc.r.appspot.com](https://mqi-interns-467405.uc.r.appspot.com)
 
 ## 📋 Overview
 

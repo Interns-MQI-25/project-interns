@@ -26,20 +26,20 @@ module.exports = (pool, requireAuth, requireRole) => {
                     SELECT pa.*, p.product_name, u.full_name as monitor_name,
                            CASE 
                                WHEN pa.return_status = 'requested' THEN 'Return request submitted'
-                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN 'Return approved and completed'
-                               WHEN pa.return_status = 'rejected' THEN 'Return request rejected'
+                               WHEN pa.is_returned = 1 THEN 'Return approved and completed'
+                               WHEN pa.remarks LIKE 'RETURN_REJECTED:%' THEN 'Return request rejected'
                                ELSE 'Product assigned for use'
                            END as return_purpose,
                            CASE 
                                WHEN pa.return_status = 'requested' THEN 'pending'
-                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN 'approved'
-                               WHEN pa.return_status = 'rejected' THEN 'rejected'
+                               WHEN pa.is_returned = 1 THEN 'approved'
+                               WHEN pa.remarks LIKE 'RETURN_REJECTED:%' THEN 'rejected'
                                ELSE 'assigned'
                            END as return_request_status,
                            CASE 
                                WHEN pa.return_status = 'requested' THEN pa.assigned_at
-                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN pa.returned_at
-                               WHEN pa.return_status = 'rejected' THEN pa.assigned_at
+                               WHEN pa.is_returned = 1 THEN pa.returned_at
+                               WHEN pa.remarks LIKE 'RETURN_REJECTED:%' THEN pa.assigned_at
                                ELSE NULL
                            END as return_requested_date,
                            returned_user.full_name as returned_processed_by_name

@@ -136,7 +136,8 @@ module.exports = (pool, requireAuth, requireRole) => {
                         JOIN employees e ON pa.employee_id = e.employee_id
                         JOIN users u ON e.user_id = u.user_id
                         JOIN departments d ON e.department_id = d.department_id
-                        WHERE pa.remarks = 'RETURN_REQUESTED' AND e.employee_id != ?
+                        WHERE (pa.remarks = 'RETURN_REQUESTED' OR pa.return_status = 'requested') 
+                        AND e.employee_id != ?
                         ORDER BY pa.assigned_at ASC
                     `, [currentMonitorEmployeeId]);
                     returnRequests = returnResults || [];
@@ -153,7 +154,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                         JOIN departments d ON e.department_id = d.department_id
                         WHERE pa.is_returned = 0 
                         AND e.employee_id != ?
-                        AND pa.remarks = 'RETURN_REQUESTED'
+                        AND (pa.remarks = 'RETURN_REQUESTED' OR pa.return_status = 'requested')
                         ORDER BY pa.assigned_at ASC
                     `, [currentMonitorEmployeeId]);
                     returnRequests = returnResults || [];
@@ -567,7 +568,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             if (action === 'approve') {
                 // For approval, get assignment details and mark as returned
                 const [assignments] = await pool.execute(
-                    'SELECT * FROM product_assignments WHERE assignment_id = ? AND remarks = "RETURN_REQUESTED"',
+                    'SELECT * FROM product_assignments WHERE assignment_id = ? AND (remarks = "RETURN_REQUESTED" OR return_status = "requested")',
                     [assignment_id]
                 );
                 
@@ -579,24 +580,37 @@ module.exports = (pool, requireAuth, requireRole) => {
                 
                 const assignment = assignments[0];
                 
-                // Update assignment as returned with remarks
-                await pool.execute(
-                    'UPDATE product_assignments SET is_returned = 1, returned_at = NOW(), remarks = ? WHERE assignment_id = ?',
-                    [remarks || null, assignment_id]
-                );
+                // Update assignment as returned - clear return_status for employee requests
+                if (hasReturnStatusColumn) {
+                    await pool.execute(
+                        'UPDATE product_assignments SET is_returned = 1, returned_at = NOW(), return_status = NULL, remarks = ? WHERE assignment_id = ?',
+                        [remarks || 'Return approved', assignment_id]
+                    );
+                } else {
+                    await pool.execute(
+                        'UPDATE product_assignments SET is_returned = 1, returned_at = NOW(), remarks = ? WHERE assignment_id = ?',
+                        [remarks || 'Return approved', assignment_id]
+                    );
+                }
                 
                 console.log(`Return approved: Assignment ${assignment_id}, Product ${assignment.product_id}`);
                 req.flash('success', 'Return approved successfully. Product is now available for request.');
                 
             } else if (action === 'reject') {
-                // For rejection, update remarks with rejection reason
-                const rejectionRemark = 'RETURN_REJECTED: ' + (remarks || 'Return request rejected');
-                await pool.execute(
-                    'UPDATE product_assignments SET remarks = ? WHERE assignment_id = ?',
-                    [rejectionRemark, assignment_id]
-                );
+                // For rejection, update return_status for employee requests
+                if (hasReturnStatusColumn) {
+                    await pool.execute(
+                        'UPDATE product_assignments SET return_status = NULL, remarks = ? WHERE assignment_id = ?',
+                        ['RETURN_REJECTED: ' + (remarks || 'Return request rejected'), assignment_id]
+                    );
+                } else {
+                    await pool.execute(
+                        'UPDATE product_assignments SET remarks = ? WHERE assignment_id = ?',
+                        ['RETURN_REJECTED: ' + (remarks || 'Return request rejected'), assignment_id]
+                    );
+                }
                 
-                console.log(`Return rejected: Assignment ${assignment_id}, Remarks: ${rejectionRemark}`);
+                console.log(`Return rejected: Assignment ${assignment_id}`);
                 req.flash('success', 'Return request rejected.');
             }
             

@@ -9,8 +9,8 @@ async function setupDatabase() {
         // First connect without specifying database
         const connection = await mysql.createConnection({
             host: process.env.DB_HOST || 'localhost',
-            user: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || 'Neha@012004',
+            user: process.env.DB_USER || 'sigma',
+            password: process.env.DB_PASSWORD || 'sigma',
             port: process.env.DB_PORT || 3306
         });
         

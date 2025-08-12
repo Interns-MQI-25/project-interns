@@ -63,12 +63,24 @@ const upload = multer({
 });
 
 // Function to save file attachment info to database
-async function saveFileAttachment(pool, productId, file, uploadedBy, description = null) {
+async function saveFileAttachment(pool, file, productId, uploadedBy, description = null) {
     try {
-        // In production (App Engine), we can't store files, so we'll skip file storage
-        // and just store metadata for now
+        // Check if we're in production mode
         if (process.env.NODE_ENV === 'production') {
             console.warn('File storage not supported in production environment');
+            return null;
+        }
+        
+        // Check if the table exists
+        const [tables] = await pool.execute(`
+            SELECT COUNT(*) as table_count 
+            FROM information_schema.tables 
+            WHERE table_schema = 'product_management_system' 
+            AND table_name = 'product_attachments'
+        `);
+        
+        if (tables[0].table_count === 0) {
+            console.warn('product_attachments table does not exist, skipping file attachment save');
             return null;
         }
         
@@ -97,6 +109,19 @@ async function saveFileAttachment(pool, productId, file, uploadedBy, description
 // Function to get attachments for a product
 async function getProductAttachments(pool, productId) {
     try {
+        // First check if the table exists
+        const [tables] = await pool.execute(`
+            SELECT COUNT(*) as table_count 
+            FROM information_schema.tables 
+            WHERE table_schema = 'product_management_system' 
+            AND table_name = 'product_attachments'
+        `);
+        
+        if (tables[0].table_count === 0) {
+            console.log('product_attachments table does not exist, returning empty array');
+            return [];
+        }
+
         const [attachments] = await pool.execute(`
             SELECT pa.*, u.full_name as uploaded_by_name
             FROM product_attachments pa
@@ -115,6 +140,19 @@ async function getProductAttachments(pool, productId) {
 // Function to delete file attachment
 async function deleteFileAttachment(pool, attachmentId, userId) {
     try {
+        // Check if the table exists
+        const [tables] = await pool.execute(`
+            SELECT COUNT(*) as table_count 
+            FROM information_schema.tables 
+            WHERE table_schema = 'product_management_system' 
+            AND table_name = 'product_attachments'
+        `);
+        
+        if (tables[0].table_count === 0) {
+            console.warn('product_attachments table does not exist, cannot delete attachment');
+            return false;
+        }
+
         // Get file info first
         const [attachments] = await pool.execute(
             'SELECT * FROM product_attachments WHERE attachment_id = ?',

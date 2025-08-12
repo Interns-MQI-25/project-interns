@@ -2,25 +2,27 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs-extra');
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: async (req, file, cb) => {
-        const uploadPath = path.join(__dirname, '../../uploads/products');
-        try {
-            await fs.ensureDir(uploadPath);
-            cb(null, uploadPath);
-        } catch (error) {
-            cb(error, null);
+// Configure multer for file uploads - use memory storage for cloud compatibility
+const storage = process.env.NODE_ENV === 'production' ? 
+    multer.memoryStorage() : // Use memory storage in production (App Engine)
+    multer.diskStorage({
+        destination: async (req, file, cb) => {
+            const uploadPath = path.join(__dirname, '../../uploads/products');
+            try {
+                await fs.ensureDir(uploadPath);
+                cb(null, uploadPath);
+            } catch (error) {
+                cb(error, null);
+            }
+        },
+        filename: (req, file, cb) => {
+            // Generate unique filename with timestamp
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            const extension = path.extname(file.originalname);
+            const filename = `product-${uniqueSuffix}${extension}`;
+            cb(null, filename);
         }
-    },
-    filename: (req, file, cb) => {
-        // Generate unique filename with timestamp
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const extension = path.extname(file.originalname);
-        const filename = `product-${uniqueSuffix}${extension}`;
-        cb(null, filename);
-    }
-});
+    });
 
 // File filter to allow only specific file types
 const fileFilter = (req, file, cb) => {
@@ -63,6 +65,13 @@ const upload = multer({
 // Function to save file attachment info to database
 async function saveFileAttachment(pool, productId, file, uploadedBy, description = null) {
     try {
+        // In production (App Engine), we can't store files, so we'll skip file storage
+        // and just store metadata for now
+        if (process.env.NODE_ENV === 'production') {
+            console.warn('File storage not supported in production environment');
+            return null;
+        }
+        
         const [result] = await pool.execute(`
             INSERT INTO product_attachments 
             (product_id, filename, original_filename, file_path, file_size, mime_type, uploaded_by, description)
@@ -71,7 +80,7 @@ async function saveFileAttachment(pool, productId, file, uploadedBy, description
             productId,
             file.filename,
             file.originalname,
-            file.path,
+            file.path || '',
             file.size,
             file.mimetype,
             uploadedBy,
@@ -118,11 +127,13 @@ async function deleteFileAttachment(pool, attachmentId, userId) {
         
         const attachment = attachments[0];
         
-        // Delete file from filesystem
-        try {
-            await fs.remove(attachment.file_path);
-        } catch (fsError) {
-            console.warn('Could not delete file from filesystem:', fsError.message);
+        // Delete file from filesystem (only in development)
+        if (process.env.NODE_ENV !== 'production') {
+            try {
+                await fs.remove(attachment.file_path);
+            } catch (fsError) {
+                console.warn('Could not delete file from filesystem:', fsError.message);
+            }
         }
         
         // Delete from database

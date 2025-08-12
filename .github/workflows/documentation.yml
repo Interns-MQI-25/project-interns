@@ -1,0 +1,191 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'README.md'
+      - 'docs/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+jobs:
+  generate-docs:
+    name: 📚 Generate Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📦 Install dependencies
+      run: npm ci
+      
+    - name: 📋 Generate API Documentation
+      run: |
+        echo "Generating API documentation..."
+        mkdir -p docs/api
+        
+        echo "# API Documentation" > docs/api/README.md
+        echo "" >> docs/api/README.md
+        echo "Auto-generated on: $(date)" >> docs/api/README.md
+        echo "" >> docs/api/README.md
+        
+        echo "## Routes Overview" >> docs/api/README.md
+        echo "" >> docs/api/README.md
+        
+        # Analyze route files
+        if [ -d "src/routes" ]; then
+          for route_file in src/routes/*.js; do
+            if [ -f "$route_file" ]; then
+              route_name=$(basename "$route_file" .js)
+              echo "### $route_name Routes" >> docs/api/README.md
+              echo "" >> docs/api/README.md
+              
+              # Extract route definitions
+              grep -n "router\.\(get\|post\|put\|delete\|patch\)" "$route_file" | while read line; do
+                echo "- $line" >> docs/api/README.md
+              done
+              echo "" >> docs/api/README.md
+            fi
+          done
+        fi
+        
+    - name: 📊 Generate Database Schema Documentation
+      run: |
+        echo "Generating database schema documentation..."
+        mkdir -p docs/database
+        
+        echo "# Database Schema" > docs/database/README.md
+        echo "" >> docs/database/README.md
+        echo "Auto-generated on: $(date)" >> docs/database/README.md
+        echo "" >> docs/database/README.md
+        
+        if [ -f "setup-db.js" ]; then
+          echo "## Tables" >> docs/database/README.md
+          echo "" >> docs/database/README.md
+          
+          # Extract table definitions
+          grep -A 20 "CREATE TABLE" setup-db.js | while read line; do
+            if echo "$line" | grep -q "CREATE TABLE"; then
+              table_name=$(echo "$line" | sed 's/.*CREATE TABLE[^A-Za-z]*\([A-Za-z_]*\).*/\1/')
+              echo "### $table_name" >> docs/database/README.md
+              echo "\`\`\`sql" >> docs/database/README.md
+            elif echo "$line" | grep -q ");"; then
+              echo "$line" >> docs/database/README.md
+              echo "\`\`\`" >> docs/database/README.md
+              echo "" >> docs/database/README.md
+            else
+              echo "$line" >> docs/database/README.md
+            fi
+          done
+        fi
+        
+    - name: 🎯 Generate Deployment Documentation
+      run: |
+        echo "Generating deployment documentation..."
+        mkdir -p docs/deployment
+        
+        echo "# Deployment Guide" > docs/deployment/README.md
+        echo "" >> docs/deployment/README.md
+        echo "Auto-generated on: $(date)" >> docs/deployment/README.md
+        echo "" >> docs/deployment/README.md
+        
+        echo "## Quick Deployment" >> docs/deployment/README.md
+        echo "" >> docs/deployment/README.md
+        echo "\`\`\`bash" >> docs/deployment/README.md
+        echo "# Deploy to App Engine" >> docs/deployment/README.md
+        echo "gcloud app deploy app.yaml --quiet" >> docs/deployment/README.md
+        echo "" >> docs/deployment/README.md
+        echo "# Setup database" >> docs/deployment/README.md
+        echo "node setup-db.js" >> docs/deployment/README.md
+        echo "\`\`\`" >> docs/deployment/README.md
+        echo "" >> docs/deployment/README.md
+        
+        echo "## Environment Variables" >> docs/deployment/README.md
+        echo "" >> docs/deployment/README.md
+        if [ -f "app.yaml" ]; then
+          echo "\`\`\`yaml" >> docs/deployment/README.md
+          grep -A 10 "env_variables:" app.yaml >> docs/deployment/README.md || echo "No environment variables found"
+          echo "\`\`\`" >> docs/deployment/README.md
+        fi
+        
+    - name: 🔧 Generate Setup Documentation
+      run: |
+        echo "Generating setup documentation..."
+        mkdir -p docs/setup
+        
+        echo "# Project Setup" > docs/setup/README.md
+        echo "" >> docs/setup/README.md
+        echo "Auto-generated on: $(date)" >> docs/setup/README.md
+        echo "" >> docs/setup/README.md
+        
+        echo "## Prerequisites" >> docs/setup/README.md
+        echo "" >> docs/setup/README.md
+        if [ -f "package.json" ]; then
+          node_version=$(grep -o '"node":[^,]*' package.json | cut -d'"' -f4 || echo "18+")
+          echo "- Node.js $node_version" >> docs/setup/README.md
+        fi
+        echo "- MySQL 8.0+" >> docs/setup/README.md
+        echo "- Google Cloud CLI" >> docs/setup/README.md
+        echo "" >> docs/setup/README.md
+        
+        echo "## Installation" >> docs/setup/README.md
+        echo "" >> docs/setup/README.md
+        echo "\`\`\`bash" >> docs/setup/README.md
+        echo "# Clone repository" >> docs/setup/README.md
+        echo "git clone <repository-url>" >> docs/setup/README.md
+        echo "cd project-interns" >> docs/setup/README.md
+        echo "" >> docs/setup/README.md
+        echo "# Install dependencies" >> docs/setup/README.md
+        echo "npm install" >> docs/setup/README.md
+        echo "" >> docs/setup/README.md
+        echo "# Setup database" >> docs/setup/README.md
+        echo "node setup-db.js" >> docs/setup/README.md
+        echo "" >> docs/setup/README.md
+        echo "# Start development server" >> docs/setup/README.md
+        echo "npm start" >> docs/setup/README.md
+        echo "\`\`\`" >> docs/setup/README.md
+        
+    - name: 📝 Create Documentation Index
+      run: |
+        echo "Creating documentation index..."
+        
+        echo "# Project Documentation" > docs/README.md
+        echo "" >> docs/README.md
+        echo "Auto-generated on: $(date)" >> docs/README.md
+        echo "" >> docs/README.md
+        
+        echo "## Available Documentation" >> docs/README.md
+        echo "" >> docs/README.md
+        echo "- [📚 API Documentation](api/README.md)" >> docs/README.md
+        echo "- [🗄️ Database Schema](database/README.md)" >> docs/README.md
+        echo "- [🚀 Deployment Guide](deployment/README.md)" >> docs/README.md
+        echo "- [🔧 Setup Guide](setup/README.md)" >> docs/README.md
+        echo "" >> docs/README.md
+        
+        echo "## Project Structure" >> docs/README.md
+        echo "" >> docs/README.md
+        echo "\`\`\`" >> docs/README.md
+        tree -I 'node_modules|.git' -L 3 . >> docs/README.md 2>/dev/null || find . -type d -not -path "./node_modules*" -not -path "./.git*" | head -20 | sed 's/\.//' | sort >> docs/README.md
+        echo "\`\`\`" >> docs/README.md
+        
+    - name: 💾 Commit Documentation
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if [ -n "$(git status --porcelain docs/)" ]; then
+          git add docs/
+          git commit -m "📚 Auto-update documentation [skip ci]"
+          git push
+          echo "✅ Documentation updated and committed"
+        else
+          echo "📄 No documentation changes to commit"
+        fi

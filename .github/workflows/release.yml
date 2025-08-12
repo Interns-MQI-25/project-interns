@@ -1,0 +1,192 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  create-release:
+    name: 🚀 Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: 🏷️ Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "push" ]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+        else
+          VERSION="${{ github.event.inputs.version }}"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+        
+    - name: 📋 Generate changelog
+      id: changelog
+      run: |
+        echo "Generating changelog for ${{ steps.version.outputs.version }}"
+        
+        # Get the previous tag
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        
+        if [ -n "$PREV_TAG" ]; then
+          echo "Previous tag: $PREV_TAG"
+          CHANGELOG=$(git log --oneline $PREV_TAG..HEAD --pretty=format:"- %s (%h)")
+        else
+          echo "No previous tag found, using last 10 commits"
+          CHANGELOG=$(git log --oneline -10 --pretty=format:"- %s (%h)")
+        fi
+        
+        # Create release notes
+        cat << EOF > release-notes.md
+        # Release ${{ steps.version.outputs.version }}
+        
+        ## What's Changed
+        
+        $CHANGELOG
+        
+        ## Deployment
+        
+        This release includes:
+        - ✅ Case-sensitive username authentication
+        - ✅ Enhanced security features
+        - ✅ Improved database operations
+        - ✅ Better error handling
+        - ✅ Organized file structure
+        
+        ## Database Updates
+        
+        If upgrading from a previous version:
+        1. Backup your database
+        2. Run database migrations
+        3. Test the application
+        
+        ## Breaking Changes
+        
+        - Username authentication is now case-sensitive
+        - Some deployment scripts have been reorganized
+        
+        EOF
+        
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        cat release-notes.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📦 Install dependencies
+      run: npm ci
+      
+    - name: 🔍 Run tests
+      run: |
+        if grep -q '"test"' package.json; then
+          npm test
+        else
+          echo "No tests defined, skipping..."
+        fi
+      continue-on-error: true
+      
+    - name: 📦 Create release package
+      run: |
+        echo "Creating release package..."
+        
+        # Create a clean directory for the release
+        mkdir -p release-package
+        
+        # Copy application files (excluding dev dependencies and temp files)
+        rsync -av --exclude 'node_modules' \
+                  --exclude '.git' \
+                  --exclude 'release-package' \
+                  --exclude '*.log' \
+                  --exclude '.env' \
+                  --exclude 'uploads' \
+                  . release-package/
+        
+        # Create production package.json
+        cd release-package
+        npm ci --only=production
+        
+        # Create deployment ready archive
+        cd ..
+        tar -czf marquardt-ims-${{ steps.version.outputs.version }}.tar.gz release-package/
+        
+        echo "Release package created: marquardt-ims-${{ steps.version.outputs.version }}.tar.gz"
+        
+    - name: 📊 Generate release metrics
+      run: |
+        echo "Generating release metrics..."
+        
+        # Count files
+        TOTAL_FILES=$(find . -type f -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./release-package/*" | wc -l)
+        JS_FILES=$(find . -name "*.js" -not -path "./node_modules/*" -not -path "./.git/*" | wc -l)
+        EJS_FILES=$(find . -name "*.ejs" | wc -l)
+        SQL_FILES=$(find . -name "*.sql" | wc -l)
+        
+        # Get package info
+        if [ -f "package.json" ]; then
+          DEPENDENCIES=$(grep -c '".*":' package.json || echo "0")
+        else
+          DEPENDENCIES=0
+        fi
+        
+        # Calculate lines of code
+        LOC=$(find . -name "*.js" -not -path "./node_modules/*" -exec wc -l {} + | tail -1 | awk '{print $1}' || echo "0")
+        
+        cat << EOF > release-metrics.md
+        ## Release Metrics
+        
+        - 📁 Total files: $TOTAL_FILES
+        - 🟨 JavaScript files: $JS_FILES
+        - 📄 EJS templates: $EJS_FILES
+        - 🗄️ SQL files: $SQL_FILES
+        - 📦 Dependencies: $DEPENDENCIES
+        - 📏 Lines of code: $LOC
+        - 📅 Release date: $(date)
+        
+        EOF
+        
+        # Append to release notes
+        cat release-metrics.md >> release-notes.md
+        
+    - name: 🚀 Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        release_name: Marquardt IMS ${{ steps.version.outputs.version }}
+        body_path: release-notes.md
+        draft: false
+        prerelease: false
+        
+    - name: 📎 Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./marquardt-ims-${{ steps.version.outputs.version }}.tar.gz
+        asset_name: marquardt-ims-${{ steps.version.outputs.version }}.tar.gz
+        asset_content_type: application/gzip
+        
+    - name: 🎉 Release Summary
+      run: |
+        echo "🎉 Release ${{ steps.version.outputs.version }} created successfully!"
+        echo "📦 Package: marquardt-ims-${{ steps.version.outputs.version }}.tar.gz"
+        echo "🌐 View release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}"

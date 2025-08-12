@@ -124,7 +124,7 @@ module.exports = (pool, requireAuth, requireRole) => {
         
         try {
             const [users] = await pool.execute(
-                'SELECT u.*, e.department_id FROM users u LEFT JOIN employees e ON u.user_id = e.user_id WHERE username = ? AND u.is_active = TRUE',
+                'SELECT u.*, e.department_id FROM users u LEFT JOIN employees e ON u.user_id = e.user_id WHERE BINARY u.username = ? AND u.is_active = TRUE',
                 [username]
             );
             
@@ -192,7 +192,7 @@ module.exports = (pool, requireAuth, requireRole) => {
         try {
             // Check if username or email already exists in users table
             const [existingUsers] = await pool.execute(
-                'SELECT * FROM users WHERE username = ? OR email = ?',
+                'SELECT * FROM users WHERE BINARY username = ? OR email = ?',
                 [username, email]
             );
             
@@ -203,7 +203,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             // Check if email already exists in registration_requests table
             const [existingRequests] = await pool.execute(
-                'SELECT * FROM registration_requests WHERE username = ? OR email = ?',
+                'SELECT * FROM registration_requests WHERE BINARY username = ? OR email = ?',
                 [username, email]
             );
             

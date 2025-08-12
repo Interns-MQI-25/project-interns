@@ -1187,7 +1187,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             try {
                 // Check if username or email already exists
                 const [existingUsers] = await connection.execute(
-                    'SELECT * FROM users WHERE username = ? OR email = ?',
+                    'SELECT * FROM users WHERE BINARY username = ? OR email = ?',
                     [username, email]
                 );
                 

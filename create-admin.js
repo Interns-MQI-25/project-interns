@@ -48,7 +48,7 @@ async function createAdmins() {
         for (const adminData of adminUsers) {
             // Check if admin user already exists
             const [existingUser] = await connection.execute(
-                'SELECT * FROM users WHERE username = ?', 
+                'SELECT * FROM users WHERE BINARY username = ?', 
                 [adminData.username]
             );
             
@@ -61,7 +61,7 @@ async function createAdmins() {
                 await connection.execute(`
                     UPDATE users 
                     SET full_name = ?, email = ?, password = ?, role = ?, is_active = 1 
-                    WHERE username = ?
+                    WHERE BINARY username = ?
                 `, [
                     adminData.full_name,
                     adminData.email,

@@ -262,7 +262,7 @@ app.post('/login', async (req, res) => {
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['test', 'Test User', 'test@example.com', testHash, 'admin', 1]);
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Guddi.Somling@marquardt.com', guddiHash, 'admin', 1]);
         
-        const [users] = await pool.execute('SELECT * FROM users WHERE username = ? AND is_active = 1', [username]);
+        const [users] = await pool.execute('SELECT * FROM users WHERE BINARY username = ? AND is_active = 1', [username]);
         
         if (users.length === 0) {
             req.flash('error', 'Invalid username or password');

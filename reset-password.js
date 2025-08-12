@@ -10,7 +10,7 @@ async function resetPassword() {
     });
 
     const newHash = await bcrypt.hash('Welcome@MQI', 10);
-    await connection.execute('UPDATE users SET password = ? WHERE username = ?', [newHash, 'GuddiS']);
+    await connection.execute('UPDATE users SET password = ? WHERE BINARY username = ?', [newHash, 'GuddiS']);
     
     console.log('Password updated successfully');
     await connection.end();

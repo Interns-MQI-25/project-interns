@@ -186,7 +186,7 @@ async function setupDatabase() {
         console.log('✅ Departments inserted');
         
         // Check if admin user exists
-        const [adminCheck] = await dbConnection.execute('SELECT * FROM users WHERE username = ?', ['admin']);
+        const [adminCheck] = await dbConnection.execute('SELECT * FROM users WHERE BINARY username = ?', ['admin']);
         
         if (adminCheck.length === 0) {
             // Create admin user with proper password hash
@@ -204,7 +204,7 @@ async function setupDatabase() {
         // Add some sample products
         const [productCheck] = await dbConnection.execute('SELECT * FROM products LIMIT 1');
         if (productCheck.length === 0) {
-            const [adminUser] = await dbConnection.execute('SELECT user_id FROM users WHERE username = ?', ['admin']);
+            const [adminUser] = await dbConnection.execute('SELECT user_id FROM users WHERE BINARY username = ?', ['admin']);
             if (adminUser.length > 0) {
                 await dbConnection.execute(`
                     INSERT INTO products (product_name, description, quantity, added_by) VALUES 

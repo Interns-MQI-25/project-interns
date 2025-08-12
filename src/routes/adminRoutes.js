@@ -266,8 +266,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             model_number,
             quantity,
             calibration_required,
-            calibration_frequency,
-            description
+            calibration_frequency
         } = req.body;
 
         try {
@@ -309,7 +308,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                         quantity = ?,
                         calibration_required = ?,
                         calibration_frequency = ?,
-                        description = ?,
                         updated_at = NOW()
                     WHERE product_id = ?
                 `;
@@ -323,7 +321,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                     parseInt(quantity),
                     calibration_required === '1' ? 1 : 0,
                     calibration_frequency || null,
-                    description || null,
                     productId
                 ]);
 

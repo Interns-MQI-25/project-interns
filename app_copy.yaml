@@ -11,7 +11,6 @@ env_variables:
   EMAIL_PASS: 'bztn fcvu zaig dztn'
   ADMIN_EMAIL: 'priyanshu17ks@gmail.com'
 
-
 beta_settings:
   cloud_sql_instances: mqi-ims:us-central1:product-management-db
 

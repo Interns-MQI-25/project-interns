@@ -51,7 +51,7 @@ gcloud sql connect $INSTANCE_NAME --user=$DB_USER --database=$DATABASE_NAME < /t
 }
 
 # Clean up temporary file
-rm -f /tmp/product_table_migration.sql
+rm -f /tzmp/product_table_migration.sql
 
 echo ""
 echo "✅ Database migration completed!"

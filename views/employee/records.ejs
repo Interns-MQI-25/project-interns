@@ -25,7 +25,7 @@
                 <div class="mb-4">
                     <button onclick="toggleSection('requestStatus')" class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-2 hover:bg-gray-50">
                         <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            Request Status
+                            Product Request Status
                         </h3>
                         <i id="requestStatusIcon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
                     </button>
@@ -61,6 +61,9 @@
                                         </td>
                                         <td class="px-2 py-4 text-sm text-gray-500">
                                             <div class="break-words"><%= request.purpose || '-' %></div>
+                                            <!-- <% if (request.remarks) { %>
+                                                <div class="text-xs <%= request.status === 'rejected' ? 'text-red-600' : 'text-blue-600' %> mt-1 italic">Remarks: <%= request.remarks %></div>
+                                            <% } %> -->
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap text-center">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -75,6 +78,9 @@
                                         </td>
                                         <td class="pl-2 pr-4 py-4 text-sm text-gray-500 text-center">
                                             <div class="break-words"><%= request.processed_by_name || '-' %></div>
+                                            <% if (request.remarks) { %>
+                                                <div class="text-xs <%= request.status === 'rejected' ? 'text-red-600' : 'text-blue-600' %> mt-1 italic">Remarks: <%= request.remarks %></div>
+                                            <% } %>
                                         </td>
                                     </tr>
                                 <% }); %>
@@ -98,7 +104,7 @@
                 <div class="mb-4">
                     <button onclick="toggleSection('productAssignments')" class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-2 hover:bg-gray-50">
                         <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            Product Assignments
+                            Product Return Status
                         </h3>
                         <i id="productAssignmentsIcon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
                     </button>
@@ -111,20 +117,17 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/5">
                                     Product
                                 </th>
-                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                    Quantity
+                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                    Purpose
                                 </th>
-                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                    Assigned By
-                                </th>
-                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                    Assigned Date
-                                </th>
-                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
                                     Status
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                    Action
+                                <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                    Requested Date
+                                </th>
+                                <th class="pl-2 pr-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                    Processed By
                                 </th>
                             </tr>
                         </thead>
@@ -135,49 +138,62 @@
                                         <td class="px-4 py-4" style="max-width: 250px;">
                                             <div class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-tight"><%= assignment.product_name %></div>
                                         </td>
-                                        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= assignment.quantity %>
-                                        </td>
                                         <td class="px-2 py-4 text-sm text-gray-500">
-                                            <div class="break-words"><%= assignment.monitor_name %></div>
+                                            <div class="break-words"><%= assignment.return_purpose || '-' %></div>
                                         </td>
-                                        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= new Date(assignment.assigned_at).toLocaleDateString() %>
-                                        </td>
-                                        <td class="px-2 py-4 whitespace-nowrap">
-                                            <% if (assignment.is_returned) { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    Returned
-                                                </span>
-                                            <% } else if (assignment.return_status === 'requested') { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                                        <td class="px-2 py-4 whitespace-nowrap text-center">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                <%= assignment.return_request_status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                                    assignment.return_request_status === 'rejected' ? 'bg-red-100 text-red-800' : 
+                                                    assignment.return_request_status === 'pending' ? 'bg-orange-100 text-orange-800' :
+                                                    'bg-yellow-100 text-yellow-800' %>">
+                                                <% if (assignment.return_request_status === 'pending') { %>
                                                     Return Pending
-                                                </span>
-                                            <% } else { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                <% } else if (assignment.return_request_status === 'approved') { %>
+                                                    Returned
+                                                <% } else if (assignment.return_request_status === 'rejected') { %>
+                                                    Return Rejected
+                                                <% } else { %>
                                                     Assigned
-                                                </span>
+                                                <% } %>
+                                            </span>
+                                        </td>
+                                        <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                            <% if (assignment.return_requested_date) { %>
+                                                <%= new Date(assignment.return_requested_date).toLocaleDateString() %>
+                                            <% } else { %>
+                                                <%= new Date(assignment.assigned_at).toLocaleDateString() %>
                                             <% } %>
                                         </td>
-                                        <td class="px-4 py-4 text-sm text-gray-500">
-                                            <% if (assignment.is_returned) { %>
-                                                <span class="text-gray-400">Returned on <%= assignment.return_date ? new Date(assignment.return_date).toLocaleDateString() : '-' %></span>
-                                            <% } else if (assignment.return_status === 'requested') { %>
-                                                <span class="text-orange-600">Waiting for approval</span>
-                                            <% } else { %>
-                                                <form action="/employee/return-product" method="POST" onsubmit="return confirm('Are you sure you want to request return of this product?');">
-                                                    <input type="hidden" name="assignment_id" value="<%= assignment.assignment_id %>" />
-                                                    <button type="submit" title="Request Return" class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                                        <i class="fas fa-box-open mr-1"></i> Request Return
-                                                    </button>
-                                                </form>
+                                        <td class="pl-2 pr-4 py-4 text-sm text-gray-500 text-center">
+                                            <div class="break-words">
+                                                <% if (assignment.return_request_status === 'approved' || assignment.return_request_status === 'rejected') { %>
+                                                    <%= assignment.returned_processed_by_name || assignment.monitor_name || '-' %>
+                                                <% } else { %>
+                                                    <%= assignment.monitor_name || '-' %>
+                                                <% } %>
+                                            </div>
+                                            <% if (assignment.remarks) { %>
+                                                <div class="text-xs <%= assignment.return_request_status === 'rejected' ? 'text-red-600' : 'text-blue-600' %> mt-1 italic">Remarks: <%= assignment.remarks %></div>
+                                            <% } %>
+                                            
+                                            <!-- Action button for requesting return -->
+                                            <% if (assignment.return_request_status === 'assigned' || (assignment.return_request_status === 'rejected' && assignment.remarks)) { %>
+                                                <div class="mt-2">
+                                                    <form action="/employee/return-product" method="POST" onsubmit="return confirm('Are you sure you want to request return of this product?');" class="inline">
+                                                        <input type="hidden" name="assignment_id" value="<%= assignment.assignment_id %>" />
+                                                        <button type="submit" title="Request Return" class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                                            <i class="fas fa-box-open mr-1"></i> Request Return
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             <% } %>
                                         </td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                         No assignments found
                                     </td>
                                 </tr>

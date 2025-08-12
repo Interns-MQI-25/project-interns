@@ -33,6 +33,7 @@ const commonRoutes = require('./src/routes/commonRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const employeeRoutes = require('./src/routes/employeeRoutes');
 const monitorRoutes = require('./src/routes/monitorRoutes');
+const resetPasswordRoutes = require('./src/routes/resetPassword');
 
 // Try to import ActivityLogger, fallback if not available
 let ActivityLogger;
@@ -59,17 +60,33 @@ process.on('unhandledRejection', (reason, promise) => {
     process.exit(1);
 });
 
-const pool = mysql.createPool({
-    socketPath: process.env.NODE_ENV === 'production' ? process.env.DB_HOST : undefined,
-    host: process.env.NODE_ENV === 'production' ? undefined : 'localhost',
-    user: process.env.NODE_ENV === 'production' ? process.env.DB_USER : 'root',
-    password: process.env.NODE_ENV === 'production' ? process.env.DB_PASSWORD : '',
-    database: process.env.NODE_ENV === 'production' ? process.env.DB_NAME : 'product_management_system',
+// Database configuration - different for production (App Engine) vs development
+const dbConfig = process.env.NODE_ENV === 'production' ? {
+    // Production: Use Unix socket for Cloud SQL
+    socketPath: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     connectionLimit: 5,
-    acquireTimeout: 60000,
-    timeout: 60000,
-    reconnect: true
-});
+    waitForConnections: true,
+    queueLimit: 0
+} : {
+    // Development: Use standard TCP connection
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || 'Neha@012004',
+    database: process.env.DB_NAME || 'product_management_system',
+    port: process.env.DB_PORT || 3306,
+    connectionLimit: 5,
+    waitForConnections: true,
+    queueLimit: 0
+};
+
+console.log('Database connection config:', process.env.NODE_ENV === 'production' ? 
+    `Production mode - using socket: ${process.env.DB_HOST}` : 
+    `Development mode - using host: ${dbConfig.host}:${dbConfig.port}`);
+
+const pool = mysql.createPool(dbConfig);
 app.locals.pool = pool;
 
 app.use(express.urlencoded({ extended: true }));
@@ -97,6 +114,8 @@ app.set('views', path.join(__dirname, 'views'));
 app.use('/', commonRoutes(pool, requireAuth, requireRole));
 app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
 app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
+app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
+app.use('/reset', resetPasswordRoutes(pool));
 
 // Middleware to check authentication
 // const { requireAuth, requireRole } = require('./src/middleware/auth'); {
@@ -237,13 +256,13 @@ app.post('/login', async (req, res) => {
         
         const testHash = await bcrypt.hash('password', 10);
         const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
-        const vennuHash = await bcrypt.hash('Vennu@123', 10);
+        // const vennuHash = await bcrypt.hash('Vennu@123', 10);
 
         await pool.execute('CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE, full_name VARCHAR(100), email VARCHAR(100), password VARCHAR(255), role VARCHAR(20) DEFAULT "admin", is_active BOOLEAN DEFAULT TRUE)');
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['test', 'Test User', 'test@example.com', testHash, 'admin', 1]);
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Guddi.Somling@marquardt.com', guddiHash, 'admin', 1]);
         
-        const [users] = await pool.execute('SELECT * FROM users WHERE username = ? AND is_active = 1', [username]);
+        const [users] = await pool.execute('SELECT * FROM users WHERE BINARY username = ? AND is_active = 1', [username]);
         
         if (users.length === 0) {
             req.flash('error', 'Invalid username or password');
@@ -374,12 +393,6 @@ app.get('/admin/all-logs', requireAuth, requireRole(['admin']), async (req, res)
         res.status(500).json({ error: 'Failed to fetch logs', logs: [] });
     }
 });
-
-// Use route modules
-app.use('/', commonRoutes(pool, requireAuth, requireRole));
-app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
-app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
-app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
 
 app.get('/health', (req, res) => {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });

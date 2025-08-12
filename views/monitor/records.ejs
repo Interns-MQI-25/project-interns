@@ -6,7 +6,6 @@
     <title>Monitor Records - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
@@ -25,307 +24,161 @@
         <!-- Scrollable Content Area -->
         <div class="flex-1 overflow-y-auto p-4 sm:p-6">
         
-        <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-box text-blue-500 text-2xl"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Products</dt>
-                                <dd class="text-lg font-medium text-gray-900"><%= totalProducts || 0 %></dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-clipboard-list text-indigo-500 text-2xl"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Requests</dt>
-                                <dd class="text-lg font-medium text-gray-900"><%= (productRequests && productRequests.length) || 0 %></dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-user-check text-green-500 text-2xl"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Active Assignments</dt>
-                                <dd class="text-lg font-medium text-gray-900"><%= activeAssignments || 0 %></dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-clock text-yellow-500 text-2xl"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Pending Requests</dt>
-                                <dd class="text-lg font-medium text-gray-900"><%= pendingRequests || 0 %></dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-undo text-purple-500 text-2xl"></i>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Returned Items</dt>
-                                <dd class="text-lg font-medium text-gray-900"><%= returnedItems || 0 %></dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Recent Assignments Table -->
+        <!-- Product Request History -->
         <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
             <div class="px-4 py-5 sm:p-6">
-                <div class="mb-4">
-                    <button onclick="toggleSection('productRequestHistory')" class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-2 hover:bg-gray-50">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Product Request History</h3>
-                        <i id="productRequestHistoryIcon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
-                    </button>
-                </div>
-                <div id="productRequestHistoryContent" class="block">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Product Request History</h3>
                 <div class="overflow-x-auto w-full">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="pr-0 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 40%">
-                                    Product
-                                </th>
-                                <th class="pl-0 pr-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Category
-                                </th>
-                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Requestor
-                                </th>
-                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Type
-                                </th>
-                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Quantity
-                                </th>
-                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Requested Date
-                                </th>
-                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th class="px-1 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Processed Date
-                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requestor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processed Date</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <% if (productRequests && productRequests.length > 0) { %>
                                 <% productRequests.forEach(request => { %>
                                     <tr>
-                                        <td class="pr-0 py-4 text-sm font-medium text-gray-900" style="max-width: 200px;">
-                                            <div class="break-words whitespace-normal"><%= request.product_name || 'N/A' %></div>
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                            <%= request.product_name || 'N/A' %>
                                         </td>
-                                        <td class="pl-0 pr-1 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                <%= request.asset_type || 'General' %>
-                                            </span>
-                                        </td>
-                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div class="flex items-center">
-                                                <%= request.employee_name || 'Unknown' %>
-                                                <% if (request.requestor_role === 'monitor') { %>
-                                                    <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                        Monitor
-                                                    </span>
-                                                <% } %>
-                                            </div>
-                                        </td>
-                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <%= request.employee_name || 'Unknown' %>
                                             <% if (request.requestor_role === 'monitor') { %>
-                                                <span class="text-blue-600 font-medium">Monitor Request</span>
-                                            <% } else { %>
-                                                <span class="text-gray-600">Employee Request</span>
+                                                <span class="ml-2 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">Monitor</span>
                                             <% } %>
                                         </td>
-                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= request.quantity || 1 %>
+                                        <td class="px-6 py-4 text-sm">
+                                            <% if (request.status === 'rejected' && request.remarks) { %>
+                                                <div class="text-red-600 font-medium">
+                                                    <%= request.remarks %>
+                                                </div>
+                                            <% } else if (request.status === 'approved' && request.remarks) { %>
+                                                <div class="text-gray-500">
+                                                    <%= request.remarks %>
+                                                </div>
+                                            <% } else { %>
+                                                <div class="text-gray-500">
+                                                    <%= request.purpose || 'No purpose specified' %>
+                                                </div>
+                                            <% } %>
                                         </td>
-                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= request.requested_at ? new Date(request.requested_at).toLocaleDateString() : 'N/A' %>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <%= request.formatted_requested_at || 'N/A' %>
                                         </td>
-                                        <td class="px-1 py-4 whitespace-nowrap">
+                                        <td class="px-6 py-4 whitespace-nowrap">
                                             <% if (request.status === 'approved') { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    Approved
-                                                </span>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✓ Approved</span>
                                             <% } else if (request.status === 'rejected') { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                    Rejected
-                                                </span>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">✗ Rejected</span>
                                             <% } else { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                    Pending
-                                                </span>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ Pending</span>
                                             <% } %>
                                         </td>
-                                        <td class="px-1 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= request.processed_at ? new Date(request.processed_at).toLocaleDateString() : 'N/A' %>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <%= request.formatted_processed_at || 'Not processed' %>
                                         </td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="8" class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                        <div class="text-center py-8">
-                                            <i class="fas fa-clipboard-list text-gray-400 text-4xl mb-4"></i>
-                                            <p class="text-gray-500">No product request history found</p>
-                                            <p class="text-sm text-gray-400">Product requests will appear here once you start processing them</p>
-                                        </div>
+                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                        No request history found
                                     </td>
                                 </tr>
                             <% } %>
                         </tbody>
                     </table>
                 </div>
-                </div>
             </div>
         </div>
         
-        <!-- Recent Assignments Table -->
+        <!-- Assignment Records -->
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <div class="px-4 py-5 sm:p-6">
-                <div class="mb-4">
-                    <button onclick="toggleSection('productAssignmentHistory')" class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-2 hover:bg-gray-50">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Product Assignment History</h3>
-                        <i id="productAssignmentHistoryIcon" class="fas fa-chevron-down text-gray-500 transition-transform duration-200"></i>
-                    </button>
-                </div>
-                <div id="productAssignmentHistoryContent" class="block">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Product Return Status</h3>
                 <div class="overflow-x-auto w-full">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Product
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Category
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Employee
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Quantity
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Assigned Date
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Return Date
-                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return Reason</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processed Date</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <% if (assignments && assignments.length > 0) { %>
                                 <% assignments.forEach(assignment => { %>
                                     <tr>
-                                        <td class="px-6 py-4 text-sm font-medium text-gray-900" style="max-width: 200px;">
-                                            <div class="break-words whitespace-normal"><%= assignment.product_name || 'N/A' %></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                <%= assignment.asset_type || 'General' %>
-                                            </span>
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                            <%= assignment.product_name || 'N/A' %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= assignment.employee_name || 'Unknown' %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= assignment.quantity || 1 %>
+                                        <td class="px-6 py-4 text-sm">
+                                            <% if (assignment.remarks && assignment.remarks.startsWith('RETURN_REJECTED')) { %>
+                                                <div class="text-red-600 font-medium">
+                                                    <%= assignment.remarks.replace('RETURN_REJECTED: ', '') %>
+                                                </div>
+                                            <% } else if (assignment.remarks === 'RETURN_REQUESTED') { %>
+                                                <div class="text-gray-500">
+                                                    Return requested
+                                                </div>
+                                            <% } else if (assignment.is_returned) { %>
+                                                <div class="text-gray-500">
+                                                    <%= assignment.remarks || 'Product returned' %>
+                                                </div>
+                                            <% } else { %>
+                                                <div class="text-gray-500">
+                                                    <%= assignment.remarks || 'No return request' %>
+                                                </div>
+                                            <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= assignment.assigned_at ? new Date(assignment.assigned_at).toLocaleDateString() : 'N/A' %>
+                                            <% if (assignment.return_status === 'requested' || assignment.return_status === 'approved' || assignment.return_status === 'rejected') { %>
+                                                <%= assignment.formatted_assigned_at || 'N/A' %>
+                                            <% } else { %>
+                                                <%= assignment.formatted_assigned_at || 'N/A' %>
+                                            <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= assignment.is_returned ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' %>">
-                                                <%= assignment.is_returned ? 'Returned' : 'Active' %>
-                                            </span>
+                                            <% if (assignment.is_returned) { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✓ Returned</span>
+                                            <% } else if (assignment.remarks && assignment.remarks.startsWith('RETURN_REJECTED')) { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">✗ Rejected</span>
+                                            <% } else if (assignment.remarks === 'RETURN_REQUESTED') { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ Pending</span>
+                                            <% } else { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">📦 In Use</span>
+                                            <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= assignment.return_date ? new Date(assignment.return_date).toLocaleDateString() : 'N/A' %>
+                                            <%= assignment.formatted_returned_at || (assignment.returned_at ? new Date(assignment.returned_at).toLocaleDateString() : 'Not processed') %>
                                         </td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                        <div class="text-center py-8">
-                                            <i class="fas fa-user-check text-gray-400 text-4xl mb-4"></i>
-                                            <p class="text-gray-500">No assignment records found</p>
-                                            <p class="text-sm text-gray-400">Product assignments will appear here once you approve product requests</p>
-                                        </div>
+                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                        No assignment records found
                                     </td>
                                 </tr>
                             <% } %>
                         </tbody>
                     </table>
                 </div>
-                </div>
             </div>
         </div>
-        </div> <!-- End scrollable content area -->
+        </div>
     </main>
-
-    <script>
-        function toggleSection(sectionId) {
-            const content = document.getElementById(sectionId + 'Content');
-            const icon = document.getElementById(sectionId + 'Icon');
-            
-            if (content.classList.contains('hidden')) {
-                content.classList.remove('hidden');
-                content.classList.add('block');
-                icon.classList.remove('fa-chevron-right');
-                icon.classList.add('fa-chevron-down');
-            } else {
-                content.classList.remove('block');
-                content.classList.add('hidden');
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-right');
-            }
-        }
-    </script>
 </body>
 </html>

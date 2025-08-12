@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const path = require('path');
+const multer = require('multer');
+const xlsx = require('xlsx');
+const fs = require('fs');
 const { sendRegistrationApprovalEmail, sendRegistrationRejectionEmail } = require('../utils/emailService');
 
 // Import file upload utilities
@@ -12,6 +15,28 @@ const {
     getFileIcon,
     formatFileSize 
 } = require('../utils/fileUpload');
+
+// Configure multer for Excel file uploads - use memory storage for cloud compatibility
+const excelUpload = multer({
+    storage: multer.memoryStorage(), // Use memory storage instead of disk for App Engine
+    fileFilter: (req, file, cb) => {
+        // Check if file is Excel
+        const allowedMimes = [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+            'application/vnd.ms-excel', // .xls
+            'text/csv' // .csv
+        ];
+        
+        if (allowedMimes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only Excel files (.xlsx, .xls) and CSV files are allowed'), false);
+        }
+    },
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    }
+});
 
 // Admin routes module
 module.exports = (pool, requireAuth, requireRole) => {
@@ -333,6 +358,267 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
 
         res.redirect('/admin/stock');
+    });
+
+    // Admin: Excel Upload Page Route
+    router.get('/upload-products', requireAuth, requireRole(['admin']), async (req, res) => {
+        try {
+            // Get the products table column structure
+            const [columns] = await pool.execute(`
+                SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT, COLUMN_COMMENT 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
+                ORDER BY ORDINAL_POSITION
+            `);
+            
+            // Filter out auto-increment and system columns that users shouldn't provide
+            const editableColumns = columns.filter(col => 
+                !['product_id', 'added_at', 'updated_at'].includes(col.COLUMN_NAME)
+            );
+            
+            res.render('admin/upload-products', { 
+                user: req.session.user,
+                columns: editableColumns,
+                messages: req.flash()
+            });
+        } catch (error) {
+            console.error('Upload products page error:', error);
+            res.render('error', { message: 'Error loading upload page' });
+        }
+    });
+
+    // Admin: Process Excel Upload Route
+    router.post('/upload-products', requireAuth, requireRole(['admin']), excelUpload.single('excelFile'), async (req, res) => {
+        try {
+            if (!req.file) {
+                req.flash('error', 'No file uploaded. Please select an Excel file.');
+                return res.redirect('/admin/upload-products');
+            }
+
+            // Read the Excel file from memory buffer
+            const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+            const sheetName = workbook.SheetNames[0]; // Use first sheet
+            const sheet = workbook.Sheets[sheetName];
+            
+            // Convert to JSON with header row as keys
+            const data = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+            
+            if (data.length < 2) {
+                req.flash('error', 'Excel file must contain at least a header row and one data row.');
+                return res.redirect('/admin/upload-products');
+            }
+
+            const headers = data[0].map(h => h ? h.toString().trim() : '');
+            const rows = data.slice(1);
+
+            // Get the products table column structure
+            const [dbColumns] = await pool.execute(`
+                SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
+                ORDER BY ORDINAL_POSITION
+            `);
+
+            // Filter out auto-increment and system columns
+            const expectedColumns = dbColumns
+                .filter(col => !['product_id', 'added_at', 'updated_at'].includes(col.COLUMN_NAME))
+                .map(col => col.COLUMN_NAME);
+
+            // Validate column headers
+            const missingColumns = expectedColumns.filter(col => !headers.includes(col));
+            const extraColumns = headers.filter(col => col && !expectedColumns.includes(col));
+
+            if (missingColumns.length > 0 || extraColumns.length > 0) {
+                let errorMessage = 'Column mismatch detected:\\n';
+                if (missingColumns.length > 0) {
+                    errorMessage += `Missing columns: ${missingColumns.join(', ')}\\n`;
+                }
+                if (extraColumns.length > 0) {
+                    errorMessage += `Extra columns: ${extraColumns.join(', ')}\\n`;
+                }
+                errorMessage += `Expected columns: ${expectedColumns.join(', ')}`;
+                
+                req.flash('error', errorMessage);
+                return res.redirect('/admin/upload-products');
+            }
+
+            // Process and validate data
+            const connection = await pool.getConnection();
+            await connection.beginTransaction();
+
+            try {
+                let successCount = 0;
+                let errorCount = 0;
+                const errors = [];
+
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    const rowNumber = i + 2; // Excel row number (accounting for header)
+
+                    try {
+                        // Skip empty rows
+                        if (!row || row.every(cell => !cell && cell !== 0)) {
+                            continue;
+                        }
+
+                        // Create object from row data
+                        const productData = {};
+                        headers.forEach((header, index) => {
+                            if (header && expectedColumns.includes(header)) {
+                                productData[header] = row[index] || null;
+                            }
+                        });
+
+                        // Set default values for required fields
+                        if (!productData.added_by) {
+                            productData.added_by = req.session.user.user_id;
+                        }
+                        if (productData.is_available === undefined || productData.is_available === null) {
+                            productData.is_available = true;
+                        }
+                        if (!productData.quantity) {
+                            productData.quantity = 1;
+                        }
+
+                        // Convert boolean fields
+                        if (typeof productData.is_available === 'string') {
+                            productData.is_available = ['true', '1', 'yes', 'y'].includes(productData.is_available.toLowerCase());
+                        }
+                        if (typeof productData.calibration_required === 'string') {
+                            productData.calibration_required = ['true', '1', 'yes', 'y'].includes(productData.calibration_required.toLowerCase());
+                        }
+
+                        // Validate required fields
+                        if (!productData.product_name || !productData.asset_type) {
+                            errors.push(`Row ${rowNumber}: Product name and asset type are required`);
+                            errorCount++;
+                            continue;
+                        }
+
+                        // Build INSERT query dynamically
+                        const columns = Object.keys(productData).filter(key => productData[key] !== null);
+                        const values = columns.map(key => productData[key]);
+                        const placeholders = columns.map(() => '?').join(', ');
+                        const columnNames = columns.join(', ');
+
+                        const insertQuery = `INSERT INTO products (${columnNames}) VALUES (${placeholders})`;
+                        await connection.execute(insertQuery, values);
+
+                        successCount++;
+
+                    } catch (rowError) {
+                        console.error(`Error processing row ${rowNumber}:`, rowError);
+                        errors.push(`Row ${rowNumber}: ${rowError.message}`);
+                        errorCount++;
+                    }
+                }
+
+                if (successCount > 0) {
+                    await connection.commit();
+                    req.flash('success', `Successfully imported ${successCount} products.`);
+                    
+                    if (errorCount > 0) {
+                        req.flash('warning', `${errorCount} rows had errors and were skipped.`);
+                        if (errors.length <= 10) {
+                            req.flash('info', errors.join('\\n'));
+                        } else {
+                            req.flash('info', `First 10 errors:\\n${errors.slice(0, 10).join('\\n')}\\n... and ${errors.length - 10} more errors.`);
+                        }
+                    }
+                } else {
+                    await connection.rollback();
+                    req.flash('error', 'No products were imported. Please check your data.');
+                    if (errors.length > 0) {
+                        req.flash('info', errors.slice(0, 10).join('\\n'));
+                    }
+                }
+
+            } catch (error) {
+                await connection.rollback();
+                throw error;
+            } finally {
+                connection.release();
+            }
+
+        } catch (error) {
+            console.error('Excel upload error:', error);
+            req.flash('error', 'Error processing Excel file. Please check the format and try again.');
+        }
+
+        res.redirect('/admin/upload-products');
+    });
+
+    // Admin: Download Template Route
+    router.get('/download-template', requireAuth, requireRole(['admin']), async (req, res) => {
+        try {
+            // Get the products table column structure
+            const [columns] = await pool.execute(`
+                SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT, COLUMN_COMMENT 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
+                ORDER BY ORDINAL_POSITION
+            `);
+            
+            // Filter out auto-increment and system columns
+            const templateColumns = columns
+                .filter(col => !['product_id', 'added_at', 'updated_at'].includes(col.COLUMN_NAME))
+                .map(col => col.COLUMN_NAME);
+
+            // Create a sample data row
+            const sampleData = {
+                item_number: 1001,
+                asset_type: 'Hardware',
+                product_category: 'Testing Equipment',
+                product_name: 'Sample Product Name',
+                model_number: 'MODEL-123',
+                serial_number: 'SN-123456',
+                is_available: true,
+                quantity: 1,
+                added_by: req.session.user.user_id,
+                calibration_required: false,
+                calibration_frequency: '1 Year',
+                calibration_due_date: '2025-12-31',
+                pr_no: 1234,
+                po_number: 'PO-2024-001',
+                inward_date: '2024-01-15',
+                inwarded_by: req.session.user.user_id,
+                version_number: 'v1.0',
+                software_license_type: 'Standard',
+                license_start: '2024-01-01',
+                renewal_frequency: '1 Year',
+                next_renewal_date: '2025-01-01',
+                new_license_key: null,
+                new_version_number: null
+            };
+
+            // Create worksheet data
+            const wsData = [
+                templateColumns, // Header row
+                templateColumns.map(col => sampleData[col] || '') // Sample data row
+            ];
+
+            // Create workbook
+            const wb = xlsx.utils.book_new();
+            const ws = xlsx.utils.aoa_to_sheet(wsData);
+
+            // Add the worksheet to workbook
+            xlsx.utils.book_append_sheet(wb, ws, 'Products Template');
+
+            // Generate buffer
+            const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+            // Set headers for download
+            res.setHeader('Content-Disposition', 'attachment; filename="products_template.xlsx"');
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+            // Send the file
+            res.send(buffer);
+
+        } catch (error) {
+            console.error('Template download error:', error);
+            req.flash('error', 'Error generating template file.');
+            res.redirect('/admin/upload-products');
+        }
     });
 
 

@@ -63,7 +63,7 @@ Value: ims_production
 ### Step 1: Create Service Account
 ```bash
 # Set your project ID
-export PROJECT_ID="marq-interns-dev"
+export PROJECT_ID=" "
 
 # Create service account
 gcloud iam service-accounts create github-actions-sa \

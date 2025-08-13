@@ -170,10 +170,10 @@ final-monitor1 → main → Production Environment
 
 The workflows use these environment variables:
 ```yaml
-NODE_VERSION: "18"  # Node.js version
+NODE_VERSION: "20"  # Node.js version (matches package.json)
 PROJECT_ID: "mqi-ims"  # Google Cloud Project ID
 APP_SERVICE: "default"  # App Engine service name
-INSTANCE_NAME: "mqi-ims-db"  # Cloud SQL instance name
+INSTANCE_NAME: "product-management-db"  # Cloud SQL instance name
 ```
 
 ## 🔍 Monitoring and Alerts

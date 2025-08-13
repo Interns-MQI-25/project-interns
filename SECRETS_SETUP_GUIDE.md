@@ -258,7 +258,7 @@ gcloud projects list
 gcloud app describe --project=$PROJECT_ID
 
 # Test Cloud SQL connection
-gcloud sql instances describe mqi-ims-db --project=$PROJECT_ID
+gcloud sql instances describe product-management-db --project=$PROJECT_ID
 ```
 
 ## 📋 Checklist

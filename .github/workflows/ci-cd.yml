@@ -158,25 +158,61 @@ jobs:
         
     - name: 🚀 Deploy to App Engine Development
       run: |
-        # Create development app.yaml
-        cp app.yaml app-dev.yaml
-        sed -i 's/service: default/service: dev/' app-dev.yaml
+        # Create development app.yaml with explicit configuration
+        cat > app-dev.yaml << EOF
+        runtime: nodejs20
+        service: dev
         
-        # Check if dev service exists
-        if gcloud app services describe dev --project=${{ env.PROJECT_ID }} 2>/dev/null; then
-          echo "Dev service exists, updating..."
-          gcloud app deploy app-dev.yaml \
-            --version=dev-$(date +%Y%m%d-%H%M%S) \
-            --promote \
-            --stop-previous-version \
-            --quiet
-        else
-          echo "Creating new dev service..."
-          gcloud app deploy app-dev.yaml \
+        env_variables:
+          NODE_ENV: 'development'
+          DB_HOST: '/cloudsql/${{ env.PROJECT_ID }}:us-central1:${{ env.INSTANCE_NAME }}'
+          DB_USER: 'sigma'
+          DB_PASSWORD: 'sigma'
+          DB_NAME: 'product_management_system'
+          SESSION_SECRET: 'dev-secret-key-2025'
+          EMAIL_USER: 'priyanshu17ks.edu@gmail.com'
+          EMAIL_PASS: 'bztn fcvu zaig dztn'
+          ADMIN_EMAIL: 'priyanshu17ks@gmail.com'
+        
+        beta_settings:
+          cloud_sql_instances: ${{ env.PROJECT_ID }}:us-central1:${{ env.INSTANCE_NAME }}
+        
+        automatic_scaling:
+          min_instances: 1
+          max_instances: 2
+          target_cpu_utilization: 0.65
+        
+        handlers:
+        - url: /.*
+          script: auto
+          secure: always
+        EOF
+        
+        # Deploy with retry logic
+        MAX_RETRIES=3
+        RETRY_COUNT=0
+        
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          echo "Deployment attempt $((RETRY_COUNT + 1))..."
+          
+          if gcloud app deploy app-dev.yaml \
             --version=dev-$(date +%Y%m%d-%H%M%S) \
             --no-promote \
-            --quiet
-        fi
+            --quiet \
+            --project=${{ env.PROJECT_ID }}; then
+            echo "✅ Deployment successful!"
+            break
+          else
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "⚠️ Deployment failed, retrying in 30 seconds..."
+              sleep 30
+            else
+              echo "❌ Deployment failed after $MAX_RETRIES attempts"
+              exit 1
+            fi
+          fi
+        done
           
     - name: 🌐 Get deployment URL
       run: |

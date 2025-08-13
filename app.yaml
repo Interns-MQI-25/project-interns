@@ -1,4 +1,5 @@
 runtime: nodejs20
+service: default
 
 env_variables:
   NODE_ENV: 'production'
@@ -10,7 +11,6 @@ env_variables:
   EMAIL_USER: 'priyanshu17ks.edu@gmail.com'
   EMAIL_PASS: 'bztn fcvu zaig dztn'
   ADMIN_EMAIL: 'priyanshu17ks@gmail.com'
-
 
 beta_settings:
   cloud_sql_instances: mqi-ims:us-central1:product-management-db

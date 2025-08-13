@@ -7,9 +7,10 @@ on:
     branches: [ main, gcp-deploy-win, final-monitor1 ]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   PROJECT_ID: 'mqi-ims'
   GAE_SERVICE: 'default'
+  INSTANCE_NAME: 'product-management-db'
 
 jobs:
   # Lint and Test Job
@@ -138,7 +139,7 @@ jobs:
     - name: 🔧 Setup environment variables
       run: |
         echo "NODE_ENV=development" >> .env
-        echo "DB_HOST=/cloudsql/${{ env.PROJECT_ID }}:us-central1:mqi-ims-db" >> .env
+        echo "DB_HOST=/cloudsql/${{ env.PROJECT_ID }}:us-central1:${{ env.INSTANCE_NAME }}" >> .env
         echo "DB_USER=${{ secrets.DEV_DB_USER }}" >> .env
         echo "DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}" >> .env
         echo "DB_NAME=${{ secrets.DEV_DB_NAME }}" >> .env
@@ -196,7 +197,7 @@ jobs:
     - name: 🔧 Setup environment variables
       run: |
         echo "NODE_ENV=staging" >> .env
-        echo "DB_HOST=/cloudsql/${{ env.PROJECT_ID }}:us-central1:mqi-ims-db" >> .env
+        echo "DB_HOST=/cloudsql/${{ env.PROJECT_ID }}:us-central1:${{ env.INSTANCE_NAME }}" >> .env
         echo "DB_USER=${{ secrets.STAGING_DB_USER }}" >> .env
         echo "DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}" >> .env
         echo "DB_NAME=${{ secrets.STAGING_DB_NAME }}" >> .env
@@ -248,7 +249,7 @@ jobs:
     - name: 🔧 Setup environment variables
       run: |
         echo "NODE_ENV=production" >> .env
-        echo "DB_HOST=/cloudsql/${{ env.PROJECT_ID }}:us-central1:mqi-ims-db" >> .env
+        echo "DB_HOST=/cloudsql/${{ env.PROJECT_ID }}:us-central1:${{ env.INSTANCE_NAME }}" >> .env
         echo "DB_USER=${{ secrets.PROD_DB_USER }}" >> .env
         echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> .env
         echo "DB_NAME=${{ secrets.PROD_DB_NAME }}" >> .env

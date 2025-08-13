@@ -5,7 +5,12 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "gcp-deploy": "gcloud app deploy"
+    "dev": "NODE_ENV=development node server.js",
+    "setup-db": "node setup-db.js",
+    "setup-local": "bash setup-local.sh",
+    "setup-local-win": "powershell -ExecutionPolicy Bypass -File setup-local.ps1",
+    "gcp-deploy": "gcloud app deploy",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

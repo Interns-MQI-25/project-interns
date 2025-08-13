@@ -121,7 +121,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, validate-schema, check-secrets]
     if: github.ref == 'refs/heads/gcp-deploy-win' && github.event_name == 'push' && needs.check-secrets.outputs.secrets-available == 'true'
-    environment: development
+    environment:
+      name: development
+      url: https://dev-dot-${{ env.PROJECT_ID }}.uc.r.appspot.com
     
     steps:
     - name: 📥 Checkout code
@@ -138,12 +140,33 @@ jobs:
       
     - name: 🔧 Setup environment variables
       run: |
-        echo "NODE_ENV=development" >> .env
-        echo "DB_HOST=/cloudsql/${{ env.PROJECT_ID }}:us-central1:${{ env.INSTANCE_NAME }}" >> .env
-        # Use default credentials if secrets are not set
-        echo "DB_USER=sigma" >> .env
-        echo "DB_PASSWORD=sigma" >> .env
-        echo "DB_NAME=product_management_system" >> .env
+        # Load deployment environment variables
+        if [ -f ".env.deployment" ]; then
+          echo "Loading deployment environment variables..."
+          # Export variables from .env.deployment file
+          set -a  # automatically export all variables
+          source .env.deployment
+          set +a  # stop auto-exporting
+          
+          echo "✅ Loaded deployment configuration"
+          echo "PROJECT_ID: $PROJECT_ID"
+          echo "DEV_SERVICE: $DEV_SERVICE"
+        fi
+        
+        # Create environment file for this deployment
+        cat > .env << EOF
+        NODE_ENV=development
+        DB_HOST=$DEV_DB_HOST
+        DB_USER=$DEV_DB_USER
+        DB_PASSWORD=$DEV_DB_PASSWORD
+        DB_NAME=$DEV_DB_NAME
+        SESSION_SECRET=$DEV_SESSION_SECRET
+        EMAIL_USER=$EMAIL_USER
+        EMAIL_PASS=$EMAIL_PASS
+        ADMIN_EMAIL=$ADMIN_EMAIL
+        EOF
+        
+        echo "✅ Environment variables configured for development"
         
     - name: 🔐 Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
@@ -158,24 +181,34 @@ jobs:
         
     - name: 🚀 Deploy to App Engine Development
       run: |
-        # Create development app.yaml with explicit configuration
-        cat > app-dev.yaml << EOF
+        # Load deployment environment variables first
+        if [ -f ".env.deployment" ]; then
+          set -a
+          source .env.deployment
+          set +a
+        fi
+        
+        # Ensure config directory exists
+        mkdir -p config
+        
+        # Create development app.yaml with configuration from .env.deployment
+        cat > config/app-dev.yaml << EOF
         runtime: nodejs20
-        service: dev
+        service: $DEV_SERVICE
         
         env_variables:
           NODE_ENV: 'development'
-          DB_HOST: '/cloudsql/${{ env.PROJECT_ID }}:us-central1:${{ env.INSTANCE_NAME }}'
-          DB_USER: 'sigma'
-          DB_PASSWORD: 'sigma'
-          DB_NAME: 'product_management_system'
-          SESSION_SECRET: 'dev-secret-key-2025'
-          EMAIL_USER: 'priyanshu17ks.edu@gmail.com'
-          EMAIL_PASS: 'bztn fcvu zaig dztn'
-          ADMIN_EMAIL: 'priyanshu17ks@gmail.com'
+          DB_HOST: '$DEV_DB_HOST'
+          DB_USER: '$DEV_DB_USER'
+          DB_PASSWORD: '$DEV_DB_PASSWORD'
+          DB_NAME: '$DEV_DB_NAME'
+          SESSION_SECRET: '$DEV_SESSION_SECRET'
+          EMAIL_USER: '$EMAIL_USER'
+          EMAIL_PASS: '$EMAIL_PASS'
+          ADMIN_EMAIL: '$ADMIN_EMAIL'
         
         beta_settings:
-          cloud_sql_instances: ${{ env.PROJECT_ID }}:us-central1:${{ env.INSTANCE_NAME }}
+          cloud_sql_instances: $PROJECT_ID:$REGION:$INSTANCE_NAME
         
         automatic_scaling:
           min_instances: 1
@@ -188,6 +221,8 @@ jobs:
           secure: always
         EOF
         
+        echo "✅ Generated config/app-dev.yaml with environment configuration"
+        
         # Deploy with retry logic
         MAX_RETRIES=3
         RETRY_COUNT=0
@@ -195,11 +230,11 @@ jobs:
         while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
           echo "Deployment attempt $((RETRY_COUNT + 1))..."
           
-          if gcloud app deploy app-dev.yaml \
+          if gcloud app deploy config/app-dev.yaml \
             --version=dev-$(date +%Y%m%d-%H%M%S) \
             --no-promote \
             --quiet \
-            --project=${{ env.PROJECT_ID }}; then
+            --project=$PROJECT_ID; then
             echo "✅ Deployment successful!"
             break
           else
@@ -226,7 +261,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, validate-schema, check-secrets]
     if: github.ref == 'refs/heads/final-monitor1' && github.event_name == 'push' && needs.check-secrets.outputs.secrets-available == 'true'
-    environment: staging
+    environment:
+      name: staging
+      url: https://staging-dot-${{ env.PROJECT_ID }}.uc.r.appspot.com
     
     steps:
     - name: 📥 Checkout code
@@ -243,12 +280,33 @@ jobs:
       
     - name: 🔧 Setup environment variables
       run: |
-        echo "NODE_ENV=staging" >> .env
-        echo "DB_HOST=/cloudsql/${{ env.PROJECT_ID }}:us-central1:${{ env.INSTANCE_NAME }}" >> .env
-        # Use default credentials if secrets are not set
-        echo "DB_USER=sigma" >> .env
-        echo "DB_PASSWORD=sigma" >> .env
-        echo "DB_NAME=product_management_system" >> .env
+        # Load deployment environment variables
+        if [ -f ".env.deployment" ]; then
+          echo "Loading deployment environment variables..."
+          # Export variables from .env.deployment file
+          set -a  # automatically export all variables
+          source .env.deployment
+          set +a  # stop auto-exporting
+          
+          echo "✅ Loaded deployment configuration"
+          echo "PROJECT_ID: $PROJECT_ID"
+          echo "STAGING_SERVICE: $STAGING_SERVICE"
+        fi
+        
+        # Create environment file for this deployment
+        cat > .env << EOF
+        NODE_ENV=staging
+        DB_HOST=$STAGING_DB_HOST
+        DB_USER=$STAGING_DB_USER
+        DB_PASSWORD=$STAGING_DB_PASSWORD
+        DB_NAME=$STAGING_DB_NAME
+        SESSION_SECRET=$STAGING_SESSION_SECRET
+        EMAIL_USER=$EMAIL_USER
+        EMAIL_PASS=$EMAIL_PASS
+        ADMIN_EMAIL=$ADMIN_EMAIL
+        EOF
+        
+        echo "✅ Environment variables configured for staging"
         
     - name: 🔐 Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
@@ -263,11 +321,47 @@ jobs:
         
     - name: 🚀 Deploy to App Engine Staging
       run: |
-        # Create staging app.yaml
-        cp app.yaml app-staging.yaml
-        sed -i 's/service: default/service: staging/' app-staging.yaml
+        # Load deployment environment variables first
+        if [ -f ".env.deployment" ]; then
+          set -a
+          source .env.deployment
+          set +a
+        fi
         
-        gcloud app deploy app-staging.yaml \
+        # Ensure config directory exists
+        mkdir -p config
+        
+        # Create staging app.yaml
+        cat > config/app-staging.yaml << EOF
+        runtime: nodejs20
+        service: $STAGING_SERVICE
+        
+        env_variables:
+          NODE_ENV: 'staging'
+          DB_HOST: '$STAGING_DB_HOST'
+          DB_USER: '$STAGING_DB_USER'
+          DB_PASSWORD: '$STAGING_DB_PASSWORD'
+          DB_NAME: '$STAGING_DB_NAME'
+          SESSION_SECRET: '$STAGING_SESSION_SECRET'
+          EMAIL_USER: '$EMAIL_USER'
+          EMAIL_PASS: '$EMAIL_PASS'
+          ADMIN_EMAIL: '$ADMIN_EMAIL'
+        
+        beta_settings:
+          cloud_sql_instances: $PROJECT_ID:$REGION:$INSTANCE_NAME
+        
+        automatic_scaling:
+          min_instances: 1
+          max_instances: 3
+          target_cpu_utilization: 0.65
+        
+        handlers:
+        - url: /.*
+          script: auto
+          secure: always
+        EOF
+        
+        gcloud app deploy config/app-staging.yaml \
           --version=staging-$(date +%Y%m%d-%H%M%S) \
           --promote \
           --stop-previous-version \
@@ -279,7 +373,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, validate-schema, check-secrets]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.check-secrets.outputs.secrets-available == 'true'
-    environment: production
+    environment:
+      name: production
+      url: https://${{ env.PROJECT_ID }}.uc.r.appspot.com
     
     steps:
     - name: 📥 Checkout code
@@ -296,12 +392,33 @@ jobs:
       
     - name: 🔧 Setup environment variables
       run: |
-        echo "NODE_ENV=production" >> .env
-        echo "DB_HOST=/cloudsql/${{ env.PROJECT_ID }}:us-central1:${{ env.INSTANCE_NAME }}" >> .env
-        # Use default credentials if secrets are not set
-        echo "DB_USER=sigma" >> .env
-        echo "DB_PASSWORD=sigma" >> .env
-        echo "DB_NAME=product_management_system" >> .env
+        # Load deployment environment variables
+        if [ -f ".env.deployment" ]; then
+          echo "Loading deployment environment variables..."
+          # Export variables from .env.deployment file
+          set -a  # automatically export all variables
+          source .env.deployment
+          set +a  # stop auto-exporting
+          
+          echo "✅ Loaded deployment configuration"
+          echo "PROJECT_ID: $PROJECT_ID"
+          echo "PROD_SERVICE: $PROD_SERVICE"
+        fi
+        
+        # Create environment file for this deployment
+        cat > .env << EOF
+        NODE_ENV=production
+        DB_HOST=$PROD_DB_HOST
+        DB_USER=$PROD_DB_USER
+        DB_PASSWORD=$PROD_DB_PASSWORD
+        DB_NAME=$PROD_DB_NAME
+        SESSION_SECRET=$PROD_SESSION_SECRET
+        EMAIL_USER=$EMAIL_USER
+        EMAIL_PASS=$EMAIL_PASS
+        ADMIN_EMAIL=$ADMIN_EMAIL
+        EOF
+        
+        echo "✅ Environment variables configured for production"
         
     - name: 🔐 Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
@@ -316,11 +433,27 @@ jobs:
         
     - name: 🚀 Deploy to App Engine Production
       run: |
-        gcloud app deploy app.yaml \
-          --version=prod-$(date +%Y%m%d-%H%M%S) \
-          --promote \
-          --stop-previous-version \
-          --quiet
+        # Load deployment environment variables first
+        if [ -f ".env.deployment" ]; then
+          set -a
+          source .env.deployment
+          set +a
+        fi
+        
+        # Use existing app.yaml for production or create from config
+        if [ -f "config/app.yaml" ]; then
+          gcloud app deploy config/app.yaml \
+            --version=prod-$(date +%Y%m%d-%H%M%S) \
+            --promote \
+            --stop-previous-version \
+            --quiet
+        else
+          gcloud app deploy app.yaml \
+            --version=prod-$(date +%Y%m%d-%H%M%S) \
+            --promote \
+            --stop-previous-version \
+            --quiet
+        fi
           
     - name: 🌐 Get production URL
       run: |
@@ -360,7 +493,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check-secrets]
     if: github.event_name == 'workflow_dispatch' && needs.check-secrets.outputs.secrets-available == 'true'
-    environment: production
+    environment:
+      name: production
+      url: https://${{ env.PROJECT_ID }}.uc.r.appspot.com
     
     steps:
     - name: 📥 Checkout code

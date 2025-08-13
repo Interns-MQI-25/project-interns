@@ -7,7 +7,7 @@ env_variables:
   DB_USER: 'sigma'
   DB_PASSWORD: 'sigma'
   DB_NAME: 'product_management_system'
-  SESSION_SECRET: 'dev-secret-key-2025'
+  SESSION_SECRET: 'dev-secret-key-2025-marquardt'
   EMAIL_USER: 'priyanshu17ks.edu@gmail.com'
   EMAIL_PASS: 'bztn fcvu zaig dztn'
   ADMIN_EMAIL: 'priyanshu17ks@gmail.com'

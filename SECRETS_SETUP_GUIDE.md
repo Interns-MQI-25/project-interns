@@ -61,17 +61,48 @@ Value: ims_production
 ## 🔑 Creating Google Cloud Service Account Key
 
 ### Step 1: Create Service Account
+```powershell
+# Set your project ID (PowerShell)
+$PROJECT_ID = "mqi-ims"
+
+# Create service account
+gcloud iam service-accounts create github-actions-sa `
+    --description="GitHub Actions Service Account for CI/CD" `
+    --display-name="GitHub Actions" `
+    --project=$PROJECT_ID
+```
+
+**For Bash/Linux users:**
 ```bash
-# Set your project ID
-export PROJECT_ID=" "
+# Set your project ID (Bash)
+export PROJECT_ID="mqi-ims"
 
 # Create service account
 gcloud iam service-accounts create github-actions-sa \
     --description="GitHub Actions Service Account for CI/CD" \
-    --display-name="GitHub Actions"
+    --display-name="GitHub Actions" \
+    --project=$PROJECT_ID
 ```
 
 ### Step 2: Grant Required Permissions
+```powershell
+# App Engine deployment permission
+gcloud projects add-iam-policy-binding $PROJECT_ID `
+    --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" `
+    --role="roles/appengine.deployer"
+
+# Cloud SQL client permission
+gcloud projects add-iam-policy-binding $PROJECT_ID `
+    --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" `
+    --role="roles/cloudsql.client"
+
+# Storage admin permission (for file uploads)
+gcloud projects add-iam-policy-binding $PROJECT_ID `
+    --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" `
+    --role="roles/storage.admin"
+```
+
+**For Bash/Linux users:**
 ```bash
 # App Engine deployment permission
 gcloud projects add-iam-policy-binding $PROJECT_ID \
@@ -87,18 +118,19 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/storage.admin"
-
-# Additional permissions for full deployment
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" \
-    --role="roles/compute.instanceAdmin.v1"
-
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" \
-    --role="roles/iam.serviceAccountUser"
 ```
 
 ### Step 3: Create and Download Key
+```powershell
+# Create JSON key file
+gcloud iam service-accounts keys create github-actions-key.json `
+    --iam-account=github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com
+
+# Display the key content (copy this for GitHub)
+Get-Content github-actions-key.json
+```
+
+**For Bash/Linux users:**
 ```bash
 # Create JSON key file
 gcloud iam service-accounts keys create github-actions-key.json \

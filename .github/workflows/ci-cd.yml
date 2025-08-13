@@ -143,10 +143,14 @@ jobs:
         # Load deployment environment variables
         if [ -f ".env.deployment" ]; then
           echo "Loading deployment environment variables..."
-          # Export variables from .env.deployment file
-          set -a  # automatically export all variables
-          source .env.deployment
-          set +a  # stop auto-exporting
+          # Use a more robust method to load variables with spaces
+          while IFS= read -r line; do
+            # Skip comments and empty lines
+            if [[ ! "$line" =~ ^[[:space:]]*# && -n "$line" ]]; then
+              # Export the variable
+              export "$line"
+            fi
+          done < .env.deployment
           
           echo "✅ Loaded deployment configuration"
           echo "PROJECT_ID: $PROJECT_ID"
@@ -183,9 +187,15 @@ jobs:
       run: |
         # Load deployment environment variables first
         if [ -f ".env.deployment" ]; then
-          set -a
-          source .env.deployment
-          set +a
+          echo "Loading deployment environment variables..."
+          # Use a more robust method to load variables with spaces
+          while IFS= read -r line; do
+            # Skip comments and empty lines
+            if [[ ! "$line" =~ ^[[:space:]]*# && -n "$line" ]]; then
+              # Export the variable
+              export "$line"
+            fi
+          done < .env.deployment
         fi
         
         # Ensure config directory exists

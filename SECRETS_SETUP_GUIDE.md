@@ -100,6 +100,16 @@ gcloud projects add-iam-policy-binding $PROJECT_ID `
 gcloud projects add-iam-policy-binding $PROJECT_ID `
     --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" `
     --role="roles/storage.admin"
+
+# Service Account User permission (required for App Engine)
+gcloud projects add-iam-policy-binding $PROJECT_ID `
+    --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" `
+    --role="roles/iam.serviceAccountUser"
+
+# Compute Instance Admin permission (for App Engine deployments)
+gcloud projects add-iam-policy-binding $PROJECT_ID `
+    --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" `
+    --role="roles/compute.instanceAdmin.v1"
 ```
 
 **For Bash/Linux users:**
@@ -118,6 +128,16 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" \
     --role="roles/storage.admin"
+
+# Service Account User permission (required for App Engine)
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/iam.serviceAccountUser"
+
+# Compute Instance Admin permission (for App Engine deployments)
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:github-actions-sa@$PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/compute.instanceAdmin.v1"
 ```
 
 ### Step 3: Create and Download Key

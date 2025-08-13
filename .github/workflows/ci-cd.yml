@@ -89,12 +89,37 @@ jobs:
         node -c setup-db.js
         echo "✅ Database setup script syntax is valid"
 
+  # Check required secrets before deployment
+  check-secrets:
+    name: 🔍 Validate Required Secrets
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/gcp-deploy-win' || github.ref == 'refs/heads/final-monitor1' || github.ref == 'refs/heads/main'
+    outputs:
+      secrets-available: ${{ steps.check.outputs.secrets-available }}
+    
+    steps:
+    - name: 📋 Check for required secrets
+      id: check
+      run: |
+        echo "Checking for required GitHub secrets..."
+        if [ -z "${{ secrets.GCP_SA_KEY }}" ]; then
+          echo "❌ Missing GCP_SA_KEY secret"
+          echo "secrets-available=false" >> $GITHUB_OUTPUT
+          echo "::error::Missing required secret: GCP_SA_KEY"
+          echo "::error::Please add Google Cloud Service Account key as GCP_SA_KEY secret"
+          echo "::error::Visit: https://github.com/${{ github.repository }}/settings/secrets/actions"
+          exit 1
+        else
+          echo "✅ GCP_SA_KEY secret is configured"
+          echo "secrets-available=true" >> $GITHUB_OUTPUT
+        fi
+
   # Build and Deploy to Development (on feature branches)
   deploy-dev:
     name: 🚀 Deploy to Development
     runs-on: ubuntu-latest
-    needs: [test, validate-schema]
-    if: github.ref == 'refs/heads/gcp-deploy-win' && github.event_name == 'push'
+    needs: [test, validate-schema, check-secrets]
+    if: github.ref == 'refs/heads/gcp-deploy-win' && github.event_name == 'push' && needs.check-secrets.outputs.secrets-available == 'true'
     environment: development
     
     steps:
@@ -151,8 +176,8 @@ jobs:
   deploy-staging:
     name: 🎭 Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [test, validate-schema]
-    if: github.ref == 'refs/heads/final-monitor1' && github.event_name == 'push'
+    needs: [test, validate-schema, check-secrets]
+    if: github.ref == 'refs/heads/final-monitor1' && github.event_name == 'push' && needs.check-secrets.outputs.secrets-available == 'true'
     environment: staging
     
     steps:
@@ -203,8 +228,8 @@ jobs:
   deploy-production:
     name: 🏭 Deploy to Production
     runs-on: ubuntu-latest
-    needs: [test, validate-schema]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [test, validate-schema, check-secrets]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.check-secrets.outputs.secrets-available == 'true'
     environment: production
     
     steps:
@@ -283,7 +308,8 @@ jobs:
   migrate-database:
     name: 🗄️ Database Migration
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    needs: [check-secrets]
+    if: github.event_name == 'workflow_dispatch' && needs.check-secrets.outputs.secrets-available == 'true'
     environment: production
     
     steps:

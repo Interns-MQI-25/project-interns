@@ -1,2 +1,47 @@
-node_modules
+# Dependencies
+node_modules/
+
+# Environment files (local development)
 .env
+.env.local
+
+# Keep deployment environment file tracked
+# .env.deployment - This file should be committed for GitHub Actions
+
+# Temporary files
+temp/
+*.tmp
+*.temp
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Upload files (keep structure, ignore content)
+uploads/*
+!uploads/.gitkeep
+
+# Configuration files
+# Track all config files for deployment
+# config/ directory contains deployment configurations
+# Generated YAML files are tracked for consistency
+
+# Build artifacts
+dist/
+build/

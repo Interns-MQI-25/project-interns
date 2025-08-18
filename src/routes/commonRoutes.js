@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
+const { sendNewRegistrationNotification, sendRegistrationConfirmation } = require('../utils/emailService');
 
 // Common routes module (auth, dashboard, etc.)
 module.exports = (pool, requireAuth, requireRole) => {
@@ -123,7 +124,7 @@ module.exports = (pool, requireAuth, requireRole) => {
         
         try {
             const [users] = await pool.execute(
-                'SELECT u.*, e.department_id FROM users u LEFT JOIN employees e ON u.user_id = e.user_id WHERE username = ? AND u.is_active = TRUE',
+                'SELECT u.*, e.department_id FROM users u LEFT JOIN employees e ON u.user_id = e.user_id WHERE BINARY u.username = ? AND u.is_active = TRUE',
                 [username]
             );
             
@@ -189,14 +190,25 @@ module.exports = (pool, requireAuth, requireRole) => {
         const { full_name, username, email, password, department_id } = req.body;
         
         try {
-            // Check if username or email already exists
+            // Check if username or email already exists in users table
             const [existingUsers] = await pool.execute(
-                'SELECT * FROM users WHERE username = ? OR email = ?',
+                'SELECT * FROM users WHERE BINARY username = ? OR email = ?',
                 [username, email]
             );
             
             if (existingUsers.length > 0) {
                 req.flash('error', 'Username or email already exists');
+                return res.redirect('/register');
+            }
+            
+            // Check if email already exists in registration_requests table
+            const [existingRequests] = await pool.execute(
+                'SELECT * FROM registration_requests WHERE BINARY username = ? OR email = ?',
+                [username, email]
+            );
+            
+            if (existingRequests.length > 0) {
+                req.flash('error', 'Registration request already exists for this username or email');
                 return res.redirect('/register');
             }
             
@@ -208,6 +220,32 @@ module.exports = (pool, requireAuth, requireRole) => {
                 'INSERT INTO registration_requests (full_name, username, email, password, department_id) VALUES (?, ?, ?, ?, ?)',
                 [full_name, username, email, hashedPassword, department_id]
             );
+            
+            // Send confirmation email to user
+            try {
+                await sendRegistrationConfirmation(email, full_name);
+            } catch (emailError) {
+                console.error('Failed to send user confirmation email:', emailError);
+            }
+            
+            // Send email notification to all admins
+            try {
+                // Fetch all admin emails
+                const [admins] = await pool.execute(
+                    'SELECT email FROM users WHERE role = "admin" AND is_active = TRUE'
+                );
+                
+                if (admins.length > 0) {
+                    const adminEmails = admins.map(admin => admin.email);
+                    await sendNewRegistrationNotification(
+                        adminEmails,
+                        full_name,
+                        email
+                    );
+                }
+            } catch (emailError) {
+                console.error('Failed to send admin notification email:', emailError);
+            }
             
             req.flash('success', 'Registration request submitted. Please wait for admin approval.');
             res.redirect('/login');

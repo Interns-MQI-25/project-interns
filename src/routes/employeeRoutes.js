@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 
 // Try to import ActivityLogger, fallback if not available
 let ActivityLogger;
@@ -11,6 +12,13 @@ try {
         logProductRequest: () => Promise.resolve()
     };
 }
+
+// Import file upload utilities
+const { 
+    getProductAttachments, 
+    getFileIcon,
+    formatFileSize 
+} = require('../utils/fileUpload');
 
 // Employee routes module
 module.exports = (pool, requireAuth, requireRole) => {
@@ -26,20 +34,20 @@ module.exports = (pool, requireAuth, requireRole) => {
                     SELECT pa.*, p.product_name, u.full_name as monitor_name,
                            CASE 
                                WHEN pa.return_status = 'requested' THEN 'Return request submitted'
-                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN 'Return approved and completed'
-                               WHEN pa.return_status = 'rejected' THEN 'Return request rejected'
+                               WHEN pa.is_returned = 1 THEN 'Return approved and completed'
+                               WHEN pa.remarks LIKE 'RETURN_REJECTED:%' THEN 'Return request rejected'
                                ELSE 'Product assigned for use'
                            END as return_purpose,
                            CASE 
                                WHEN pa.return_status = 'requested' THEN 'pending'
-                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN 'approved'
-                               WHEN pa.return_status = 'rejected' THEN 'rejected'
+                               WHEN pa.is_returned = 1 THEN 'approved'
+                               WHEN pa.remarks LIKE 'RETURN_REJECTED:%' THEN 'rejected'
                                ELSE 'assigned'
                            END as return_request_status,
                            CASE 
                                WHEN pa.return_status = 'requested' THEN pa.assigned_at
-                               WHEN pa.return_status = 'approved' AND pa.is_returned = 1 THEN pa.returned_at
-                               WHEN pa.return_status = 'rejected' THEN pa.assigned_at
+                               WHEN pa.is_returned = 1 THEN pa.returned_at
+                               WHEN pa.remarks LIKE 'RETURN_REJECTED:%' THEN pa.assigned_at
                                ELSE NULL
                            END as return_requested_date,
                            returned_user.full_name as returned_processed_by_name
@@ -445,6 +453,64 @@ module.exports = (pool, requireAuth, requireRole) => {
         } catch (error) {
             console.error('Error fetching total requests count:', error);
             res.json({ count: 0 });
+        }
+    });
+
+    // Route: Download file attachment (Employee)
+    router.get('/download-attachment/:attachmentId', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            const attachmentId = req.params.attachmentId;
+            
+            // Get attachment details
+            const [attachments] = await pool.execute(
+                'SELECT * FROM product_attachments WHERE attachment_id = ?',
+                [attachmentId]
+            );
+            
+            if (attachments.length === 0) {
+                return res.status(404).json({ error: 'File not found' });
+            }
+            
+            const attachment = attachments[0];
+            const filePath = attachment.file_path;
+            
+            // Check if file exists
+            const fs = require('fs');
+            if (!fs.existsSync(filePath)) {
+                return res.status(404).json({ error: 'File not found on server' });
+            }
+            
+            // Set headers for download
+            res.setHeader('Content-Disposition', `attachment; filename="${attachment.original_filename}"`);
+            res.setHeader('Content-Type', attachment.mime_type);
+            
+            // Send file
+            res.sendFile(path.resolve(filePath));
+            
+        } catch (error) {
+            console.error('Download error:', error);
+            res.status(500).json({ error: 'Error downloading file' });
+        }
+    });
+
+    // Route: View product attachments (API - Employee)
+    router.get('/api/product-attachments/:productId', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            const productId = req.params.productId;
+            const attachments = await getProductAttachments(pool, productId);
+            
+            // Add file icons and formatted sizes
+            const formattedAttachments = attachments.map(attachment => ({
+                ...attachment,
+                file_icon: getFileIcon(attachment.filename),
+                formatted_size: formatFileSize(attachment.file_size),
+                download_url: `/employee/download-attachment/${attachment.attachment_id}`
+            }));
+            
+            res.json(formattedAttachments);
+        } catch (error) {
+            console.error('Error fetching attachments:', error);
+            res.status(500).json({ error: 'Error fetching attachments' });
         }
     });
 

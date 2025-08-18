@@ -53,11 +53,19 @@
                                                 <span class="ml-2 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">Monitor</span>
                                             <% } %>
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-500">
-                                            <% if (request.status === 'approved' || request.status === 'rejected') { %>
-                                                <%= request.remarks || (request.purpose || 'No purpose specified') %>
+                                        <td class="px-6 py-4 text-sm">
+                                            <% if (request.status === 'rejected' && request.remarks) { %>
+                                                <div class="text-red-600 font-medium">
+                                                    <%= request.remarks %>
+                                                </div>
+                                            <% } else if (request.status === 'approved' && request.remarks) { %>
+                                                <div class="text-gray-500">
+                                                    <%= request.remarks %>
+                                                </div>
                                             <% } else { %>
-                                                <%= request.purpose || 'No purpose specified' %>
+                                                <div class="text-gray-500">
+                                                    <%= request.purpose || 'No purpose specified' %>
+                                                </div>
                                             <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -116,13 +124,23 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= assignment.employee_name || 'Unknown' %>
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-500">
-                                            <% if (assignment.return_status === 'requested' || assignment.return_status === 'approved' || assignment.return_status === 'rejected') { %>
-                                                <%= assignment.remarks || 'Return requested' %>
+                                        <td class="px-6 py-4 text-sm">
+                                            <% if (assignment.remarks && assignment.remarks.startsWith('RETURN_REJECTED')) { %>
+                                                <div class="text-red-600 font-medium">
+                                                    <%= assignment.remarks.replace('RETURN_REJECTED: ', '') %>
+                                                </div>
+                                            <% } else if (assignment.remarks === 'RETURN_REQUESTED') { %>
+                                                <div class="text-gray-500">
+                                                    Return requested
+                                                </div>
                                             <% } else if (assignment.is_returned) { %>
-                                                <%= assignment.remarks || 'Product returned' %>
+                                                <div class="text-gray-500">
+                                                    <%= assignment.remarks || 'Product returned' %>
+                                                </div>
                                             <% } else { %>
-                                                No return request
+                                                <div class="text-gray-500">
+                                                    <%= assignment.remarks || 'No return request' %>
+                                                </div>
                                             <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -133,14 +151,12 @@
                                             <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <% if (assignment.is_returned && assignment.return_status === 'approved') { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✓ Approved</span>
-                                            <% } else if (assignment.return_status === 'rejected') { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">✗ Rejected</span>
-                                            <% } else if (assignment.return_status === 'requested') { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ Pending</span>
-                                            <% } else if (assignment.is_returned) { %>
+                                            <% if (assignment.is_returned) { %>
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✓ Returned</span>
+                                            <% } else if (assignment.remarks && assignment.remarks.startsWith('RETURN_REJECTED')) { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">✗ Rejected</span>
+                                            <% } else if (assignment.remarks === 'RETURN_REQUESTED') { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ Pending</span>
                                             <% } else { %>
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">📦 In Use</span>
                                             <% } %>

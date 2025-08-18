@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
 
 // Try to import ActivityLogger, fallback if not available
 let ActivityLogger;
@@ -12,6 +13,16 @@ try {
         logProductAssignment: () => Promise.resolve()
     };
 }
+
+// Import file upload utilities
+const { 
+    upload, 
+    saveFileAttachment, 
+    getProductAttachments, 
+    deleteFileAttachment,
+    getFileIcon,
+    formatFileSize 
+} = require('../utils/fileUpload');
 
 // Monitor routes module
 module.exports = (pool, requireAuth, requireRole) => {
@@ -125,7 +136,8 @@ module.exports = (pool, requireAuth, requireRole) => {
                         JOIN employees e ON pa.employee_id = e.employee_id
                         JOIN users u ON e.user_id = u.user_id
                         JOIN departments d ON e.department_id = d.department_id
-                        WHERE pa.return_status = 'requested' AND e.employee_id != ?
+                        WHERE (pa.remarks = 'RETURN_REQUESTED' OR pa.return_status = 'requested') 
+                        AND e.employee_id != ?
                         ORDER BY pa.assigned_at ASC
                     `, [currentMonitorEmployeeId]);
                     returnRequests = returnResults || [];
@@ -142,8 +154,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                         JOIN departments d ON e.department_id = d.department_id
                         WHERE pa.is_returned = 0 
                         AND e.employee_id != ?
-                        AND pa.return_date IS NOT NULL 
-                        AND pa.return_date <= CURDATE()
+                        AND (pa.remarks = 'RETURN_REQUESTED' OR pa.return_status = 'requested')
                         ORDER BY pa.assigned_at ASC
                     `, [currentMonitorEmployeeId]);
                     returnRequests = returnResults || [];
@@ -188,6 +199,17 @@ module.exports = (pool, requireAuth, requireRole) => {
     // Monitor: Stock Route
     router.get('/stock', requireAuth, requireRole(['monitor']), async (req, res) => {
         try {
+            // Get user with department information
+            const [userWithDept] = await pool.execute(`
+                SELECT u.*, d.department_name 
+                FROM users u 
+                LEFT JOIN employees e ON u.user_id = e.user_id 
+                LEFT JOIN departments d ON e.department_id = d.department_id 
+                WHERE u.user_id = ?
+            `, [req.session.user.user_id]);
+            
+            const userInfo = userWithDept.length > 0 ? userWithDept[0] : req.session.user;
+            
             const productsQuery = `
                 SELECT 
                     p.*,
@@ -243,7 +265,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             const [stockStats] = await pool.execute(stockStatsQuery);
             
             res.render('monitor/stock', { 
-                user: req.session.user, 
+                user: userInfo, 
                 products: products || [],
                 stockStats: stockStats || []
             });
@@ -285,7 +307,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             const currentMonitorEmployeeId = currentMonitor[0].employee_id;
             
-            // Get all assignment records (all transactions)
+            // Get all assignment records (live view of all transactions)
             const [records] = await pool.execute(`
                 SELECT 
                     pa.*,
@@ -305,7 +327,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 ORDER BY pa.assigned_at DESC
             `);
             
-            // Get all product request history (all transactions)
+            // Get all product request history (live view of all transactions)
             const [productRequests] = await pool.execute(`
                 SELECT 
                     pr.*,
@@ -546,9 +568,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             if (action === 'approve') {
                 // For approval, get assignment details and mark as returned
                 const [assignments] = await pool.execute(
-                    hasReturnStatusColumn 
-                        ? 'SELECT * FROM product_assignments WHERE assignment_id = ? AND return_status = "requested"'
-                        : 'SELECT * FROM product_assignments WHERE assignment_id = ? AND is_returned = 0',
+                    'SELECT * FROM product_assignments WHERE assignment_id = ? AND (remarks = "RETURN_REQUESTED" OR return_status = "requested")',
                     [assignment_id]
                 );
                 
@@ -560,16 +580,16 @@ module.exports = (pool, requireAuth, requireRole) => {
                 
                 const assignment = assignments[0];
                 
-                // Update assignment as returned with remarks
+                // Update assignment as returned - clear return_status for employee requests
                 if (hasReturnStatusColumn) {
                     await pool.execute(
-                        'UPDATE product_assignments SET is_returned = 1, return_status = "approved", returned_at = NOW(), remarks = ? WHERE assignment_id = ?',
-                        [remarks || null, assignment_id]
+                        'UPDATE product_assignments SET is_returned = 1, returned_at = NOW(), return_status = NULL, remarks = ? WHERE assignment_id = ?',
+                        [remarks || 'Return approved', assignment_id]
                     );
                 } else {
                     await pool.execute(
                         'UPDATE product_assignments SET is_returned = 1, returned_at = NOW(), remarks = ? WHERE assignment_id = ?',
-                        [remarks || null, assignment_id]
+                        [remarks || 'Return approved', assignment_id]
                     );
                 }
                 
@@ -577,18 +597,16 @@ module.exports = (pool, requireAuth, requireRole) => {
                 req.flash('success', 'Return approved successfully. Product is now available for request.');
                 
             } else if (action === 'reject') {
-                // For rejection, update status to rejected and save rejection remarks
+                // For rejection, update return_status for employee requests
                 if (hasReturnStatusColumn) {
-                    // Set return status to rejected and save rejection remarks
                     await pool.execute(
-                        'UPDATE product_assignments SET return_status = "rejected", return_remarks = ? WHERE assignment_id = ?',
-                        [remarks || 'Return request rejected', assignment_id]
+                        'UPDATE product_assignments SET return_status = NULL, remarks = ? WHERE assignment_id = ?',
+                        ['RETURN_REJECTED: ' + (remarks || 'Return request rejected'), assignment_id]
                     );
                 } else {
-                    // If no return_status column, just update remarks
                     await pool.execute(
                         'UPDATE product_assignments SET remarks = ? WHERE assignment_id = ?',
-                        [remarks || 'Return request rejected', assignment_id]
+                        ['RETURN_REJECTED: ' + (remarks || 'Return request rejected'), assignment_id]
                     );
                 }
                 
@@ -641,7 +659,7 @@ module.exports = (pool, requireAuth, requireRole) => {
     });
 
     // Monitor: Add Product Route
-    router.post('/add-product', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
+    router.post('/add-product', requireAuth, requireRole(['monitor', 'admin']), upload.array('attachments', 10), async (req, res) => {
         const { 
             name, 
             product_category, 
@@ -671,6 +689,7 @@ module.exports = (pool, requireAuth, requireRole) => {
         
         try {
             console.log('Add product request body:', req.body); // Debug logging
+            console.log('Uploaded files:', req.files); // Debug logging
             
             const connection = await pool.getConnection();
             await connection.beginTransaction();
@@ -713,13 +732,33 @@ module.exports = (pool, requireAuth, requireRole) => {
                     next_calibration_date || null
                 ]);
                 
+                const productId = productResult.insertId;
+                
+                // Save file attachments if any
+                if (req.files && req.files.length > 0) {
+                    for (const file of req.files) {
+                        try {
+                            await saveFileAttachment(
+                                { execute: connection.execute.bind(connection) },
+                                productId,
+                                file,
+                                req.session.user.user_id,
+                                `Attached during product creation`
+                            );
+                        } catch (fileError) {
+                            console.error('Error saving file attachment:', fileError);
+                            // Continue with other files even if one fails
+                        }
+                    }
+                }
+                
                 // Add to stock history if table exists
                 try {
                     await connection.execute(`
                         INSERT INTO stock_history (product_id, action, quantity, performed_by, notes) 
                         VALUES (?, 'add', ?, ?, ?)
                     `, [
-                        productResult.insertId, 
+                        productId, 
                         1, // Default quantity
                         req.session.user.user_id, 
                         'Initial stock added'
@@ -729,7 +768,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 }
                 
                 await connection.commit();
-                req.flash('success', 'Product added successfully to inventory');
+                req.flash('success', `Product added successfully to inventory${req.files && req.files.length > 0 ? ` with ${req.files.length} attachment(s)` : ''}`);
             } catch (error) {
                 await connection.rollback();
                 throw error;
@@ -782,12 +821,12 @@ module.exports = (pool, requireAuth, requireRole) => {
             // Randomly assign to one of the other monitors
             const randomMonitor = otherMonitors[Math.floor(Math.random() * otherMonitors.length)];
             
-            // Create the product request with return date
+            // Create the product request with return date and default quantity
             await pool.execute(`
                 INSERT INTO product_requests 
-                (employee_id, product_id, purpose, return_date, status, requested_at) 
-                VALUES (?, ?, ?, ?, 'pending', NOW())
-            `, [employeeId, product_id, purpose || null, return_date]);
+                (employee_id, product_id, quantity, purpose, return_date, status, requested_at) 
+                VALUES (?, ?, ?, ?, ?, 'pending', NOW())
+            `, [employeeId, product_id, 1, purpose || null, return_date]);
             
             // Log the activity
             if (ActivityLogger && ActivityLogger.logRequest) {
@@ -836,7 +875,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             
             // Get only products currently in use by the monitor (not returned)
             const [myProducts] = await pool.execute(`
-                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status, pa.returned_at, pa.remarks,
+                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status, pa.returned_at, pa.remarks, pa.return_remarks,
                        p.product_name, p.asset_type, p.model_number, p.serial_number,
                        u.full_name as monitor_name
                 FROM product_assignments pa
@@ -866,16 +905,21 @@ module.exports = (pool, requireAuth, requireRole) => {
         const { assignment_id } = req.body;
         
         try {
-            // Update assignment to request return
+            if (!assignment_id) {
+                req.flash('error', 'Missing assignment ID');
+                return res.redirect('/monitor/my-products');
+            }
+            
+            // Simply update remarks field to indicate return request
             await pool.execute(
-                'UPDATE product_assignments SET return_status = "requested" WHERE assignment_id = ?',
-                [assignment_id]
+                'UPDATE product_assignments SET remarks = ? WHERE assignment_id = ?',
+                ['RETURN_REQUESTED', assignment_id]
             );
             
             req.flash('success', 'Return request submitted successfully. Awaiting approval from another monitor.');
         } catch (error) {
             console.error('Return product error:', error);
-            req.flash('error', 'Error submitting return request');
+            req.flash('error', `Error submitting return request: ${error.message}`);
         }
         
         res.redirect('/monitor/my-products');
@@ -922,7 +966,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 ORDER BY pr.requested_at DESC
             `, [currentMonitorEmployeeId]);
             
-            // Get monitor's own assignment history
+            // Get monitor's own assignment history (all assignments - current and returned)
             const [myAssignments] = await pool.execute(`
                 SELECT 
                     pa.*,
@@ -963,6 +1007,76 @@ module.exports = (pool, requireAuth, requireRole) => {
             res.json({ count: rows[0].count });
         } catch (err) {
             res.json({ count: 0 });
+        }
+    });
+
+    // Route: Download file attachment
+    router.get('/download-attachment/:attachmentId', requireAuth, async (req, res) => {
+        try {
+            const attachmentId = req.params.attachmentId;
+            
+            // Get attachment details
+            const [attachments] = await pool.execute(
+                'SELECT * FROM product_attachments WHERE attachment_id = ?',
+                [attachmentId]
+            );
+            
+            if (attachments.length === 0) {
+                return res.status(404).json({ error: 'File not found' });
+            }
+            
+            const attachment = attachments[0];
+            const filePath = attachment.file_path;
+            
+            // Check if file exists
+            const fs = require('fs');
+            if (!fs.existsSync(filePath)) {
+                return res.status(404).json({ error: 'File not found on server' });
+            }
+            
+            // Set headers for download
+            res.setHeader('Content-Disposition', `attachment; filename="${attachment.original_filename}"`);
+            res.setHeader('Content-Type', attachment.mime_type);
+            
+            // Send file
+            res.sendFile(path.resolve(filePath));
+            
+        } catch (error) {
+            console.error('Download error:', error);
+            res.status(500).json({ error: 'Error downloading file' });
+        }
+    });
+
+    // Route: View product attachments (API)
+    router.get('/api/product-attachments/:productId', requireAuth, async (req, res) => {
+        try {
+            const productId = req.params.productId;
+            const attachments = await getProductAttachments(pool, productId);
+            
+            // Add file icons and formatted sizes
+            const formattedAttachments = attachments.map(attachment => ({
+                ...attachment,
+                file_icon: getFileIcon(attachment.filename),
+                formatted_size: formatFileSize(attachment.file_size),
+                download_url: `/monitor/download-attachment/${attachment.attachment_id}`
+            }));
+            
+            res.json(formattedAttachments);
+        } catch (error) {
+            console.error('Error fetching attachments:', error);
+            res.status(500).json({ error: 'Error fetching attachments' });
+        }
+    });
+
+    // Route: Delete attachment
+    router.delete('/api/attachment/:attachmentId', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
+        try {
+            const attachmentId = req.params.attachmentId;
+            await deleteFileAttachment(pool, attachmentId, req.session.user.user_id);
+            res.json({ success: true, message: 'Attachment deleted successfully' });
+        } catch (error) {
+            console.error('Delete attachment error:', error);
+            res.status(500).json({ error: 'Error deleting attachment' });
         }
     });
 

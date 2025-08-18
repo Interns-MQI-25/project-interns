@@ -108,7 +108,7 @@
                     </button>
                 </div>
 
-                <form action="/monitor/add-product" method="POST" class="space-y-6" id="productForm">
+                <form action="/monitor/add-product" method="POST" enctype="multipart/form-data" class="space-y-6" id="productForm">
                     <!-- Basic Information -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -144,49 +144,49 @@
                         </div>
                         
                         <div id="modelDiv">
-                            <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
-                            <input type="text" id="model" name="model" placeholder="Enter Model no. mentioned on the product e.g., Dell Inspiron 15" 
+                            <label for="model" class="block text-sm font-medium text-gray-700">Model *</label>
+                            <input type="text" id="model" name="model" required placeholder="Enter Model no. mentioned on the product e.g., Dell Inspiron 15" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label for="serial" class="block text-sm font-medium text-gray-700">Product Serial Number</label>
-                            <input type="text" id="serial" name="serial" placeholder="Enter Unique Serial no mentioned on the product" 
+                            <label for="serial" class="block text-sm font-medium text-gray-700">Product Serial Number *</label>
+                            <input type="text" id="serial" name="serial" required placeholder="Enter Unique Serial no mentioned on the product" 
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
 
                         <div>
-                            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date</label>
-                            <input type="date" id="purchase_date" name="purchase_date"
+                            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date *</label>
+                            <input type="date" id="purchase_date" name="purchase_date" required
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
 
                         <div>
-                            <label for="pr_no" class="block text-sm font-medium text-gray-700">PR No</label>
-                            <input type="text" id="pr_no" name="pr_no" placeholder="Enter SAP Purchase Request Number"
+                            <label for="pr_no" class="block text-sm font-medium text-gray-700">PR No *</label>
+                            <input type="text" id="pr_no" name="pr_no" required placeholder="Enter SAP Purchase Request Number"
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label for="po_number" class="block text-sm font-medium text-gray-700">PO Number</label>
-                            <input type="text" id="po_number" name="po_number" placeholder="Enter SAP Purchase Order Number"
+                            <label for="po_number" class="block text-sm font-medium text-gray-700">PO Number *</label>
+                            <input type="text" id="po_number" name="po_number" required placeholder="Enter SAP Purchase Order Number"
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
 
                         <div>
-                            <label for="inward_date" class="block text-sm font-medium text-gray-700">Inward Date</label>
-                            <input type="date" id="inward_date" name="inward_date"
+                            <label for="inward_date" class="block text-sm font-medium text-gray-700">Inward Date *</label>
+                            <input type="date" id="inward_date" name="inward_date" required
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         </div>
 
                         <div>
                             <label for="inwarded_by" class="block text-sm font-medium text-gray-700">Inwarded By</label>
                             <input type="text" id="inwarded_by" name="inwarded_by" 
-                                   value="<%= user && user.full_name ? user.full_name : '' %>" readonly
+                                   value="<%= user && user.full_name ? user.full_name : '' %><%= user && user.department_name ? ' - ' + user.department_name : '' %>" readonly
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-700 cursor-not-allowed">
                         </div>
                     </div>
@@ -299,6 +299,27 @@
                         </div>
                     </div>
 
+                    <!-- File Attachments Section -->
+                    <div class="border-t pt-6">
+                        <h4 class="text-md font-medium text-gray-800 mb-3">📎 File Attachments</h4>
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <label for="attachments" class="block text-sm font-medium text-gray-700 mb-2">
+                                Upload Files (Images, PDF, DOC, TXT)
+                            </label>
+                            <input type="file" 
+                                   id="attachments" 
+                                   name="attachments" 
+                                   multiple 
+                                   accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
+                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <div class="mt-2 text-sm text-gray-500">
+                                <p>• Maximum 10 files, 10MB per file</p>
+                                <p>• Supported formats: JPG, PNG, GIF, WebP, PDF, DOC, DOCX, TXT, CSV, XLS, XLSX</p>
+                            </div>
+                            <div id="filePreview" class="mt-3 space-y-2"></div>
+                        </div>
+                    </div>
+
                     <div class="flex justify-end">
                         <button type="submit" class="px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" style="background-color: #009A9A;">
                             <i class="fas fa-save mr-2"></i>Save Product
@@ -342,6 +363,9 @@
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Model
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Files
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Availability
@@ -460,7 +484,119 @@
                     closeRequestModal();
                 }
             });
+
+            // File upload preview functionality
+            const attachmentsInput = document.getElementById('attachments');
+            if (attachmentsInput) {
+                attachmentsInput.addEventListener('change', function(e) {
+                    const files = e.target.files;
+                    const preview = document.getElementById('filePreview');
+                    preview.innerHTML = '';
+                    
+                    if (files.length > 0) {
+                        for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            const fileDiv = document.createElement('div');
+                            fileDiv.className = 'flex items-center justify-between p-2 bg-gray-50 rounded border';
+                            
+                            const fileName = file.name.length > 30 ? 
+                                file.name.substring(0, 30) + '...' : file.name;
+                            
+                            fileDiv.innerHTML = `
+                                <div class="flex items-center">
+                                    <i class="fas fa-file mr-2 text-gray-500"></i>
+                                    <span class="text-sm font-medium">${fileName}</span>
+                                    <span class="text-xs text-gray-500 ml-2">(${formatFileSize(file.size)})</span>
+                                </div>
+                                <button type="button" onclick="removeFileFromPreview(this, ${i})" 
+                                        class="text-red-500 hover:text-red-700">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            `;
+                            preview.appendChild(fileDiv);
+                        }
+                    }
+                });
+            }
         });
+
+        // Function to remove file from preview
+        function removeFileFromPreview(button, index) {
+            const attachmentsInput = document.getElementById('attachments');
+            const dt = new DataTransfer();
+            const files = attachmentsInput.files;
+            
+            for (let i = 0; i < files.length; i++) {
+                if (i !== index) {
+                    dt.items.add(files[i]);
+                }
+            }
+            
+            attachmentsInput.files = dt.files;
+            button.parentElement.remove();
+        }
+
+        // Function to format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Function to load and display product attachments
+        async function loadProductAttachments(productId) {
+            try {
+                const response = await fetch(`/monitor/api/product-attachments/${productId}`);
+                const attachments = await response.json();
+                
+                const filesContainer = document.getElementById(`files-${productId}`);
+                
+                if (attachments.length === 0) {
+                    filesContainer.innerHTML = `
+                        <span class="text-xs text-gray-500">No files</span>
+                    `;
+                    return;
+                }
+                
+                let filesHtml = `
+                    <div class="space-y-1">
+                        <div class="text-xs font-medium text-gray-700">${attachments.length} file(s):</div>
+                `;
+                
+                attachments.forEach(attachment => {
+                    filesHtml += `
+                        <div class="flex items-center justify-between p-1 bg-gray-50 rounded text-xs">
+                            <div class="flex items-center">
+                                <i class="${attachment.file_icon} mr-1"></i>
+                                <span class="truncate max-w-[120px]" title="${attachment.original_filename}">
+                                    ${attachment.original_filename.length > 15 ? 
+                                        attachment.original_filename.substring(0, 15) + '...' : 
+                                        attachment.original_filename}
+                                </span>
+                                <span class="text-gray-500 ml-1">(${attachment.formatted_size})</span>
+                            </div>
+                            <a href="${attachment.download_url}" 
+                               class="text-blue-600 hover:text-blue-800 ml-1"
+                               title="Download ${attachment.original_filename}">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    `;
+                });
+                
+                filesHtml += `</div>`;
+                filesContainer.innerHTML = filesHtml;
+                
+            } catch (error) {
+                console.error('Error loading attachments:', error);
+                const filesContainer = document.getElementById(`files-${productId}`);
+                filesContainer.innerHTML = `
+                    <span class="text-xs text-red-500">Error loading files</span>
+                `;
+            }
+        }
 
         // Populate asset type filter dropdown
         function populateAssetTypeFilter() {
@@ -506,7 +642,7 @@
             if (pageProducts.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                             <div class="text-gray-400">
                                 <i class="fas fa-box-open text-4xl mb-2"></i>
                                 <p>No products found</p>
@@ -562,6 +698,15 @@
                     <td class="px-6 py-4">
                         <div class="text-sm text-gray-900">${product.model_number || 'N/A'}</div>
                         ${product.serial_number ? `<div class="text-sm text-gray-500">S/N: ${product.serial_number}</div>` : ''}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div id="files-${product.product_id}" class="text-sm">
+                            <button onclick="loadProductAttachments(${product.product_id})" 
+                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50">
+                                <i class="fas fa-paperclip mr-1"></i>
+                                View Files
+                            </button>
+                        </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-sm">

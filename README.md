@@ -488,5 +488,4 @@ This project is part of the **MQI Internship Program 2025**.
 - **Production App**: [https://mqi-interns-467405.uc.r.appspot.com/](https://mqi-interns-467405.uc.r.appspot.com/)
 - **Live Link**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
 - **Admin Login**: `admin` / `admin123`
-# Test: GitHub Actions authentication fix
-# Fix: Added required App Engine permissions
+

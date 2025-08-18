@@ -1,8 +1,29 @@
+/**
+ * @fileoverview File Upload Utility - Handles file upload, storage, and management operations
+ * 
+ * This module provides comprehensive file upload functionality for the inventory management system.
+ * Handles product attachments, file validation, storage management, and database operations.
+ * Supports both development (disk storage) and production (memory storage) environments.
+ * 
+ * @author Priyanshu Kumar Sharma
+ * @version 1.0.0
+ * @requires multer - Middleware for handling multipart/form-data (file uploads)
+ * @requires path - Utilities for working with file and directory paths
+ * @requires fs-extra - Extended file system operations with promise support
+ */
+
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs-extra');
 
-// Configure multer for file uploads - use memory storage for cloud compatibility
+/**
+ * Storage Configuration for File Uploads
+ * 
+ * Configures multer storage based on environment. Uses memory storage in production
+ * for cloud platform compatibility (Google App Engine), and disk storage in development.
+ * 
+ * @constant {multer.StorageEngine} storage - Configured storage engine for multer
+ */
 const storage = process.env.NODE_ENV === 'production' ? 
     multer.memoryStorage() : // Use memory storage in production (App Engine)
     multer.diskStorage({
@@ -24,7 +45,18 @@ const storage = process.env.NODE_ENV === 'production' ?
         }
     });
 
-// File filter to allow only specific file types
+/**
+ * File Type Filter for Upload Validation
+ * 
+ * Validates uploaded files against allowed MIME types and file extensions.
+ * Supports images, documents, PDFs, and various text formats for product attachments.
+ * 
+ * @function fileFilter
+ * @param {Object} req - Express request object
+ * @param {Object} file - Multer file object with upload details
+ * @param {Function} cb - Callback function to accept or reject file
+ * @returns {void} Calls callback with validation result
+ */
 const fileFilter = (req, file, cb) => {
     // Allowed file types: images, documents, PDFs, text files
     const allowedTypes = [
@@ -52,7 +84,14 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Configure multer upload
+/**
+ * Configured Multer Upload Instance
+ * 
+ * Pre-configured multer instance with storage, file filtering, and size limits.
+ * Supports up to 10 files per upload with 10MB size limit per file.
+ * 
+ * @constant {multer.Multer} upload - Configured multer upload instance
+ */
 const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
@@ -62,7 +101,26 @@ const upload = multer({
     }
 });
 
-// Function to save file attachment info to database
+/**
+ * Save File Attachment to Database
+ * 
+ * Stores file attachment metadata in the database for tracking and management.
+ * Handles production environment restrictions and database table validation.
+ * 
+ * @async
+ * @function saveFileAttachment
+ * @param {mysql.Pool} pool - Database connection pool
+ * @param {Object} file - Multer file object with upload details
+ * @param {number} productId - ID of the product to attach file to
+ * @param {number} uploadedBy - User ID of the uploader
+ * @param {string|null} description - Optional file description
+ * @returns {Promise<number|null>} Attachment ID if successful, null if failed
+ * @throws {Error} When database operations fail
+ * 
+ * @example
+ * // Save uploaded file attachment
+ * const attachmentId = await saveFileAttachment(pool, file, 123, 456, 'Product manual');
+ */
 async function saveFileAttachment(pool, file, productId, uploadedBy, description = null) {
     try {
         // Check if we're in production mode

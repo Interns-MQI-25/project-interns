@@ -1,3 +1,21 @@
+/**
+ * @fileoverview Admin Routes Module - Handles all administrative functionality routes
+ * 
+ * This module exports a factory function that creates Express router with administrative routes.
+ * Provides comprehensive admin dashboard, user management, product management, inventory control,
+ * and system monitoring capabilities for the inventory management system.
+ * 
+ * @author Priyanshu Kumar Sharma
+ * @version 1.0.0
+ * @requires express - Web application framework
+ * @requires multer - Middleware for handling multipart/form-data (file uploads)
+ * @requires xlsx - Excel file parser and writer
+ * @requires fs - File system operations
+ * @requires path - Utilities for working with file paths
+ * @requires ../utils/emailService - Email notification utilities
+ * @requires ../utils/fileUpload - File upload and attachment management
+ */
+
 const express = require('express');
 const router = express.Router();
 const path = require('path');
@@ -16,7 +34,13 @@ const {
     formatFileSize 
 } = require('../utils/fileUpload');
 
-// Configure multer for Excel file uploads - use memory storage for cloud compatibility
+/**
+ * Configure multer middleware for Excel file uploads
+ * Uses memory storage for cloud platform compatibility (Google App Engine)
+ * Restricts uploads to Excel (.xlsx, .xls) and CSV files with 10MB size limit
+ * 
+ * @constant {multer.Multer} excelUpload - Configured multer instance for Excel uploads
+ */
 const excelUpload = multer({
     storage: multer.memoryStorage(), // Use memory storage instead of disk for App Engine
     fileFilter: (req, file, cb) => {
@@ -38,10 +62,42 @@ const excelUpload = multer({
     }
 });
 
-// Admin routes module
+/**
+ * Admin Routes Factory Function
+ * 
+ * Creates and configures all administrative routes with proper authentication and authorization.
+ * Returns an Express router instance with all admin functionality including dashboard,
+ * user management, inventory control, and system monitoring.
+ * 
+ * @param {mysql.Pool} pool - MySQL connection pool for database operations
+ * @param {Function} requireAuth - Authentication middleware function
+ * @param {Function} requireRole - Role-based authorization middleware function
+ * @returns {express.Router} Configured Express router with admin routes
+ * 
+ * @example
+ * // Usage in main server file
+ * const adminRoutes = require('./src/routes/adminRoutes');
+ * app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
+ */
 module.exports = (pool, requireAuth, requireRole) => {
     
-    // Admin: Dashboard Route (add this before other routes)
+    /**
+     * Admin Dashboard Route
+     * 
+     * Displays comprehensive administrative dashboard with system statistics, metrics,
+     * and recent activity overview. Provides real-time insights into system usage,
+     * employee counts, pending registrations, inventory status, and recent transactions.
+     * 
+     * @route GET /admin/dashboard
+     * @access Admin only
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {void} Renders admin dashboard view
+     * 
+     * @example
+     * // Access: GET /admin/dashboard
+     * // Renders view with: stats, recentActivity, messages
+     */
     router.get('/dashboard', requireAuth, requireRole(['admin']), async (req, res) => {
         try {
             // Get dashboard statistics
@@ -107,7 +163,23 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
-    // Admin: Employees Route
+    /**
+     * Admin Employees Management Route
+     * 
+     * Displays comprehensive employee management interface with employee listings,
+     * department associations, and status information. Provides functionality for
+     * viewing all employees and monitors with their current status and department assignments.
+     * 
+     * @route GET /admin/employees
+     * @access Admin only
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {void} Renders admin employees management view
+     * 
+     * @example
+     * // Access: GET /admin/employees
+     * // Renders view with: employees list, departments list
+     */
     router.get('/employees', requireAuth, requireRole(['admin']), async (req, res) => {
         try {
             const [employees] = await pool.execute(`
@@ -128,7 +200,23 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
-    // Admin: Monitors Route
+    /**
+     * Admin Monitors Management Route
+     * 
+     * Displays monitor assignment and management interface. Shows currently assigned
+     * monitors with their assignment periods, and provides access to available employees
+     * for potential monitor assignments. Supports monitor role transitions.
+     * 
+     * @route GET /admin/monitors
+     * @access Admin only
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {void} Renders admin monitors management view
+     * 
+     * @example
+     * // Access: GET /admin/monitors
+     * // Renders view with: monitors list, available employees list
+     */
     router.get('/monitors', requireAuth, requireRole(['admin']), async (req, res) => {
         try {
             const [monitors] = await pool.execute(`
@@ -165,7 +253,23 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
-    // Admin: Stock Route
+    /**
+     * Admin Stock Management Route
+     * 
+     * Comprehensive inventory and stock management interface. Displays detailed product
+     * information including quantities, assignments, calibration status, and stock analytics.
+     * Provides insights into stock levels, calibration requirements, and inventory distribution.
+     * 
+     * @route GET /admin/stock
+     * @access Admin only
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {void} Renders admin stock management view
+     * 
+     * @example
+     * // Access: GET /admin/stock
+     * // Renders view with: products, stockStats, recentActivity
+     */
     router.get('/stock', requireAuth, requireRole(['admin']), async (req, res) => {
         try {
             const productsQuery = `
@@ -255,7 +359,25 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
-    // Admin: Update Product Route
+    /**
+     * Admin Product Update Route
+     * 
+     * Handles product information updates including name, category, serial numbers,
+     * quantities, and calibration settings. Validates input data, processes updates
+     * within database transactions, and maintains activity logs for audit purposes.
+     * 
+     * @route POST /admin/update-product/:productId
+     * @access Admin only
+     * @param {Object} req - Express request object with product update data
+     * @param {Object} res - Express response object
+     * @param {string} req.params.productId - Product ID to update
+     * @param {Object} req.body - Product update data (name, category, quantity, etc.)
+     * @returns {void} Redirects to stock management page with success/error message
+     * 
+     * @example
+     * // Access: POST /admin/update-product/123
+     * // Body: { product_name, quantity, calibration_required, etc. }
+     */
     router.post('/update-product/:productId', requireAuth, requireRole(['admin']), async (req, res) => {
         const productId = req.params.productId;
         const {

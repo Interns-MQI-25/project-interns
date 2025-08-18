@@ -1,8 +1,30 @@
+/**
+ * @fileoverview Employee Routes Module - Handles all employee-specific functionality routes
+ * 
+ * This module exports a factory function that creates Express router with employee routes.
+ * Provides dashboard access, product requests, records viewing, account management,
+ * and product interaction capabilities for employees in the inventory management system.
+ * 
+ * @author Priyanshu Kumar Sharma
+ * @version 1.0.0
+ * @requires express - Web application framework
+ * @requires path - Utilities for working with file paths
+ * @requires ../utils/activityLogger - Activity logging utilities (optional fallback)
+ * @requires ../utils/fileUpload - File attachment management utilities
+ */
+
 const express = require('express');
 const router = express.Router();
 const path = require('path');
 
-// Try to import ActivityLogger, fallback if not available
+/**
+ * Activity Logger Import with Fallback
+ * 
+ * Attempts to import activity logging utility with graceful fallback.
+ * Provides no-op functions if activity logger is not available to prevent crashes.
+ * 
+ * @type {Object} ActivityLogger - Activity logging utility or fallback object
+ */
 let ActivityLogger;
 try {
     ActivityLogger = require('../utils/activityLogger');
@@ -20,10 +42,42 @@ const {
     formatFileSize 
 } = require('../utils/fileUpload');
 
-// Employee routes module
+/**
+ * Employee Routes Factory Function
+ * 
+ * Creates and configures all employee-specific routes with proper authentication and authorization.
+ * Returns an Express router instance with employee functionality including dashboard,
+ * product requests, records management, and account settings.
+ * 
+ * @param {mysql.Pool} pool - MySQL connection pool for database operations
+ * @param {Function} requireAuth - Authentication middleware function
+ * @param {Function} requireRole - Role-based authorization middleware function
+ * @returns {express.Router} Configured Express router with employee routes
+ * 
+ * @example
+ * // Usage in main server file
+ * const employeeRoutes = require('./src/routes/employeeRoutes');
+ * app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
+ */
 module.exports = (pool, requireAuth, requireRole) => {
     
-    // Employee: Records Route
+    /**
+     * Employee Records Route
+     * 
+     * Displays comprehensive employee transaction history including product assignments
+     * and requests. Shows current assignments, return status, processed requests,
+     * and provides complete audit trail for employee's product interactions.
+     * 
+     * @route GET /employee/records
+     * @access Employee and Monitor roles
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {void} Renders employee records view
+     * 
+     * @example
+     * // Access: GET /employee/records
+     * // Renders view with: assignments history, requests history
+     */
     router.get('/records', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
             let assignments = [];

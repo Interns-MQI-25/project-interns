@@ -1,0 +1,226 @@
+# ==============================================================================
+# DOCKER COMPOSE CONFIGURATION FOR PROJECT INTERNS
+# ==============================================================================
+# 
+# UNIFIED CONFIGURATION - ALL SERVICES IN ONE FILE
+# 
+# USAGE EXAMPLES:
+# - Development (local):     docker-compose --profile development up -d
+# - Development (with reload): docker-compose --profile dev up -d
+# - With Serveo tunnel:      docker-compose --profile dev --profile serveo up -d  
+# - With ngrok tunnel:       docker-compose --profile dev --profile ngrok up -d
+# - With cloudflare tunnel:  docker-compose --profile dev --profile cloudflare up -d
+# - Production mode:         docker-compose --profile production up -d
+# - Database admin UI:       docker-compose --profile admin up -d
+# - Global access services:  docker-compose --profile global up -d
+# 
+# ==============================================================================
+
+services:
+  # ==============================================================================
+  # MYSQL DATABASE SERVICE (Always Available)
+  # ==============================================================================
+  mysql:
+    image: mysql:8.0
+    container_name: project-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: sigma
+      MYSQL_DATABASE: product_management_system
+      MYSQL_USER: sigma
+      MYSQL_PASSWORD: sigma
+    ports:
+      - "3307:3306"  # Host:Container (3307 to avoid conflicts)
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "sigma", "-psigma"]
+      timeout: 20s
+      retries: 10
+
+  # ==============================================================================
+  # DEVELOPMENT APPLICATION SERVICE
+  # ==============================================================================
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: project-interns
+    restart: unless-stopped
+    profiles: ["development", "dev"]  # Development profiles with hot reload
+    ports:
+      - "3000:3000"
+    environment:
+      # Application Configuration
+      - NODE_ENV=${NODE_ENV:-development}
+      
+      # Database Configuration
+      - DB_HOST=mysql
+      - DB_USER=sigma
+      - DB_PASSWORD=sigma
+      - DB_NAME=product_management_system
+      - DB_PORT=3306
+      
+      # Security Configuration
+      - SESSION_SECRET=${SESSION_SECRET:-docker-dev-secret-key-2025}
+      
+      # Email Configuration (Optional)
+      - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USER=${EMAIL_USER:-}
+      - EMAIL_PASS=${EMAIL_PASS:-}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@yourcompany.com}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+    volumes:
+      # Development: Live reload
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==============================================================================
+  # TUNNEL SERVICES (Profile-based for Global Access)
+  # ==============================================================================
+  
+  # Option 1: Serveo Tunnel (No signup required)
+  serveo:
+    image: alpine:latest
+    container_name: serveo-tunnel
+    restart: unless-stopped
+    profiles: ["serveo", "global"]
+    command: >
+      sh -c "
+        apk add --no-cache openssh-client &&
+        echo 'Connecting to serveo.net...' &&
+        ssh -o StrictHostKeyChecking=no 
+            -o ServerAliveInterval=60 
+            -o ServerAliveCountMax=3 
+            -R 80:project-interns:3000 
+            serveo.net
+      "
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  # Option 2: Ngrok Tunnel (Requires auth token - With custom domain support)
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok-tunnel
+    restart: unless-stopped
+    profiles: ["ngrok", "global"]
+    command: ["http", "--url=${NGROK_DOMAIN:-bright-pleasing-marlin.ngrok-free.app}", "project-interns:3000"]
+    ports:
+      - "4040:4040"  # ngrok web interface
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  # Option 3: Cloudflare Tunnel (FREE permanent URL with custom domain)
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    restart: unless-stopped
+    profiles: ["cloudflare", "global"]
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    environment:
+      # Get your token from Cloudflare Zero Trust Dashboard
+      - CLOUDFLARE_TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  # Option 4: LocalTunnel (Simple HTTP tunnel with custom subdomain)
+  localtunnel:
+    image: node:18-alpine
+    container_name: localtunnel
+    restart: unless-stopped
+    profiles: ["localtunnel", "global"]
+    command: >
+      sh -c "
+        npm install -g localtunnel &&
+        lt --port 3000 --host project-interns --subdomain ${LT_SUBDOMAIN:-project-interns-$(date +%s)}
+      "
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  # Database Admin Interface
+  adminer:
+    image: adminer
+    container_name: database-admin
+    restart: unless-stopped
+    profiles: ["admin", "development"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # ==============================================================================
+  # PRODUCTION SERVICE
+  # ==============================================================================
+  
+  # Production App (Optimized for production deployment)
+  app-prod:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    container_name: project-interns-prod
+    restart: unless-stopped
+    profiles: ["production"]
+    ports:
+      - "0.0.0.0:3000:3000"  # Bind to all interfaces for production
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=mysql
+      - DB_USER=sigma
+      - DB_PASSWORD=sigma
+      - DB_NAME=product_management_system
+      - DB_PORT=3306
+      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production-env}
+      # Production email configuration
+      - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USER=${EMAIL_USER:-}
+      - EMAIL_PASS=${EMAIL_PASS:-}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@yourcompany.com}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+    # No development volumes for production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
+    name: project-interns-network

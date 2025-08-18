@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Employee Account - Marquardt India Pvt. Ltd.</title>
+    <title>Admin Account - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="/css/responsive.css">
@@ -17,7 +17,7 @@
             <%- include('../partials/messages') %>
 
             <div class="mb-4">
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Employee Account Details</h1>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Admin Account Details</h1>
                 <p class="text-gray-600">Welcome <%= user.full_name %>! View your profile and manage your account</p>
             </div>
         </div>
@@ -37,40 +37,33 @@
                 <div class="grid grid-cols-1 gap-y-4 text-gray-700">
                     <div>
                         <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Full Name</dt>
-                        <dd class="mt-1 text-base font-medium text-gray-900"><%= employee.full_name %></dd>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= admin.full_name %></dd>
                     </div>
                     <div>
                         <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Username</dt>
-                        <dd class="mt-1 text-base font-medium text-gray-900"><%= employee.username %></dd>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= admin.username %></dd>
                     </div>
                     <div>
                         <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Email</dt>
-                        <dd class="mt-1 text-base font-medium text-gray-900"><%= employee.email %></dd>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= admin.email %></dd>
                     </div>
                     <div>
                         <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Role</dt>
                         <dd class="mt-1">
-                            <% if (employee.role === 'monitor') { %>
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-900 shadow-sm">
-                                    <i class="fas fa-eye mr-1"></i>
-                                    Monitor
-                                </span>
-                            <% } else { %>
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-900 shadow-sm">
-                                    <i class="fas fa-user mr-1"></i>
-                                    Employee
-                                </span>
-                            <% } %>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-900 shadow-sm">
+                                <i class="fas fa-crown mr-1"></i>
+                                Administrator
+                            </span>
                         </dd>
                     </div>
                     <div>
                         <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Department</dt>
-                        <dd class="mt-1 text-base font-medium text-gray-900"><%= employee.department_name %></dd>
+                        <dd class="mt-1 text-base font-medium text-gray-900"><%= admin.department_name %></dd>
                     </div>
-                    <div>
+                    <!-- <div>
                         <dt class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Account Status</dt>
                         <dd class="mt-1">
-                            <% if (employee.is_active) { %>
+                            <% if (admin.is_active) { %>
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-900 shadow-sm">
                                     <i class="fas fa-check-circle mr-1"></i>
                                     Active
@@ -82,7 +75,7 @@
                                 </span>
                             <% } %>
                         </dd>
-                    </div>
+                    </div> -->
                 </div>
             </div>
 
@@ -94,7 +87,7 @@
                         Change Password
                     </h2>
                 </div>
-                <form action="/employee/change-password" method="POST" class="space-y-4">
+                <form action="/admin/change-password" method="POST" class="space-y-4">
                     <div>
                         <label for="current_password" class="block text-sm font-medium text-gray-700">Current Password</label>
                         <div class="relative">

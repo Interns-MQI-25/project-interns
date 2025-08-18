@@ -9,7 +9,7 @@ async function createAdmins() {
         const connection = await mysql.createConnection({
             host: process.env.DB_HOST || 'localhost',
             user: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || '',
+            password: process.env.DB_PASSWORD || 'Neha@012004',
             port: process.env.DB_PORT || 3306,
             database: process.env.DB_NAME || 'product_management_system'
         });
@@ -48,7 +48,7 @@ async function createAdmins() {
         for (const adminData of adminUsers) {
             // Check if admin user already exists
             const [existingUser] = await connection.execute(
-                'SELECT * FROM users WHERE username = ?', 
+                'SELECT * FROM users WHERE BINARY username = ?', 
                 [adminData.username]
             );
             
@@ -61,7 +61,7 @@ async function createAdmins() {
                 await connection.execute(`
                     UPDATE users 
                     SET full_name = ?, email = ?, password = ?, role = ?, is_active = 1 
-                    WHERE username = ?
+                    WHERE BINARY username = ?
                 `, [
                     adminData.full_name,
                     adminData.email,

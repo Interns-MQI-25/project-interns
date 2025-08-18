@@ -11,49 +11,126 @@
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-<main class="ml-0 md:ml-64 p-4 sm:p-6">
-        <%- include('../partials/messages') %>
-        
-        <% if (typeof error !== 'undefined' && error) { %>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <%= error %>
+<main class="ml-0 md:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <%= error %>
+                </div>
+            <% } %>
+            
+            <div class="mb-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Product Stock</h1>
+                        <p class="text-gray-600">Browse available products and request assignments.</p>
+                    </div>
+                </div>
             </div>
-        <% } %>
-        
-    <div class="mb-8">
-        <h1 class="text-2xl sm:text-2xl sm:text-3xl font-bold text-gray-900">Product Stock</h1>
-        <p class="text-gray-600 text-base sm:text-lg">Browse available products and request assignments.</p>
-    </div>
 
-    
+            <!-- Search and Filter Section -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <!-- Search Input -->
+                        <div class="flex-1">
+                            <label for="search-input" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <div class="relative">
+                                <input type="text" id="search-input" placeholder="Search by name, category, or model..." 
+                                       class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Asset Type Filter -->
+                        <div class="sm:w-48">
+                            <label for="asset-type-filter" class="block text-sm font-medium text-gray-700 mb-2">Asset Type</label>
+                            <select id="asset-type-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
+                                <option value="">All Types</option>
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
+                        </div>
+                        
+                        <!-- Availability Filter -->
+                        <div class="sm:w-48">
+                            <label for="availability-filter" class="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                            <select id="availability-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
+                                <option value="">All Products</option>
+                                <option value="available">Available Only</option>
+                                <option value="assigned">Assigned Only</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Search Button -->
+                        <div class="flex items-end">
+                            <button id="search-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" style="background-color: #009A9A;">
+                                <i class="fas fa-search mr-2"></i>
+                                Search
+                            </button>
+                        </div>
+                        
+                        <!-- Clear Filters Button -->
+                        <div class="flex items-end">
+                            <button id="clear-filters-btn" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                <i class="fas fa-times mr-1"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-hidden p-4 sm:p-6">
+
+
         
         <!-- Stock Table -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Available Products (<span id="total-products"><%= (products && products.length) || 0 %></span> items)
-                </h3>
-                <div class="overflow-y-auto max-h-screen">
+        <div class="bg-white shadow rounded-lg flex flex-col h-full">
+            <!-- Fixed Header Section -->
+            <div class="flex-shrink-0 px-4 py-5 sm:px-6 sm:py-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Available Products (<span id="total-products"><%= (products && products.length) || 0 %></span> items)
+                    </h3>
+                    <div class="text-sm text-gray-700">
+                        Showing <span id="showing-from">1</span> to <span id="showing-to">15</span> of <span id="total-count">0</span> results
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Scrollable Table Content -->
+            <div class="flex-1 overflow-y-auto">
+                <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50 sticky top-0 z-10">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 50%">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Product Name
                                 </th>
-                                <th class="pl-1 pr-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 8%">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Action
                                 </th>
-                                <th class="pl-3 pr-1 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 14%">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Asset Type
                                 </th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 14%">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Category
                                 </th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 9%">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Model
                                 </th>
-                                <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 5%">
-                                    Status
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Files
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Availability
                                 </th>
                             </tr>
                         </thead>
@@ -62,9 +139,10 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
                 
-                <!-- Pagination Controls -->
-                <div class="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+            <!-- Fixed Pagination Controls -->
+            <div class="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
                     <div class="flex justify-between flex-1 sm:hidden">
                         <button id="prev-mobile" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
                             Previous
@@ -73,12 +151,7 @@
                             Next
                         </button>
                     </div>
-                    <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                        <div>
-                            <p class="text-sm text-gray-700">
-                                Showing <span id="showing-from">1</span> to <span id="showing-to">15</span> of <span id="total-count">0</span> results
-                            </p>
-                        </div>
+                    <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-center">
                         <div>
                             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                                 <button id="prev-desktop" class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50">
@@ -98,6 +171,7 @@
                 </div>
             </div>
         </div>
+        </div> <!-- End scrollable content area -->
     </main>
 
     <!-- Product data for JavaScript -->
@@ -122,9 +196,53 @@
                 allProducts = [];
             }
             filteredProducts = [...allProducts];
+            populateAssetTypeFilter();
             displayProducts();
             setupPagination();
+            setupFilterEventListeners();
+            
+
+            
+            // Close modal when clicking outside request modal
+            document.addEventListener('click', function(event) {
+                const modal = document.getElementById('requestModal');
+                if (modal && event.target === modal) {
+                    closeRequestModal();
+                }
+            });
         });
+
+        // Populate asset type filter dropdown
+        function populateAssetTypeFilter() {
+            const assetTypeSelect = document.getElementById('asset-type-filter');
+            const assetTypes = [...new Set(allProducts.map(product => product.asset_type).filter(Boolean))];
+            
+            // Clear existing options except "All Types"
+            assetTypeSelect.innerHTML = '<option value="">All Types</option>';
+            
+            // Add asset type options
+            assetTypes.forEach(assetType => {
+                const option = document.createElement('option');
+                option.value = assetType;
+                option.textContent = assetType;
+                assetTypeSelect.appendChild(option);
+            });
+        }
+
+        // Setup filter event listeners
+        function setupFilterEventListeners() {
+            document.getElementById('search-btn').addEventListener('click', filterProducts);
+            document.getElementById('asset-type-filter').addEventListener('change', filterProducts);
+            document.getElementById('availability-filter').addEventListener('change', filterProducts);
+            document.getElementById('clear-filters-btn').addEventListener('click', clearFilters);
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    filterProducts();
+                }
+            });
+            // Real-time search as user types
+            document.getElementById('search-input').addEventListener('input', filterProducts);
+        }
 
         // Pagination functions
         function displayProducts() {
@@ -138,7 +256,7 @@
             if (pageProducts.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                             <div class="text-gray-400">
                                 <i class="fas fa-box-open text-4xl mb-2"></i>
                                 <p>No products found</p>
@@ -154,55 +272,82 @@
                 const isAvailable = getAvailabilityStatus(product);
                 const availableQty = (product.quantity || 0) - (product.assigned_quantity || 0);
                 
-                // Add fading class for assigned products
-                if (isAvailable.isAssigned) {
+                // Add fading class for unavailable products
+                if (!isAvailable.available) {
                     row.classList.add('opacity-50', 'bg-gray-50');
                 }
                 
                 row.innerHTML = `
-                    <td class="px-6 py-4" style="width: 50%">
-                        <div class="text-sm font-medium ${isAvailable.isAssigned ? 'text-gray-500' : 'text-gray-900'} leading-5 max-w-full break-words">${product.product_name || 'N/A'}</div>
-                        ${product.serial_number ? `<div class="text-xs text-gray-400">S/N: ${product.serial_number}</div>` : ''}
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-box text-gray-500"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${product.product_name || 'N/A'}</div>
+                                <div class="text-sm text-gray-500">${product.asset_type || 'N/A'}</div>
+                            </div>
+                        </div>
                     </td>
-                    <td class="pl-2 pr-3 py-4 whitespace-nowrap text-sm font-medium" style="width: 8%">
-                        <button onclick="openRequestModal('${product.product_id}', '${product.product_name}', 1)" 
-                            class="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white ${isAvailable.isAssigned ? 'bg-gray-400 hover:bg-gray-500' : 'bg-indigo-600 hover:bg-indigo-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            <i class="fas fa-plus mr-1"></i>Request
-                        </button>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        ${isAvailable.available ? 
+                            `<button class="request-btn inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" 
+                                style="background-color: #009A9A;" 
+                                data-product-id="${product.product_id}" 
+                                data-product-name="${escapeHtml(product.product_name)}">
+                                <i class="fas fa-plus mr-1"></i>Request
+                            </button>` : 
+                            `<span class="text-xs text-gray-500">Not Available</span>`}
                     </td>
-                    <td class="pl-3 pr-2 py-4 whitespace-nowrap text-sm text-gray-500 text-center" style="width: 14%">
+                    <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                             ${product.asset_type || 'N/A'}
                         </span>
                     </td>
-                    <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500" style="width: 14%">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         ${product.product_category || 'N/A'}
                     </td>
-                    <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500" style="width: 9%">
-                        ${product.model_number || 'N/A'}
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900">${product.model_number || 'N/A'}</div>
+                        ${product.serial_number ? `<div class="text-sm text-gray-500">S/N: ${product.serial_number}</div>` : ''}
                     </td>
-                    <td class="px-3 py-4 text-sm text-right" style="width: 5%">
-                        ${isAvailable.isAssigned ? 
-                            `<div class="flex flex-col items-end">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                    Assigned
-                                </span>
-                                ${isAvailable.userInfo ? 
-                                    `<div class="text-xs text-gray-600 mt-1 text-right break-words max-w-full">
-                                        ${isAvailable.userInfo}
-                                    </div>` : ''}
-                            </div>` :
-                            `<div class="flex justify-end">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                    Available
-                                </span>
-                            </div>`}
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div id="employee-files-${product.product_id}" class="text-sm">
+                            <button onclick="loadEmployeeProductAttachments(${product.product_id})" 
+                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50">
+                                <i class="fas fa-paperclip mr-1"></i>
+                                View Files
+                            </button>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isAvailable.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${isAvailable.available ? 'Available' : 'Assigned'}
+                            </span>
+                            ${!isAvailable.available && isAvailable.userInfo ? 
+                                `<div class="text-xs text-gray-500 mt-1">
+                                    <div><strong>Used by:</strong> ${isAvailable.userInfo}</div>
+                                </div>` : ''}
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(row);
             });
             
             updatePaginationInfo();
+            
+            // Add event listeners for request buttons
+            document.querySelectorAll('.request-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-product-id');
+                    const productName = this.getAttribute('data-product-name');
+                    const availableQty = this.getAttribute('data-available-qty');
+                    openRequestModal(productId, productName, availableQty);
+                });
+            });
         }
 
         function setupPagination() {
@@ -279,29 +424,49 @@
         }
 
         // Search and filter functionality with error handling
-        document.getElementById('search-btn').addEventListener('click', filterProducts);
-        document.getElementById('asset-type-filter').addEventListener('change', filterProducts);
-        document.getElementById('search-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                filterProducts();
-            }
-        });
-
         function filterProducts() {
             const assetType = document.getElementById('asset-type-filter').value;
-            const search = document.getElementById('search-input').value.toLowerCase();
+            const availability = document.getElementById('availability-filter').value;
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
             
             filteredProducts = allProducts.filter(product => {
+                // Asset type filter
                 const matchesAssetType = !assetType || product.asset_type === assetType;
-                const matchesSearch = !search || 
-                    product.product_name.toLowerCase().includes(search) ||
-                    product.product_category.toLowerCase().includes(search) ||
-                    product.model_number.toLowerCase().includes(search);
                 
-                return matchesAssetType && matchesSearch;
+                // Availability filter
+                let matchesAvailability = true;
+                if (availability) {
+                    const productAvailability = getAvailabilityStatus(product);
+                    if (availability === 'available') {
+                        matchesAvailability = productAvailability.available;
+                    } else if (availability === 'assigned') {
+                        matchesAvailability = !productAvailability.available;
+                    }
+                }
+                
+                // Search filter
+                const matchesSearch = !search || 
+                    (product.product_name && product.product_name.toLowerCase().includes(search)) ||
+                    (product.product_category && product.product_category.toLowerCase().includes(search)) ||
+                    (product.model_number && product.model_number.toLowerCase().includes(search)) ||
+                    (product.serial_number && product.serial_number.toLowerCase().includes(search));
+                
+                return matchesAssetType && matchesAvailability && matchesSearch;
             });
             
             currentPage = 1; // Reset to first page after filtering
+            displayProducts();
+            updatePaginationControls();
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('asset-type-filter').value = '';
+            document.getElementById('availability-filter').value = '';
+            
+            filteredProducts = [...allProducts];
+            currentPage = 1;
             displayProducts();
             updatePaginationControls();
         }
@@ -315,13 +480,32 @@
         }
 
         function getAvailabilityStatus(product) {
-            return {
-                available: true,
-                userInfo: product.current_users || null,
-                isAssigned: product.is_assigned === 1
-            };
+            const totalQty = product.quantity || 0;
+            const assignedQty = product.assigned_quantity || 0;
+            const availableQty = totalQty - assignedQty;
+            
+            if (availableQty > 0) {
+                return {
+                    available: true,
+                    userInfo: null
+                };
+            } else {
+                return {
+                    available: false,
+                    userInfo: product.current_users || 'Currently assigned'
+                };
+            }
+        }
+
+        // Escape HTML to prevent XSS and quote issues
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
+
+
         function openRequestModal(productId, productName, availableQty) {
             // Create modal HTML
             const modalHTML = `
@@ -338,8 +522,8 @@
                                 </div>
                                 
                                 <div class="mb-4">
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Return Date <span class="text-red-500">*</span></label>
-                                    <input type="date" name="return_date" required min="${new Date().toISOString().split('T')[0]}"
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Expected Return Date <span class="text-red-500">*</span></label>
+                                    <input type="date" name="expected_return_date" required 
                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                                 </div>
                                 
@@ -367,6 +551,15 @@
             
             // Add modal to page
             document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Set minimum date to today
+            setTimeout(() => {
+                const dateInput = document.querySelector('#requestModal input[name="expected_return_date"]');
+                if (dateInput) {
+                    const today = new Date().toISOString().split('T')[0];
+                    dateInput.min = today;
+                }
+            }, 100);
         }
         
         function closeRequestModal() {
@@ -376,20 +569,66 @@
             }
         }
         
-        // Close modal when clicking outside
-        document.addEventListener('click', function(event) {
-            const modal = document.getElementById('requestModal');
-            if (modal && event.target === modal) {
-                closeRequestModal();
-            }
-        });
-        
         function handleFormSubmit(event) {
             // Let the form submit normally, then redirect
             setTimeout(() => {
-                window.location.href = '/employee/stock';
+                window.location.href = '/employee/my-products';
             }, 100);
         }
+
+        // Function to load and display product attachments for employee
+        async function loadEmployeeProductAttachments(productId) {
+            try {
+                const response = await fetch(`/employee/api/product-attachments/${productId}`);
+                const attachments = await response.json();
+                
+                const filesContainer = document.getElementById(`employee-files-${productId}`);
+                
+                if (attachments.length === 0) {
+                    filesContainer.innerHTML = `
+                        <span class="text-xs text-gray-500">No files</span>
+                    `;
+                    return;
+                }
+                
+                let filesHtml = `
+                    <div class="space-y-1">
+                        <div class="text-xs font-medium text-gray-700">${attachments.length} file(s):</div>
+                `;
+                
+                attachments.forEach(attachment => {
+                    filesHtml += `
+                        <div class="flex items-center justify-between p-1 bg-gray-50 rounded text-xs">
+                            <div class="flex items-center">
+                                <i class="${attachment.file_icon} mr-1"></i>
+                                <span class="truncate max-w-[120px]" title="${attachment.original_filename}">
+                                    ${attachment.original_filename.length > 15 ? 
+                                        attachment.original_filename.substring(0, 15) + '...' : 
+                                        attachment.original_filename}
+                                </span>
+                                <span class="text-gray-500 ml-1">(${attachment.formatted_size})</span>
+                            </div>
+                            <a href="${attachment.download_url}" 
+                               class="text-blue-600 hover:text-blue-800 ml-1"
+                               title="Download ${attachment.original_filename}">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    `;
+                });
+                
+                filesHtml += `</div>`;
+                filesContainer.innerHTML = filesHtml;
+                
+            } catch (error) {
+                console.error('Error loading attachments:', error);
+                const filesContainer = document.getElementById(`employee-files-${productId}`);
+                filesContainer.innerHTML = `
+                    <span class="text-xs text-red-500">Error loading files</span>
+                `;
+            }
+        }
+
     </script>
 </body>
 </html>

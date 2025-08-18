@@ -5,6 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0+-blue.svg)](https://www.mysql.com/)
 [![Express.js](https://img.shields.io/badge/Express.js-4.x-lightgrey.svg)](https://expressjs.com/)
+[![Docker](https://img.shields.io/badge/Docker-Available-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/priyanshuksharma/project-interns)
 [![Deployed on GCP](https://img.shields.io/badge/Deployed-Google%20Cloud-4285F4.svg)](https://mqi-ims.uc.r.appspot.com)
 
 ## 🚀 Live Application
@@ -67,6 +68,7 @@ This system provides comprehensive asset management capabilities for Marquardt I
 - **Frontend**: HTML5, Tailwind CSS, JavaScript (ES6+), EJS Templates
 - **Backend**: Node.js 20+, Express.js 4.x
 - **Database**: MySQL 8.0 with connection pooling
+- **Container Platform**: Docker with Docker Compose
 - **Authentication**: Express sessions with bcryptjs
 - **Email Service**: Nodemailer with Gmail SMTP
 - **File Handling**: Multer for file uploads
@@ -76,7 +78,50 @@ This system provides comprehensive asset management capabilities for Marquardt I
 
 ## 🚀 Quick Start
 
-### Option 1: Automated Setup (Recommended)
+### 🐳 Option 1: Docker (Recommended - One-Click Setup)
+
+**Available on Docker Hub**: [`priyanshuksharma/project-interns`](https://hub.docker.com/r/priyanshuksharma/project-interns)
+
+#### Quick Run with Docker
+```bash
+# Pull and run the latest image
+docker pull priyanshuksharma/project-interns:latest
+docker run -p 3000:3000 priyanshuksharma/project-interns:latest
+
+# Access at: http://localhost:3000
+```
+
+#### Full Docker Compose Setup (Database Included)
+```bash
+# Clone the repository
+git clone https://github.com/Interns-MQI-25/project-interns.git
+cd project-interns
+
+# Start everything with Docker Compose
+docker-compose --profile dev up -d
+
+# Check running services
+docker-compose ps
+
+# Access at: http://localhost:3000
+```
+
+#### Global Access with Tunneling
+```bash
+# Share your local app globally (using ngrok)
+docker-compose --profile dev --profile ngrok up -d
+# Access at: https://bright-pleasing-marlin.ngrok-free.app
+
+# Or use Serveo (no signup required)
+docker-compose --profile dev --profile serveo up -d
+docker logs serveo-tunnel  # Get your public URL
+```
+
+> 📖 **Complete Docker Guide**: See [`DOCKER_COMPLETE_GUIDE.md`](./DOCKER_COMPLETE_GUIDE.md) for detailed instructions
+
+---
+
+### Option 2: Automated Setup (Traditional)
 
 ```bash
 # Clone the repository
@@ -88,7 +133,7 @@ chmod +x scripts/setup.sh
 ./scripts/setup.sh
 ```
 
-### Option 2: Manual Setup
+### Option 3: Manual Setup
 
 #### Prerequisites
 - **Node.js** 20+ ([Download](https://nodejs.org/))
@@ -169,9 +214,12 @@ chmod +x scripts/setup.sh
 
 ```
 project-interns/
-├── 📄 app.yaml                    # Google App Engine configuration
+├── � docker-compose.yml           # Docker services configuration
+├── 🐳 Dockerfile                   # Application container definition
+├── �📄 app.yaml                    # Google App Engine configuration
 ├── 📄 server.js                   # Main application entry point
 ├── 📄 package.json                # Dependencies and scripts
+├── 📚 DOCKER_COMPLETE_GUIDE.md    # Comprehensive Docker guide
 ├── 📁 src/                        # Application source code
 │   ├── 📁 routes/                 # Express routes
 │   │   ├── adminRoutes.js         # Admin functionality
@@ -334,6 +382,40 @@ PORT=3001 npm start
 For production deployment on Google Cloud Platform, see:
 📖 **[GCP_DEPLOYMENT_GUIDE.md](./GCP_DEPLOYMENT_GUIDE.md)**
 
+### 🐳 Docker Deployment
+
+#### Docker Hub
+The application is available as a pre-built Docker image:
+
+- **Repository**: [`priyanshuksharma/project-interns`](https://hub.docker.com/r/priyanshuksharma/project-interns)
+- **Tags**: `latest`, `v1.0.0`
+- **Image Size**: ~248MB
+
+```bash
+# Pull from Docker Hub
+docker pull priyanshuksharma/project-interns:latest
+
+# Run with custom environment
+docker run -p 3000:3000 \
+  -e NODE_ENV=production \
+  -e DB_HOST=your-db-host \
+  -e DB_USER=your-db-user \
+  -e DB_PASSWORD=your-db-password \
+  priyanshuksharma/project-interns:latest
+```
+
+#### Local Docker Development
+```bash
+# Complete development environment with database
+docker-compose --profile dev up -d
+
+# Production-ready deployment
+docker-compose --profile production up -d
+
+# With global access tunneling
+docker-compose --profile dev --profile ngrok up -d
+```
+
 ### Quick Deploy to GCP
 ```bash
 # Deploy to App Engine
@@ -360,6 +442,8 @@ gcloud app logs tail -s default
 - ✅ **Caching**: Session-based user state caching
 - ✅ **Optimized Queries**: Indexed database operations
 - ✅ **Responsive Design**: Mobile-optimized interface
+- ✅ **Docker Containerization**: Lightweight, portable deployment
+- ✅ **Global Access Tunneling**: ngrok, Serveo, Cloudflare integration
 
 ## 🤝 Contributing
 

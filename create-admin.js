@@ -8,42 +8,48 @@ async function createAdmins() {
     try {
         const connection = await mysql.createConnection({
             host: process.env.DB_HOST || 'localhost',
-            user: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || 'Neha@012004',
+            user: process.env.DB_USER || 'sigma',
+            password: process.env.DB_PASSWORD || 'sigma',
             port: process.env.DB_PORT || 3306,
-            database: process.env.DB_NAME || 'product_management_system'
+            database: process.env.DB_NAME || 'product_management_system',
+            connectTimeout: 10000,  // 10 seconds
+            acquireTimeout: 10000,  // 10 seconds
+            timeout: 10000  // 10 seconds
         });
         
         console.log('✅ Connected to database');
         
-        // Remove any existing superadmin users
-        console.log('🗑️ Removing superadmin users...');
-        await connection.execute('DELETE FROM users WHERE role = ?', ['superadmin']);
-        console.log('✅ Superadmin users removed');
+        // Remove ALL existing users to start fresh
+        // console.log('🗑️ Removing all existing users...');
+        // Disable foreign key checks to allow deletion
+        // await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
+        // await connection.execute('DELETE FROM users');
+        // await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
+        // console.log('✅ All existing users removed');
         
-        // Define the 3 admin users
+        // Remove any existing superadmin users
+        // console.log('🗑️ Removing superadmin users...');
+        // await connection.execute('DELETE FROM users WHERE role = ?', ['superadmin']);
+        // console.log('✅ Superadmin users removed');
+        // Define the 2 admin users only
+
+
         const adminUsers = [
             {
-                username: 'admin1',
-                full_name: 'Admin One',
-                email: 'admin1@company.com',
-                password: 'admin123'
+                username: 'GuddiS',
+                full_name: 'Somling Guddi',
+                email: 'Somling.Guddi@marquardt.com ',
+                password: 'Welcome@123'
             },
             {
-                username: 'admin2',
-                full_name: 'Admin Two',
-                email: 'admin2@company.com',
-                password: 'admin123'
-            },
-            {
-                username: 'admin3',
-                full_name: 'Admin Three',
-                email: 'admin3@company.com',
-                password: 'admin123'
+                username: 'KatragaddaV',
+                full_name: 'Venubabu Katragadda',
+                email: 'Venubabu.Katragadda@marquardt.com',
+                password: 'Welcome@123'
             }
         ];
         
-        console.log('👥 Creating 3 admin users...');
+        console.log('👥 Creating 2 admin users...');
         
         for (const adminData of adminUsers) {
             // Check if admin user already exists
@@ -154,6 +160,7 @@ async function createAdmins() {
         
     } catch (error) {
         console.error('❌ Error creating admin users:', error.message);
+        console.error('Full error:', error);
         process.exit(1);
     }
 }

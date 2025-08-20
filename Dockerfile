@@ -1,5 +1,8 @@
 # Use official Node.js LTS image
-FROM node:18-alpine
+FROM node:20-alpine
+
+# Install nano editor
+RUN apk add --no-cache nano
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -19,8 +22,8 @@ EXPOSE 3000
 # Set environment variables (can be overridden at runtime)
 ENV NODE_ENV=development
 
-# Install wait-for-it script to wait for MySQL
-RUN apk add --no-cache bash curl
+# Install wait-for-it script to wait for MySQL and nano editor
+RUN apk add --no-cache bash curl nano
 RUN curl -o /usr/local/bin/wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh
 RUN chmod +x /usr/local/bin/wait-for-it.sh
 

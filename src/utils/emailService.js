@@ -22,7 +22,7 @@ const nodemailer = require('nodemailer');
  * 
  * @constant {nodemailer.Transporter} transporter - Configured email transporter
  */
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,

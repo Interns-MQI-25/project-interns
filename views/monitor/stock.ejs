@@ -127,7 +127,7 @@
                                 <option value="software">Software</option>
                                 <option value="tooling">Tooling</option>
                                 <option value="consumables">Consumables</option>
-                                <option value="measuring_instrument">Measuring Instrument</option>
+                                <option value="evaluation_board">Evaluation Board</option>
                                 <option value="embedded_devices">Embedded devices</option>
                                 <option value="lab_equipment">Lab Equipment</option>
                                 <option value="prototypes">Prototypes</option>
@@ -1031,22 +1031,43 @@
         const typePlaceholders = {
             hardware: "Enter (e.g., Laptop, Desktop, Printer etc)",
             software: "Enter (e.g., Antivirus, Office Suite, IDE etc)",
-            test_equipment: "Enter (e.g.,multimeter, HIL)",
-            tooling: "Enter (e.g., fixers, jigs , hand tools etc)",
-            consumables: "Enter (e.g., fuses, cables, small components regurlarly replaced etc)",
-            measuring_instrument: "Enter (e.g., Calibrated euipment like temparature or voltage sensors etc)",
-            embedded_devices: "Enter (e.g., Controllers, microcontrollers, ECUs etc)",
-            lab_equipment: "Enter (e.g.,Environmental Chambers, load banks,soldering stations etc)",
+            test_equipment: "Enter (e.g., Multimeter, HIL, Oscilloscope etc)",
+            tooling: "Enter (e.g., Fixtures, Jigs, Hand tools etc)",
+            consumables: "Enter (e.g., Fuses, Cables, Small components regularly replaced etc)",
+            evaluation_board: "Enter (e.g., Arduino, Raspberry Pi, STM32 Discovery, ESP32 DevKit etc)",
+            embedded_devices: "Enter (e.g., Controllers, Microcontrollers, ECUs etc)",
+            lab_equipment: "Enter (e.g., Environmental Chambers, Load banks, Soldering stations etc)",
             prototypes: "Enter (e.g., Custom-built experimental devices)",
             accessories: "Enter (e.g., Add-ons like connectors, probes, adaptors etc)",
             network_equipment: "Enter (e.g., Routers, Switches, Access Points etc)",
             miscellaneous: "Enter (e.g., Other, Custom Item)"
         };
 
+        const modelPlaceholders = {
+            hardware: "Enter Model no. mentioned on the product (e.g., Dell Inspiron 15, HP LaserJet Pro)",
+            software: "Enter Version/Edition (e.g., Microsoft Office 365, AutoCAD 2024)",
+            test_equipment: "Enter Model no. (e.g., Fluke 87V, Keysight 34461A)",
+            tooling: "Enter Model/Part no. (e.g., Bosch GSR 120-LI, Custom Fixture v2.1)",
+            consumables: "Enter Part/Model no. (e.g., Fuse 5A 250V, Cable Cat6 RJ45)",
+            evaluation_board: "Enter Board Model (e.g., Arduino Uno R3, Raspberry Pi 4B, STM32F407G-DISC1)",
+            embedded_devices: "Enter Model/Part no. (e.g., STM32F103C8T6, ESP32-WROOM-32)",
+            lab_equipment: "Enter Model no. (e.g., Fluke 87V, Keysight E36313A)",
+            prototypes: "Enter Version/Revision (e.g., Prototype v1.2, Test Board Rev A)",
+            accessories: "Enter Model/Part no. (e.g., USB-C to HDMI Adapter, Probe Set)",
+            network_equipment: "Enter Model no. (e.g., Cisco Catalyst 2960, TP-Link Archer C7)",
+            miscellaneous: "Enter Model/Description (e.g., Custom Item v1.0)"
+        };
+
         function updateTypePlaceholder() {
             const category = document.getElementById('productCategory').value.trim().toLowerCase();
             const typeInput = document.getElementById('type');
+            const modelInput = document.getElementById('model');
+            
+            // Update type placeholder
             typeInput.placeholder = typePlaceholders[category] || "Enter type";
+            
+            // Update model placeholder
+            modelInput.placeholder = modelPlaceholders[category] || "Enter Model no. mentioned on the product";
         }
 
         function openRequestModal(productId, productName, availableQty) {

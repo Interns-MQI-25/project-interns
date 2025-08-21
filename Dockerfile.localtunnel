@@ -63,7 +63,7 @@ RUN mysqld_safe --user=mysql --datadir=/var/lib/mysql --skip-networking &\
     mysqladmin shutdown
 
 # Copy comprehensive database schema
-COPY sql/database-merged.sql /tmp/database.sql
+COPY sql/database.sql /tmp/database.sql
 
 # Copy MySQL configuration
 RUN mkdir -p /etc/mysql/mysql.conf.d

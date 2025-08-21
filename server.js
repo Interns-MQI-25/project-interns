@@ -1,4 +1,18 @@
+/**
+ * Marquardt India Pvt. Ltd. - Inventory Management System
+ * Main Server Configuration and Entry Point
+ * 
+ * This file configures the Express.js server with database connections,
+ * middleware, authentication, and routes for the inventory management system.
+ * 
+ * @author Marquardt India Interns 2025
+ * @version 2.0.0
+ */
+
+// Load environment variables from .env file
 require('dotenv').config();
+
+// Import required dependencies
 const express = require('express');
 const session = require('express-session');
 const flash = require('express-flash');
@@ -6,7 +20,14 @@ const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
-// Import middleware
+/**
+ * Authentication middleware to ensure user is logged in
+ * Checks if user session exists and redirects to login if not authenticated
+ * 
+ * @param {Object} req - Express request object containing session data
+ * @param {Object} res - Express response object for redirects
+ * @param {Function} next - Express next function to continue to next middleware
+ */
 const requireAuth = (req, res, next) => {
     console.log('requireAuth check - session user:', req.session.user);
     console.log('requireAuth check - session ID:', req.sessionID);
@@ -18,6 +39,13 @@ const requireAuth = (req, res, next) => {
     }
 };
 
+/**
+ * Role-based access control middleware
+ * Ensures user has appropriate role permissions for accessing specific routes
+ * 
+ * @param {Array<string>} roles - Array of allowed roles (e.g., ['admin', 'monitor'])
+ * @returns {Function} Express middleware function that checks user role
+ */
 const requireRole = (roles) => {
     return (req, res, next) => {
         if (req.session.user && roles.includes(req.session.user.role)) {
@@ -28,14 +56,18 @@ const requireRole = (roles) => {
     };
 };
 
-// Import route modules
+// Import route modules - organized by user roles and functionality
 const commonRoutes = require('./src/routes/commonRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const employeeRoutes = require('./src/routes/employeeRoutes');
 const monitorRoutes = require('./src/routes/monitorRoutes');
 const resetPasswordRoutes = require('./src/routes/resetPassword');
 
-// Try to import ActivityLogger, fallback if not available
+/**
+ * Activity Logger Import with Fallback
+ * Attempts to import activity logger utility for tracking user actions
+ * Provides fallback functionality if logger is not available
+ */
 let ActivityLogger;
 try {
     ActivityLogger = require('./src/utils/activityLogger');
@@ -49,7 +81,11 @@ try {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Process error handlers
+/**
+ * Global Error Handlers
+ * Handles uncaught exceptions and unhandled promise rejections
+ * Ensures server shuts down gracefully when critical errors occur
+ */
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);
     process.exit(1);
@@ -60,6 +96,11 @@ process.on('unhandledRejection', (reason, promise) => {
     process.exit(1);
 });
 
+/**
+ * Database Configuration
+ * Configures MySQL connection pool with different settings for production vs development
+ * Production uses Unix socket for Google Cloud SQL, development uses TCP connection
+ */
 // Database configuration - different for production (App Engine) vs development
 const dbConfig = process.env.NODE_ENV === 'production' ? {
     // Production: Use Unix socket for Cloud SQL
@@ -86,13 +127,21 @@ console.log('Database connection config:', process.env.NODE_ENV === 'production'
     `Production mode - using socket: ${process.env.DB_HOST}` : 
     `Development mode - using host: ${dbConfig.host}:${dbConfig.port}`);
 
+// Create MySQL connection pool for efficient database connections
 const pool = mysql.createPool(dbConfig);
-app.locals.pool = pool;
+app.locals.pool = pool; // Make pool available to all route modules
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(express.static('public'));
-app.use('/images', express.static('images'));
+/**
+ * Express Middleware Configuration
+ * Sets up parsing, static files, sessions, and template engine
+ */
+
+app.use(express.urlencoded({ extended: true })); // Parse form data
+app.use(express.json()); // Parse JSON data
+app.use(express.static('public')); // Serve static files (CSS, JS, images)
+app.use('/images', express.static('images')); // Serve company images
+
+// Session configuration for user authentication and state management
 
 app.use(session({
     secret: process.env.SESSION_SECRET || 'secret-key',
@@ -104,73 +153,48 @@ app.use(session({
         httpOnly: true
     }
 }));
-app.use(flash());
+app.use(flash()); // Enable flash messages for user feedback
 
+// Set EJS as template engine and configure views directory
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-
-// Use route modules
+/**
+ * Route Configuration
+ * Mount route modules with appropriate middleware for each user role
+ */
 app.use('/', commonRoutes(pool, requireAuth, requireRole));
 app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
 app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
 app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
 app.use('/reset', resetPasswordRoutes(pool));
 
-// Middleware to check authentication
-// const { requireAuth, requireRole } = require('./src/middleware/auth'); {
-//     try {
-//         if (req.session.user) {
-//             // Get complete user data from database using pool instead of db
-//             const [users] = await pool.execute(
-//                 'SELECT * FROM users WHERE user_id = ?', 
-//                 [req.session.user.user_id]
-//             );
-
-//             if (users.length === 0) {
-//                 req.session.destroy();
-//                 return res.redirect('/login');
-//             }
-
-//             req.user = users[0];
-//             next();
-//         } else {
-//             res.redirect('/login');
-//         }
-//     } catch (error) {
-//         console.error('Auth error:', error);
-//         req.session.destroy();
-//         res.redirect('/login');
-//     }
-// };
-
-// // Middleware to check role
-// const requireRole = (roles) => {
-//     return (req, res, next) => {
-//         if (req.session.user && roles.includes(req.session.user.role)) {
-//             next();
-//         } else {
-//             res.status(403).render('error', { message: 'Access denied' });
-//         }
-//     };
-// };
-
-
-
-// API endpoint for live counts
+/**
+ * Live Counts API Endpoint
+ * Provides real-time counts for pending requests, registrations, and employee updates
+ * Used by dashboard components for dynamic updates
+ * 
+ * @route GET /api/live-counts
+ * @access Protected (requireAuth)
+ * @returns {JSON} Object containing counts for different pending items
+ */
 app.get('/api/live-counts', requireAuth, async (req, res) => {
     try {
+        // Get count of pending product requests for monitors
         const [pendingRequests] = await pool.execute(
             'SELECT COUNT(*) as count FROM product_requests WHERE status = "pending"'
         );
         
+        // Get count of pending user registration requests for admins
         const [pendingRegistrations] = await pool.execute(
             'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
         );
         
+        // Get employee-specific updates (approved/rejected requests in last 7 days)
         let employeeUpdates = 0;
         if (req.session.user.role === 'employee') {
             try {
+                // Query for recent status updates on employee's requests
                 const [updates] = await pool.execute(
                     `SELECT COUNT(*) as count FROM product_requests pr 
                      JOIN employees e ON pr.employee_id = e.employee_id 
@@ -198,10 +222,12 @@ app.get('/api/live-counts', requireAuth, async (req, res) => {
             }
         }
         
+        // Log counts for debugging purposes
         console.log('API Debug - Pending requests:', pendingRequests[0].count);
         console.log('API Debug - Pending registrations:', pendingRegistrations[0].count);
         console.log('API Debug - Employee updates:', employeeUpdates);
         
+        // Return counts as JSON response for frontend dashboard updates
         res.json({
             pendingRequests: pendingRequests[0].count,
             pendingRegistrations: pendingRegistrations[0].count,
@@ -213,7 +239,14 @@ app.get('/api/live-counts', requireAuth, async (req, res) => {
     }
 });
 
-// API endpoint for monitor pending approvals count
+/**
+ * Monitor Pending Approvals Count API
+ * Returns count of pending product requests specifically for monitor dashboard
+ * 
+ * @route GET /api/monitor/pending-approvals-count
+ * @access Protected (requireAuth, requireRole: monitor)
+ * @returns {JSON} Object containing pending approvals count
+ */
 app.get('/api/monitor/pending-approvals-count', requireAuth, requireRole(['monitor']), async (req, res) => {
     try {
         const [rows] = await pool.execute(
@@ -225,8 +258,13 @@ app.get('/api/monitor/pending-approvals-count', requireAuth, requireRole(['monit
         res.json({ count: 0 });
     }
 });
-// Routes
+
+/**
+ * Root Route Handler
+ * Redirects users to appropriate dashboard based on authentication status
+ */
 app.get('/', (req, res) => {
+    // Redirect authenticated users to dashboard, unauthenticated to login
     if (req.session.user) {
         res.redirect('/dashboard');
     } else {
@@ -234,16 +272,29 @@ app.get('/', (req, res) => {
     }
 });
 
-// Authentication routes
+/**
+ * Login Page Route
+ * Renders login form with any flash messages
+ */
 app.get('/login', (req, res) => {
     res.render('auth/login', { messages: req.flash() });
 });
+
+/**
+ * Login Authentication Handler
+ * Processes user login credentials, validates against database,
+ * creates session, logs activity, and redirects to role-appropriate dashboard
+ * 
+ * @route POST /login
+ * @param {string} username - User's login username
+ * @param {string} password - User's plain text password (will be hashed for comparison)
+ */
 
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
     try {
-        // Test database connection first with detailed logging
+        // Test database connection with comprehensive logging
         console.log('Attempting database connection...');
         console.log('Environment:', process.env.NODE_ENV);
         console.log('DB_HOST:', process.env.DB_HOST);
@@ -254,14 +305,17 @@ app.post('/login', async (req, res) => {
         console.log('Database connection successful!');
         connection.release();
         
+        // Create default admin users with hashed passwords
         const testHash = await bcrypt.hash('password', 10);
         const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
         // const vennuHash = await bcrypt.hash('Vennu@123', 10);
 
+        // Ensure users table exists and create default admin accounts
         await pool.execute('CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE, full_name VARCHAR(100), email VARCHAR(100), password VARCHAR(255), role VARCHAR(20) DEFAULT "admin", is_active BOOLEAN DEFAULT TRUE)');
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['test', 'Test User', 'test@example.com', testHash, 'admin', 1]);
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Guddi.Somling@marquardt.com', guddiHash, 'admin', 1]);
         
+        // Find user with exact username match (case sensitive)
         const [users] = await pool.execute('SELECT * FROM users WHERE BINARY username = ? AND is_active = 1', [username]);
         
         if (users.length === 0) {
@@ -270,6 +324,7 @@ app.post('/login', async (req, res) => {
         }
         
         const user = users[0];
+        // Verify password using bcrypt comparison
         const isValid = await bcrypt.compare(password, user.password);
         
         if (!isValid) {
@@ -277,6 +332,7 @@ app.post('/login', async (req, res) => {
             return res.redirect('/login');
         }
         
+        // Create user session with essential user data
         req.session.user = {
             user_id: user.user_id,
             username: user.username,
@@ -287,7 +343,7 @@ app.post('/login', async (req, res) => {
         console.log('Session created:', req.session.user);
         console.log('Session ID:', req.sessionID);
         
-        // Log login activity if available
+        // Log login activity for audit trail (if available)
         if (ActivityLogger && ActivityLogger.logLogin) {
             try {
                 await ActivityLogger.logLogin(
@@ -302,6 +358,7 @@ app.post('/login', async (req, res) => {
             }
         }
         
+        // Redirect user to role-appropriate dashboard
         if (user.role === 'admin') {
             res.redirect('/admin/dashboard');
         } else if (user.role === 'monitor') {
@@ -309,7 +366,7 @@ app.post('/login', async (req, res) => {
         } else if (user.role === 'employee') {
             res.redirect('/employee/dashboard');
         } else {
-            res.redirect('/dashboard');
+            res.redirect('/dashboard'); // Fallback for unknown roles
         }
     } catch (error) {
         console.error('Dashboard error:', error);
@@ -317,37 +374,54 @@ app.post('/login', async (req, res) => {
     }
 });
 
-
-
-
+/**
+ * Employee Dashboard Route
+ * Renders employee dashboard with user data and activity summaries
+ * Includes error handling with fallback HTML rendering
+ */
 app.get('/employee/dashboard', (req, res) => {
+    // Check authentication and role authorization
     if (!req.session.user || req.session.user.role !== 'employee') {
         return res.redirect('/login');
     }
     
     try {
+        // Render employee dashboard with user data and empty arrays for requests/activity
         res.render('employee/dashboard', { 
             user: req.session.user,
-            recentRequests: [],
-            recentActivity: []
+            recentRequests: [], // Populated by frontend AJAX calls
+            recentActivity: []  // Populated by frontend AJAX calls
         });
     } catch (error) {
         console.error('Employee dashboard error:', error);
+        // Fallback: render basic HTML response if EJS template fails
         res.send(`<h1>Employee Dashboard</h1><p>Welcome ${req.session.user.full_name}!</p><p>Role: ${req.session.user.role}</p><a href="/logout">Logout</a>`);
     }
 });
 
+/**
+ * Logout Route Handler
+ * Destroys user session and redirects to login page
+ */
 app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/login');
+    req.session.destroy(); // Clear user session data
+    res.redirect('/login');  // Redirect to login page
 });
 
-// Admin: All Logs API Route for GCloud
+/**
+ * Admin All Logs API Route
+ * Comprehensive logging endpoint that aggregates all system activities
+ * including assignments, requests, and registrations for admin dashboard
+ * 
+ * @route GET /admin/all-logs
+ * @access Protected (requireAuth, requireRole: admin)
+ * @returns {JSON} Object containing aggregated system logs
+ */
 app.get('/admin/all-logs', requireAuth, requireRole(['admin']), async (req, res) => {
     try {
         let history = [];
         
-        // Get assignments and requests
+        // Get comprehensive history of assignments and product requests
         const [basicHistory] = await pool.execute(`
             SELECT 'assignment' as type, pa.assigned_at as date, p.product_name, 
                    u1.full_name as employee_name, u2.full_name as monitor_name, pa.quantity,
@@ -371,8 +445,9 @@ app.get('/admin/all-logs', requireAuth, requireRole(['admin']), async (req, res)
         
         history = basicHistory;
         
-        // Try to add registration requests if table exists
+        // Attempt to include registration requests if table exists
         try {
+            // Query registration requests and merge with existing history
             const [registrations] = await pool.execute(`
                 SELECT 'registration' as type, requested_at as date, 'User Registration' as product_name,
                        full_name as employee_name, COALESCE(u.full_name, 'Admin') as monitor_name, 1 as quantity,
@@ -381,12 +456,14 @@ app.get('/admin/all-logs', requireAuth, requireRole(['admin']), async (req, res)
                 LEFT JOIN users u ON rr.processed_by = u.user_id
             `);
             
-            // Merge and sort all records
+            // Merge all records and sort by date (newest first)
             history = [...basicHistory, ...registrations].sort((a, b) => new Date(b.date) - new Date(a.date));
         } catch (regError) {
             console.log('Registration requests table not found:', regError.message);
+            // Continue with basic history if registration table doesn't exist
         }
         
+        // Return aggregated logs for admin dashboard
         res.json({ logs: history });
     } catch (error) {
         console.error('All logs error:', error);
@@ -394,11 +471,24 @@ app.get('/admin/all-logs', requireAuth, requireRole(['admin']), async (req, res)
     }
 });
 
+/**
+ * Health Check Endpoint
+ * Provides basic server health status and timestamp for monitoring
+ * Used by load balancers and monitoring systems
+ * 
+ * @route GET /health
+ * @access Public
+ * @returns {JSON} Health status and timestamp
+ */
 app.get('/health', (req, res) => {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-
+/**
+ * Server Startup and Database Connection
+ * Starts the Express server on specified port and tests database connectivity
+ * Includes comprehensive error handling and logging
+ */
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
@@ -406,24 +496,29 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`DB Host: ${process.env.DB_HOST}`);
 }).on('error', (err) => {
     console.error('Server failed to start:', err);
-    process.exit(1);
+    process.exit(1); // Exit if server cannot start
 });
 
-// Test database connection
+/**
+ * Database Connection Test
+ * Tests the MySQL connection pool on server startup
+ * Provides detailed error logging for debugging connection issues
+ */
 pool.getConnection()
     .then(connection => {
         console.log('Database connected successfully');
-        connection.release();
+        connection.release(); // Release connection back to pool
     })
     .catch(err => {
         console.error('Database connection failed:', err);
         console.error('Error details:', {
-            code: err.code,
-            errno: err.errno,
-            sqlMessage: err.sqlMessage,
-            sqlState: err.sqlState,
-            message: err.message
+            code: err.code,           // Error code (e.g., ECONNREFUSED)
+            errno: err.errno,         // Error number
+            sqlMessage: err.sqlMessage, // SQL-specific error message
+            sqlState: err.sqlState,   // SQL state code
+            message: err.message      // General error message
         });
     });
 
+// Export app for testing purposes
 module.exports = app;

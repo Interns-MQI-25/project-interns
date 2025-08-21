@@ -1,0 +1,165 @@
+# ==============================================================================
+# ALL-IN-ONE DOCKERFILE - APPLICATION + MYSQL IN SINGLE CONTAINER
+# ==============================================================================
+# This Dockerfile creates a single container with both Node.js app and MySQL
+# Perfect for Docker Hub distribution - users can run with just: docker run -p 3000:3000 image
+# ==============================================================================
+
+FROM node:20-alpine
+
+# Install system dependencies including MySQL
+RUN apk add --no-cache \
+    # MySQL server and client
+    mysql \
+    mysql-client \
+    # System utilities
+    curl \
+    wget \
+    supervisor \
+    bash \
+    nano \
+    # Required for MySQL
+    mysql-dev \
+    openrc
+
+# Initialize MySQL data directory
+RUN mkdir -p /var/lib/mysql /run/mysqld
+RUN chown -R mysql:mysql /var/lib/mysql /run/mysqld
+
+# Initialize MySQL database
+RUN mysql_install_db --user=mysql --datadir=/var/lib/mysql
+
+# Create application directory
+WORKDIR /usr/src/app
+
+# Copy package files first (for better caching)
+COPY package*.json ./
+
+# Install Node.js dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy application source code
+COPY . .
+
+# Create uploads directory with proper permissions
+RUN mkdir -p uploads/products && chmod 755 uploads/products
+
+# ==============================================================================
+# MYSQL CONFIGURATION
+# ==============================================================================
+
+# Configure MySQL
+RUN mysqld_safe --user=mysql --datadir=/var/lib/mysql --skip-networking &\
+    sleep 10 && \
+    mysql -e "CREATE DATABASE IF NOT EXISTS product_management_system;" && \
+    mysql -e "CREATE USER 'sigma'@'localhost' IDENTIFIED BY 'sigma';" && \
+    mysql -e "CREATE USER 'sigma'@'%' IDENTIFIED BY 'sigma';" && \
+    mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'sigma'@'localhost' WITH GRANT OPTION;" && \
+    mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'sigma'@'%' WITH GRANT OPTION;" && \
+    mysql -e "FLUSH PRIVILEGES;" && \
+    mysqladmin shutdown
+
+# Copy comprehensive database schema
+COPY sql/database.sql /tmp/database.sql
+
+# Copy MySQL configuration
+RUN mkdir -p /etc/mysql/mysql.conf.d
+RUN echo "[mysqld]" > /etc/mysql/mysql.conf.d/custom.cnf && \
+    echo "bind-address = 0.0.0.0" >> /etc/mysql/mysql.conf.d/custom.cnf && \
+    echo "skip-networking = 0" >> /etc/mysql/mysql.conf.d/custom.cnf && \
+    echo "max_connections = 100" >> /etc/mysql/mysql.conf.d/custom.cnf && \
+    echo "datadir = /var/lib/mysql" >> /etc/mysql/mysql.conf.d/custom.cnf && \
+    echo "socket = /run/mysqld/mysqld.sock" >> /etc/mysql/mysql.conf.d/custom.cnf
+
+# ==============================================================================
+# SUPERVISOR CONFIGURATION (Process Manager)
+# ==============================================================================
+
+# Create supervisor configuration
+RUN mkdir -p /var/log/supervisor
+
+COPY <<EOF /etc/supervisor/conf.d/supervisord.conf
+[supervisord]
+nodaemon=true
+user=root
+logfile=/var/log/supervisor/supervisord.log
+pidfile=/var/run/supervisord.pid
+
+[program:mysql]
+command=/usr/bin/mysqld_safe --user=mysql --datadir=/var/lib/mysql --socket=/run/mysqld/mysqld.sock
+user=mysql
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/supervisor/mysql.log
+stderr_logfile=/var/log/supervisor/mysql_error.log
+priority=1
+
+[program:app]
+command=sh -c "sleep 5 && node create-admin.js && node server.js"
+directory=/usr/src/app
+user=root
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/supervisor/app.log
+stderr_logfile=/var/log/supervisor/app_error.log
+priority=2
+environment=NODE_ENV=production,DB_HOST=localhost,DB_USER=sigma,DB_PASSWORD=sigma,DB_NAME=product_management_system,DB_PORT=3306,SESSION_SECRET=all-in-one-secret-2025
+EOF
+
+# ==============================================================================
+# STARTUP SCRIPT
+# ==============================================================================
+
+# Copy and setup startup script from scripts folder
+COPY scripts/startup.sh /startup.sh
+
+# Make startup script executable
+RUN chmod +x /startup.sh
+
+# ==============================================================================
+# CONTAINER CONFIGURATION
+# ==============================================================================
+
+# Expose application port
+EXPOSE 3000
+
+# Expose MySQL port (optional, for external access)
+EXPOSE 3306
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV DB_HOST=localhost
+ENV DB_USER=sigma
+ENV DB_PASSWORD=sigma
+ENV DB_NAME=product_management_system
+ENV DB_PORT=3306
+ENV SESSION_SECRET=all-in-one-secret-2025
+
+# Create volume for MySQL data persistence
+VOLUME ["/var/lib/mysql"]
+
+# Start the container
+CMD ["/startup.sh"]
+
+# ==============================================================================
+# BUILD AND RUN INSTRUCTIONS
+# ==============================================================================
+#
+# Build the all-in-one image:
+#   docker build -f Dockerfile.all-in-one -t project-interns:all-in-one .
+#
+# Run the container:
+#   docker run -d -p 3000:3000 --name project-interns project-interns:all-in-one
+#
+# Access the application:
+#   http://localhost:3000
+#
+# Login credentials:
+#   Username: admin
+#   Password: password
+#
+# ==============================================================================

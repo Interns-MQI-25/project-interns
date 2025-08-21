@@ -1,6 +1,27 @@
+/**
+ * @fileoverview Email Service Utility - Handles all email notifications and communications
+ * 
+ * This module provides email functionality for the inventory management system including
+ * registration notifications, approval/rejection emails, and administrative communications.
+ * Uses Nodemailer with Gmail SMTP for reliable email delivery.
+ * 
+ * @author Priyanshu Kumar Sharma
+ * @version 1.0.0
+ * @requires nodemailer - Email sending library for Node.js
+ * @requires process.env.EMAIL_USER - Gmail account for sending emails
+ * @requires process.env.EMAIL_PASS - Gmail app password for authentication
+ */
+
 const nodemailer = require('nodemailer');
 
-// Create transporter
+/**
+ * Email Transporter Configuration
+ * 
+ * Creates and configures Nodemailer transporter using Gmail SMTP service.
+ * Utilizes environment variables for secure credential management.
+ * 
+ * @constant {nodemailer.Transporter} transporter - Configured email transporter
+ */
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -9,7 +30,23 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Send registration approval email to user
+/**
+ * Send Registration Approval Email
+ * 
+ * Sends approval notification email to users whose registration requests have been approved.
+ * Includes login link and welcome message with company branding.
+ * 
+ * @async
+ * @function sendRegistrationApprovalEmail
+ * @param {string} userEmail - Recipient's email address
+ * @param {string} userName - Recipient's full name for personalization
+ * @returns {Promise<Object>} Email send result from Nodemailer
+ * @throws {Error} When email sending fails
+ * 
+ * @example
+ * // Send approval email to new user
+ * await sendRegistrationApprovalEmail('user@company.com', 'John Doe');
+ */
 const sendRegistrationApprovalEmail = async (userEmail, userName) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -27,7 +64,23 @@ const sendRegistrationApprovalEmail = async (userEmail, userName) => {
     return transporter.sendMail(mailOptions);
 };
 
-// Send registration rejection email to user
+/**
+ * Send Registration Rejection Email
+ * 
+ * Sends rejection notification email to users whose registration requests have been denied.
+ * Provides polite rejection message with contact information for further inquiries.
+ * 
+ * @async
+ * @function sendRegistrationRejectionEmail
+ * @param {string} userEmail - Recipient's email address
+ * @param {string} userName - Recipient's full name for personalization
+ * @returns {Promise<Object>} Email send result from Nodemailer
+ * @throws {Error} When email sending fails
+ * 
+ * @example
+ * // Send rejection email to user
+ * await sendRegistrationRejectionEmail('user@company.com', 'John Doe');
+ */
 const sendRegistrationRejectionEmail = async (userEmail, userName) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -44,7 +97,24 @@ const sendRegistrationRejectionEmail = async (userEmail, userName) => {
     return transporter.sendMail(mailOptions);
 };
 
-// Send notification to all admins about new registration
+/**
+ * Send New Registration Notification to Admins
+ * 
+ * Notifies all system administrators about new registration requests requiring review.
+ * Includes applicant details and direct link to admin review interface.
+ * 
+ * @async
+ * @function sendNewRegistrationNotification
+ * @param {string[]} adminEmails - Array of administrator email addresses
+ * @param {string} userName - Applicant's full name
+ * @param {string} userEmail - Applicant's email address
+ * @returns {Promise<Object>} Email send result from Nodemailer
+ * @throws {Error} When email sending fails
+ * 
+ * @example
+ * // Notify admins of new registration
+ * await sendNewRegistrationNotification(['admin1@company.com'], 'John Doe', 'john@example.com');
+ */
 const sendNewRegistrationNotification = async (adminEmails, userName, userEmail) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -65,7 +135,23 @@ const sendNewRegistrationNotification = async (adminEmails, userName, userEmail)
     return transporter.sendMail(mailOptions);
 };
 
-// Send registration confirmation to user
+/**
+ * Send Registration Confirmation to User
+ * 
+ * Sends confirmation email to users after successful registration submission.
+ * Informs users that their request is pending admin approval and sets expectations.
+ * 
+ * @async
+ * @function sendRegistrationConfirmation
+ * @param {string} userEmail - Recipient's email address
+ * @param {string} userName - Recipient's full name for personalization
+ * @returns {Promise<Object>} Email send result from Nodemailer
+ * @throws {Error} When email sending fails
+ * 
+ * @example
+ * // Send confirmation to new registrant
+ * await sendRegistrationConfirmation('user@company.com', 'John Doe');
+ */
 const sendRegistrationConfirmation = async (userEmail, userName) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -84,6 +170,12 @@ const sendRegistrationConfirmation = async (userEmail, userName) => {
     return transporter.sendMail(mailOptions);
 };
 
+/**
+ * Module Exports
+ * 
+ * Exports all email service functions for use throughout the application.
+ * Functions are used by authentication routes and admin management systems.
+ */
 module.exports = {
     sendRegistrationApprovalEmail,
     sendRegistrationRejectionEmail,

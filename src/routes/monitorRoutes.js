@@ -1,8 +1,30 @@
+/**
+ * @fileoverview Monitor Routes Module - Handles all monitor-specific functionality routes
+ * 
+ * This module exports a factory function that creates Express router with monitor routes.
+ * Provides dashboard access, request approval/denial, product assignments, inventory management,
+ * and system monitoring capabilities for monitor users in the inventory management system.
+ * 
+ * @author Priyanshu Kumar Sharma
+ * @version 1.0.0
+ * @requires express - Web application framework
+ * @requires path - Utilities for working with file paths
+ * @requires ../utils/activityLogger - Activity logging utilities (optional fallback)
+ * @requires ../utils/fileUpload - File upload and attachment management
+ */
+
 const express = require('express');
 const router = express.Router();
 const path = require('path');
 
-// Try to import ActivityLogger, fallback if not available
+/**
+ * Activity Logger Import with Fallback
+ * 
+ * Attempts to import activity logging utility with graceful fallback.
+ * Provides no-op functions if activity logger is not available to prevent system crashes.
+ * 
+ * @type {Object} ActivityLogger - Activity logging utility or fallback object
+ */
 let ActivityLogger;
 try {
     ActivityLogger = require('../utils/activityLogger');
@@ -24,10 +46,42 @@ const {
     formatFileSize 
 } = require('../utils/fileUpload');
 
-// Monitor routes module
+/**
+ * Monitor Routes Factory Function
+ * 
+ * Creates and configures all monitor-specific routes with proper authentication and authorization.
+ * Returns an Express router instance with monitor functionality including dashboard,
+ * request approvals, product assignments, and inventory oversight.
+ * 
+ * @param {mysql.Pool} pool - MySQL connection pool for database operations
+ * @param {Function} requireAuth - Authentication middleware function
+ * @param {Function} requireRole - Role-based authorization middleware function
+ * @returns {express.Router} Configured Express router with monitor routes
+ * 
+ * @example
+ * // Usage in main server file
+ * const monitorRoutes = require('./src/routes/monitorRoutes');
+ * app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
+ */
 module.exports = (pool, requireAuth, requireRole) => {
     
-    // Monitor: Dashboard Route
+    /**
+     * Monitor Dashboard Route
+     * 
+     * Displays comprehensive monitor dashboard with key metrics and recent activity.
+     * Shows pending request counts, daily approval statistics, product totals,
+     * and recent system activity to provide monitors with operational overview.
+     * 
+     * @route GET /monitor/dashboard
+     * @access Monitor role only
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @returns {void} Renders monitor dashboard view
+     * 
+     * @example
+     * // Access: GET /monitor/dashboard
+     * // Renders view with: stats object, recentActivity array
+     */
     router.get('/dashboard', requireAuth, requireRole(['monitor']), async (req, res) => {
         try {
             // Get basic stats for the dashboard

@@ -191,6 +191,22 @@
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="cost_center" class="block text-sm font-medium text-gray-700">Cost Center *</label>
+                            <input type="text" id="cost_center" name="cost_center" required 
+                                   value="153008" readonly
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-700 cursor-not-allowed">
+                        </div>
+                        
+                        <div>
+                            <label for="cost" class="block text-sm font-medium text-gray-700">Cost *</label>
+                            <input type="number" id="cost" name="cost" required step="0.01" min="0"
+                                   placeholder="Enter cost in INR (e.g., 25000.00)"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+
                     <!-- Calibration Section -->
                     <div id="calibrationSection" class="hidden">
                         <h4 class="text-md font-medium text-gray-800 mb-3">🔬 Calibration Information</h4>
@@ -228,6 +244,18 @@
                                 <label for="next_calibration_date" class="block text-sm font-medium text-gray-700">Next Calibration Date</label>
                                 <input type="date" id="next_calibration_date" name="next_calibration_date" readonly
                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="sap_equipment_no" class="block text-sm font-medium text-gray-700">SAP Equipment No *</label>
+                                <input type="text" id="sap_equipment_no" name="sap_equipment_no" required
+                                       placeholder="Enter SAP Equipment Number (e.g., EQ-2024-001)"
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="sap_maintenance_plan_no" class="block text-sm font-medium text-gray-700">SAP Maintenance Plan No *</label>
+                                <input type="text" id="sap_maintenance_plan_no" name="sap_maintenance_plan_no" required
+                                       placeholder="Enter SAP Maintenance Plan Number (e.g., MP-2024-001)"
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
                             <div class="md:col-span-2">
                                 <label for="calibration_notes" class="block text-sm font-medium text-gray-700">Calibration Notes</label>
@@ -910,7 +938,7 @@
         function toggleCalibrationFields() {
             const category = document.getElementById('productCategory').value;
             const calibrationSection = document.getElementById('calibrationSection');
-            if (category === 'hardware') {
+            if (category === 'hardware' || category === 'evaluation_board') {
                 calibrationSection.classList.remove('hidden');
             } else {
                 calibrationSection.classList.add('hidden');

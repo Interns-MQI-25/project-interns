@@ -5,6 +5,7 @@ const multer = require('multer');
 const xlsx = require('xlsx');
 const fs = require('fs');
 const { sendRegistrationApprovalEmail, sendRegistrationRejectionEmail } = require('../utils/emailService');
+const { checkProductRequestReminders, checkReturnRequestReminders, setDatabasePool } = require('../utils/reminderService');
 
 // Import file upload utilities
 const { 
@@ -1683,6 +1684,20 @@ module.exports = (pool, requireAuth, requireRole) => {
             console.error('Delete attachment error:', error);
             res.status(500).json({ error: 'Error deleting attachment' });
         }
+    });
+
+    // Admin: Send Email Reminders Route (Manual trigger for testing)
+    router.post('/send-reminders', requireAuth, requireRole(['admin']), async (req, res) => {
+        try {
+            setDatabasePool(pool);
+            await checkProductRequestReminders();
+            await checkReturnRequestReminders();
+            req.flash('success', 'Email reminders sent successfully!');
+        } catch (error) {
+            console.error('Send reminders error:', error);
+            req.flash('error', 'Error sending email reminders');
+        }
+        res.redirect('/admin/dashboard');
     });
 
     return router;

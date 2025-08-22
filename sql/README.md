@@ -64,3 +64,6 @@ All SQL files are organized in this directory for:
 - Test migrations in a development environment first
 - Check dependencies between migration files before running
 - Follow the proper sequence when applying multiple migrations
+
+## Important Steps
+1. first make changes in the coloumn 

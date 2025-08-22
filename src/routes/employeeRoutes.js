@@ -297,6 +297,45 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // Employee: Request Extension Route
+    router.post('/request-extension', requireAuth, requireRole(['employee']), async (req, res) => {
+        const { assignment_id, extension_reason, new_return_date } = req.body;
+
+        if (!assignment_id || !extension_reason || !new_return_date) {
+            req.flash('error', 'All fields are required for extension request.');
+            return res.redirect('/employee/my-products');
+        }
+
+        try {
+            const [assignments] = await pool.execute(
+                'SELECT * FROM product_assignments WHERE assignment_id = ? AND is_returned = 0',
+                [assignment_id]
+            );
+
+            if (assignments.length === 0) {
+                req.flash('error', 'Assignment not found or already returned.');
+                return res.redirect('/employee/my-products');
+            }
+
+            if (assignments[0].extension_status === 'requested') {
+                req.flash('error', 'Extension request already submitted.');
+                return res.redirect('/employee/my-products');
+            }
+
+            await pool.execute(
+                'UPDATE product_assignments SET extension_requested = TRUE, extension_reason = ?, new_return_date = ?, extension_status = "requested", extension_requested_at = NOW() WHERE assignment_id = ?',
+                [extension_reason, new_return_date, assignment_id]
+            );
+
+            req.flash('success', 'Extension request submitted successfully.');
+            res.redirect('/employee/my-products');
+        } catch (error) {
+            console.error('Extension request error:', error);
+            req.flash('error', 'Error submitting extension request.');
+            res.redirect('/employee/my-products');
+        }
+    });
+
     // Employee: Return Product Route (Request Return)
     router.post('/return-product', requireAuth, requireRole(['employee']), async (req, res) => {
         const { assignment_id } = req.body;
@@ -343,12 +382,14 @@ module.exports = (pool, requireAuth, requireRole) => {
         try {
             const [myProducts] = await pool.execute(`
                 SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status, pa.returned_at, pa.remarks,
+                       pa.extension_requested, pa.extension_reason, pa.new_return_date, pa.extension_status, pa.extension_requested_at, pa.extension_remarks,
                        p.product_name, p.asset_type, p.model_number, p.serial_number,
-                       u.full_name as monitor_name
+                       u.full_name as monitor_name, ext_user.full_name as extension_processed_by_name
                 FROM product_assignments pa
                 JOIN products p ON pa.product_id = p.product_id
                 JOIN employees e ON pa.employee_id = e.employee_id
                 JOIN users u ON pa.monitor_id = u.user_id
+                LEFT JOIN users ext_user ON pa.extension_processed_by = ext_user.user_id
                 WHERE e.user_id = ? AND pa.is_returned = 0
                 ORDER BY pa.assigned_at DESC
             `, [req.session.user.user_id]);

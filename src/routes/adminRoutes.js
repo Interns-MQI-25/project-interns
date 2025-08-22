@@ -1807,5 +1807,19 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // Admin: Send Email Reminders Route (Manual trigger for testing)
+    router.post('/send-reminders', requireAuth, requireRole(['admin']), async (req, res) => {
+        try {
+            setDatabasePool(pool);
+            await checkProductRequestReminders();
+            await checkReturnRequestReminders();
+            req.flash('success', 'Email reminders sent successfully!');
+        } catch (error) {
+            console.error('Send reminders error:', error);
+            req.flash('error', 'Error sending email reminders');
+        }
+        res.redirect('/admin/dashboard');
+    });
+
     return router;
 };

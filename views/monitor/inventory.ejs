@@ -3,393 +3,476 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Management - Product Management System</title>
+    <title>Inventory Management - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
 
     <%- include('../partials/navbar') %>
     
-    <main class="ml-64 p-6">
-        <%- include('../partials/messages') %>
-        
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Inventory Management</h1>
-            <p class="text-gray-600">Add and manage products in inventory</p>
-        </div>
-        
-        <!-- Add Product Form -->
-        <div class="bg-white shadow rounded-lg mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Add New Product
-                    </h3>
-                    <button type="button" onclick="toggleForm()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <i class="fas fa-plus mr-2"></i>Add Product
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <div class="mb-4">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Inventory Management</h1>
+                    <p class="text-gray-600">View and manage complete product inventory categorized by model</p>
+                </div>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="bg-white rounded-lg shadow p-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Search Bar -->
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Search products, models, serial numbers..." 
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- Asset Type Filter -->
+                    <div>
+                        <select id="assetTypeFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Asset Types</option>
+                            <% if (products && products.length > 0) { %>
+                                <%
+                                    const assetTypes = [...new Set(products.map(p => p.asset_type).filter(Boolean))];
+                                %>
+                                <% assetTypes.forEach(type => { %>
+                                    <option value="<%= type %>"><%= type %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div>
+                        <select id="categoryFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Categories</option>
+                            <% if (products && products.length > 0) { %>
+                                <%
+                                    const categories = [...new Set(products.map(p => p.product_category).filter(Boolean))];
+                                %>
+                                <% categories.forEach(category => { %>
+                                    <option value="<%= category %>"><%= category %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <!-- Calibration Status Filter -->
+                    <div>
+                        <select id="calibrationFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Calibration Status</option>
+                            <option value="Current">Current</option>
+                            <option value="Due Soon">Due Soon</option>
+                            <option value="Overdue">Overdue</option>
+                            <option value="Not Required">Not Required</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <button onclick="clearAllFilters()" class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200">
+                        <i class="fas fa-times mr-1"></i>Clear Filters
+                    </button>
+                    <button onclick="expandAllCategories()" class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200">
+                        <i class="fas fa-expand-alt mr-1"></i>Expand All
+                    </button>
+                    <button onclick="collapseAllCategories()" class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200">
+                        <i class="fas fa-compress-alt mr-1"></i>Collapse All
                     </button>
                 </div>
 
-                <form action="/add-product" method="POST" class="space-y-6" id="productForm">
-                    <!-- Basic Information -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700">Product Name *</label>
-                            <input type="text" id="name" name="name" required 
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                        
-                        <div>
-                            <label for="product_category" class="block text-sm font-medium text-gray-700">Product Category *</label>
-                            <select name="product_category" id="productCategory" required onchange="toggleCalibrationFields()" 
-                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                <option value="">Select Category</option>
-                                <option value="hardware">Hardware</option>
-                                <option value="software">Test Equipment</option>
-                                <option value="software">Software</option>
-                                <option value="furniture">Tooling</option>
-                                <option value="electronics">Consumables</option>
-                                <option value="vehicle">Measuring Instrument</option>
-                                <option value="general"> Devices</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label for="type" class="block text-sm font-medium text-gray-700">Type *</label>
-                            <input type="text" id="type" name="type" required placeholder="e.g., Laptop, Printer, Chair" 
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                        
-                        <div>
-                            <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
-                            <input type="text" id="model" name="model" placeholder="e.g., Dell Inspiron 15" 
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="serial" class="block text-sm font-medium text-gray-700">Product Serial Number</label>
-                            <input type="text" id="serial" name="serial" placeholder="Unique identifier" 
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-
-                        <div>
-                            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date</label>
-                            <input type="date" id="purchase_date" name="purchase_date"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-
-                        <div>
-                            <label for="pr_no" class="block text-sm font-medium text-gray-700">PR No</label>
-                            <input type="text" id="pr_no" name="pr_no" placeholder="Purchase Request Number"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="po_number" class="block text-sm font-medium text-gray-700">PO Number</label>
-                            <input type="text" id="po_number" name="po_number" placeholder="Purchase Order Number"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-
-                        <div>
-                            <label for="inward_date" class="block text-sm font-medium text-gray-700">Inward Date</label>
-                            <input type="date" id="inward_date" name="inward_date"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-
-                        <div>
-                            <label for="inwarded_by" class="block text-sm font-medium text-gray-700">Inwarded By</label>
-                            <input type="text" id="inwarded_by" name="inwarded_by" placeholder="Name of person"
-                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        </div>
-                    </div>
-
-                    <!-- Calibration Section -->
-                    <div id="calibrationSection" class="hidden">
-                        <h4 class="text-md font-medium text-gray-800 mb-3">🔬 Calibration Information</h4>
-                        
-                        <div class="bg-blue-50 rounded-lg p-3 mb-4">
-                            <label class="flex items-center space-x-3">
-                                <input type="checkbox" name="requires_calibration" id="requiresCalibration" onchange="toggleCalibrationDetails()" 
-                                       class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-                                <span class="text-sm font-medium text-gray-700">This hardware requires calibration</span>
-                            </label>
-                        </div>
-                        
-                        <div id="calibrationDetails" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="last_calibration_date" class="block text-sm font-medium text-gray-700">Last Calibration Date</label>
-                                <input type="date" id="last_calibration_date" name="last_calibration_date" 
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            
-                            <div>
-                                <label for="calibration_frequency_months" class="block text-sm font-medium text-gray-700">Calibration Frequency (Months)</label>
-                                <select name="calibration_frequency_months" id="calibration_frequency_months" 
-                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <option value="3">3 Months</option>
-                                    <option value="6">6 Months</option>
-                                    <option value="12" selected>12 Months</option>
-                                    <option value="24">24 Months</option>
-                                    <option value="36">36 Months</option>
-                                </select>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label for="calibration_notes" class="block text-sm font-medium text-gray-700">Calibration Notes</label>
-                                <textarea id="calibration_notes" name="calibration_notes" rows="2" 
-                                          placeholder="Special calibration requirements or notes..." 
-                                          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Software Section -->
-                    <div id="softwareSection" class="hidden">
-                        <h4 class="text-md font-medium text-gray-800 mb-3">💻 Software Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="version_number" class="block text-sm font-medium text-gray-700">Version Number</label>
-                                <input type="text" id="version_number" name="version_number"
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            <div>
-                                <label for="software_license_type" class="block text-sm font-medium text-gray-700">License Type</label>
-                                <select name="software_license_type" id="software_license_type"
-                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                        onchange="toggleLicenseDetails()">
-                                    <option value="">Select Type</option>
-                                    <option value="licensed">Licensed</option>
-                                    <option value="free">Free</option>
-                                    <option value="open_source">Open Source</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div id="licenseDetails" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div>
-                                <label for="license_expiry" class="block text-sm font-medium text-gray-700">License Expiry Date</label>
-                                <input type="date" id="license_expiry" name="license_expiry"
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                            <div>
-                                <label for="renewal_frequency" class="block text-sm font-medium text-gray-700">Renewal Frequency</label>
-                                <select name="renewal_frequency" id="renewal_frequency"
-                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <option value="">Select Frequency</option>
-                                    <option value="monthly">Monthly</option>
-                                    <option value="quarterly">Quarterly</option>
-                                    <option value="yearly">Yearly</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="next_renewal_date" class="block text-sm font-medium text-gray-700">Next Renewal Date</label>
-                                <input type="date" id="next_renewal_date" name="next_renewal_date"
-                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end">
-                        <button type="submit" class="px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            <i class="fas fa-save mr-2"></i>Save Product
-                        </button>
-                    </div>
-                </form>
+                <!-- Results Summary -->
+                <div id="resultsSummary" class="mt-2 text-sm text-gray-600"></div>
             </div>
         </div>
         
-        <!-- Products List -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Complete Product Inventory
-                </h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Product Details
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Asset Type
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Serial/Model
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Total Stock
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Currently Assigned
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Available
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Calibration
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Added By
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Added Date
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <% if (products && products.length > 0) { %>
-                                <% products.forEach(product => { %>
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">
-                                                <%= product.product_name %>
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                <%= product.product_category %>
-                                            </div>
-                                            <% if (product.description) { %>
-                                                <div class="text-xs text-gray-400 truncate max-w-xs">
-                                                    <%= product.description.substring(0, 50) %>...
-                                                </div>
-                                            <% } %>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                <%= product.asset_type %>
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div><strong>SN:</strong> <%= product.serial_number || 'N/A' %></div>
-                                            <div><strong>Model:</strong> <%= product.model_number || 'N/A' %></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="font-semibold"><%= (product.quantity || 0) + (product.currently_assigned || 0) %></span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="font-semibold text-yellow-600"><%= product.currently_assigned || 0 %></span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span class="font-semibold text-green-600"><%= product.quantity || 0 %></span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <% if (product.calibration_required) { %>
-                                                <% if (product.calibration_status === 'Overdue') { %>
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                        Overdue
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        
+        <!-- Products List Categorized by Model -->
+        <% if (products && products.length > 0) { %>
+            <%
+                // Group products by model number
+                const productsByModel = {};
+                products.forEach(product => {
+                    const modelKey = product.model_number || 'No Model';
+                    if (!productsByModel[modelKey]) {
+                        productsByModel[modelKey] = [];
+                    }
+                    productsByModel[modelKey].push(product);
+                });
+                
+                // Sort model keys
+                const sortedModels = Object.keys(productsByModel).sort();
+            %>
+            
+            <!-- Model Categories -->
+            <% sortedModels.forEach((model, index) => { %>
+                <div class="model-category bg-white shadow rounded-lg mb-6" data-model="<%= model %>">
+                    <div class="bg-gray-100 px-4 py-3 border-b border-gray-200 rounded-t-lg">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                                <i class="fas fa-tag mr-2 text-blue-600"></i>
+                                Model: <%= model %>
+                                <span class="ml-2 text-sm font-normal text-gray-600 model-count">
+                                    (<%= productsByModel[model].length %> products)
+                                </span>
+                            </h3>
+                            <button onclick="toggleCategory('category-<%= index %>')" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-chevron-down transition-transform duration-200" id="icon-<%= index %>"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="category-<%= index %>" class="category-content">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="overflow-x-auto w-full">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Product Details
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Asset Type
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Serial Number
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                PR No
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                PO Number
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Total Stock
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Currently Assigned
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Available
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Calibration
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Added By
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Added Date
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <% productsByModel[model].forEach(product => { %>
+                                            <tr class="product-row hover:bg-gray-50" 
+                                                data-product-name="<%= product.product_name %>"
+                                                data-model="<%= product.model_number || '' %>"
+                                                data-category="<%= product.product_category || '' %>"
+                                                data-asset-type="<%= product.asset_type || '' %>"
+                                                data-serial="<%= product.serial_number || '' %>"
+                                                data-calibration="<%= product.calibration_required ? (product.calibration_status || 'Current') : 'Not Required' %>"
+                                                data-added-by="<%= product.added_by_name || 'System' %>">
+                                                <td class="px-6 py-4 max-w-32">
+                                                    <div class="text-sm font-medium text-gray-900 break-words leading-tight">
+                                                        <%= product.product_name %>
+                                                    </div>
+                                                    <div class="text-sm text-gray-500 break-words leading-tight">
+                                                        <%= product.product_category %>
+                                                    </div>
+                                                    <% if (product.description) { %>
+                                                        <div class="text-xs text-gray-400 break-words leading-tight">
+                                                            <%= product.description.substring(0, 50) %>...
+                                                        </div>
+                                                    <% } %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                        <%= product.asset_type %>
                                                     </span>
-                                                <% } else if (product.calibration_status === 'Due Soon') { %>
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                        Due Soon
-                                                    </span>
-                                                <% } else { %>
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                        Current
-                                                    </span>
-                                                <% } %>
-                                                <div class="text-xs text-gray-400">
-                                                    <%= product.calibration_frequency || 'N/A' %>
-                                                </div>
-                                            <% } else { %>
-                                                <span class="text-gray-400">Not Required</span>
-                                            <% } %>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= product.added_by_name || 'System' %>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= new Date(product.added_at).toLocaleDateString() %>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr>
-                                    <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                        No products found
-                                    </td>
-                                </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= product.serial_number || 'N/A' %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= product.pr_no || 'N/A' %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= product.po_number || 'N/A' %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span class="font-semibold"><%= (product.quantity || 0) + (product.currently_assigned || 0) %></span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span class="font-semibold text-yellow-600"><%= product.currently_assigned || 0 %></span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span class="font-semibold text-green-600"><%= product.quantity || 0 %></span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <% if (product.calibration_required) { %>
+                                                        <% if (product.calibration_status === 'Overdue') { %>
+                                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                                Overdue
+                                                            </span>
+                                                        <% } else if (product.calibration_status === 'Due Soon') { %>
+                                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                                Due Soon
+                                                            </span>
+                                                        <% } else { %>
+                                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                                Current
+                                                            </span>
+                                                        <% } %>
+                                                        <div class="text-xs text-gray-400">
+                                                            <%= product.calibration_frequency || 'N/A' %>
+                                                        </div>
+                                                    <% } else { %>
+                                                        <span class="text-gray-400">Not Required</span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= product.added_by_name || 'System' %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= new Date(product.added_at).toLocaleDateString() %>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Model Summary -->
+                            <div class="mt-4 bg-gray-50 p-4 rounded-lg model-summary">
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <%
+                                        const modelProducts = productsByModel[model];
+                                        const totalStock = modelProducts.reduce((sum, p) => sum + (p.quantity || 0) + (p.currently_assigned || 0), 0);
+                                        const totalAssigned = modelProducts.reduce((sum, p) => sum + (p.currently_assigned || 0), 0);
+                                        const totalAvailable = modelProducts.reduce((sum, p) => sum + (p.quantity || 0), 0);
+                                    %>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-gray-900 total-stock"><%= totalStock %></div>
+                                        <div class="text-gray-600">Total Stock</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-yellow-600 total-assigned"><%= totalAssigned %></div>
+                                        <div class="text-gray-600">Assigned</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-green-600 total-available"><%= totalAvailable %></div>
+                                        <div class="text-gray-600">Available</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-blue-600 product-count"><%= modelProducts.length %></div>
+                                        <div class="text-gray-600">Products</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+            
+        <% } else { %>
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6 text-center">
+                    <div class="text-gray-500">
+                        <i class="fas fa-box-open text-4xl mb-4"></i>
+                        <p class="text-lg font-medium">No products found</p>
+                        <p class="text-sm">Add some products to see them categorized by model</p>
+                    </div>
                 </div>
             </div>
-        </div>
+        <% } %>
+        
+        </div> <!-- End scrollable content area -->
     </main>
 
     <script>
-    function toggleForm() {
-        const form = document.getElementById('productForm');
-        form.style.display = form.style.display === 'none' ? 'block' : 'none';
-    }
+        // Search and Filter functionality
+        function filterProducts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const assetTypeFilter = document.getElementById('assetTypeFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const calibrationFilter = document.getElementById('calibrationFilter').value;
 
-    function toggleCalibrationFields() {
-        const category = document.getElementById('productCategory').value;
-        const calibrationSection = document.getElementById('calibrationSection');
-        if (category === 'hardware') {
-            calibrationSection.classList.remove('hidden');
-        } else {
-            calibrationSection.classList.add('hidden');
-            document.getElementById('requiresCalibration').checked = false;
-            document.getElementById('calibrationDetails').classList.add('hidden');
+            const productRows = document.querySelectorAll('.product-row');
+            const modelCategories = document.querySelectorAll('.model-category');
+            
+            let totalVisible = 0;
+            let visibleModels = 0;
+
+            modelCategories.forEach(modelCategory => {
+                const rows = modelCategory.querySelectorAll('.product-row');
+                let visibleInModel = 0;
+                
+                rows.forEach(row => {
+                    const productName = row.dataset.productName.toLowerCase();
+                    const model = row.dataset.model.toLowerCase();
+                    const category = row.dataset.category.toLowerCase();
+                    const assetType = row.dataset.assetType.toLowerCase();
+                    const serial = row.dataset.serial.toLowerCase();
+                    const calibration = row.dataset.calibration;
+                    const addedBy = row.dataset.addedBy.toLowerCase();
+
+                    // Search filter
+                    const matchesSearch = !searchTerm || 
+                        productName.includes(searchTerm) ||
+                        model.includes(searchTerm) ||
+                        category.includes(searchTerm) ||
+                        assetType.includes(searchTerm) ||
+                        serial.includes(searchTerm) ||
+                        addedBy.includes(searchTerm);
+
+                    // Asset type filter
+                    const matchesAssetType = !assetTypeFilter || assetType === assetTypeFilter.toLowerCase();
+
+                    // Category filter
+                    const matchesCategory = !categoryFilter || category === categoryFilter.toLowerCase();
+
+                    // Calibration filter
+                    const matchesCalibration = !calibrationFilter || calibration === calibrationFilter;
+
+                    const isVisible = matchesSearch && matchesAssetType && matchesCategory && matchesCalibration;
+                    
+                    row.style.display = isVisible ? '' : 'none';
+                    if (isVisible) {
+                        visibleInModel++;
+                        totalVisible++;
+                    }
+                });
+
+                // Update model category visibility and count
+                const modelCount = modelCategory.querySelector('.model-count');
+                const totalProducts = rows.length;
+                
+                if (visibleInModel > 0) {
+                    modelCategory.style.display = '';
+                    modelCount.textContent = `(${visibleInModel} of ${totalProducts} products)`;
+                    visibleModels++;
+                    updateModelSummary(modelCategory);
+                } else {
+                    modelCategory.style.display = 'none';
+                }
+            });
+
+            // Update results summary
+            updateResultsSummary(totalVisible, visibleModels);
         }
-        toggleSoftwareFields(); // Call software toggle here as well
-    }
 
-    function toggleCalibrationDetails() {
-        const requiresCalibration = document.getElementById('requiresCalibration').checked;
-        const calibrationDetails = document.getElementById('calibrationDetails');
-        if (requiresCalibration) {
-            calibrationDetails.classList.remove('hidden');
-        } else {
-            calibrationDetails.classList.add('hidden');
+        function updateModelSummary(modelCategory) {
+            const visibleRows = modelCategory.querySelectorAll('.product-row:not([style*="display: none"])');
+            const summary = modelCategory.querySelector('.model-summary');
+            
+            let totalStock = 0, totalAssigned = 0, totalAvailable = 0;
+            
+            visibleRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const stock = parseInt(cells[3].textContent.trim()) || 0;
+                const assigned = parseInt(cells[4].textContent.trim()) || 0;
+                const available = parseInt(cells[5].textContent.trim()) || 0;
+                
+                totalStock += stock;
+                totalAssigned += assigned;
+                totalAvailable += available;
+            });
+            
+            summary.querySelector('.total-stock').textContent = totalStock;
+            summary.querySelector('.total-assigned').textContent = totalAssigned;
+            summary.querySelector('.total-available').textContent = totalAvailable;
+            summary.querySelector('.product-count').textContent = visibleRows.length;
         }
-    }
 
-    // --- Software Section ---
-    function toggleSoftwareFields() {
-        const category = document.getElementById('productCategory').value;
-        const softwareSection = document.getElementById('softwareSection');
-        if (category === 'software') {
-            softwareSection.classList.remove('hidden');
-        } else {
-            softwareSection.classList.add('hidden');
-            document.getElementById('requiresLicense').checked = false;
-            document.getElementById('softwareDetails').classList.add('hidden');
+        function updateResultsSummary(totalVisible, visibleModels) {
+            const summary = document.getElementById('resultsSummary');
+            if (totalVisible === 0) {
+                summary.textContent = 'No products match your filters';
+                summary.className = 'mt-2 text-sm text-red-600';
+            } else {
+                summary.textContent = `Showing ${totalVisible} products in ${visibleModels} models`;
+                summary.className = 'mt-2 text-sm text-gray-600';
+            }
         }
-    }
 
-    function toggleSoftwareDetails() {
-        const requiresLicense = document.getElementById('requiresLicense').checked;
-        const softwareDetails = document.getElementById('softwareDetails');
-        if (requiresLicense) {
-            softwareDetails.classList.remove('hidden');
-        } else {
-            softwareDetails.classList.add('hidden');
+        function clearAllFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('assetTypeFilter').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('calibrationFilter').value = '';
+            filterProducts();
         }
-    }
 
-    function toggleLicenseDetails() {
-        const licenseType = document.getElementById('software_license_type').value;
-        const licenseDetails = document.getElementById('licenseDetails');
-        if (licenseType === 'licensed') {
-            licenseDetails.classList.remove('hidden');
-        } else {
-            licenseDetails.classList.add('hidden');
+        function expandAllCategories() {
+            const categories = document.querySelectorAll('.category-content');
+            const icons = document.querySelectorAll('[id^="icon-"]');
+            
+            categories.forEach(category => {
+                category.style.display = 'block';
+            });
+            
+            icons.forEach(icon => {
+                icon.style.transform = 'rotate(0deg)';
+            });
         }
-    }
 
-    // Initially hide the form
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('productForm').style.display = 'none';
-        document.getElementById('productCategory').addEventListener('change', function() {
-            toggleCalibrationFields();
-            toggleSoftwareFields();
+        function collapseAllCategories() {
+            const categories = document.querySelectorAll('.category-content');
+            const icons = document.querySelectorAll('[id^="icon-"]');
+            
+            categories.forEach(category => {
+                category.style.display = 'none';
+            });
+            
+            icons.forEach(icon => {
+                icon.style.transform = 'rotate(-90deg)';
+            });
+        }
+
+        function toggleCategory(categoryId) {
+            const content = document.getElementById(categoryId);
+            const icon = document.getElementById(categoryId.replace('category-', 'icon-'));
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'none';
+                icon.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const categories = document.querySelectorAll('.category-content');
+            categories.forEach(category => {
+                category.style.display = 'block';
+            });
+
+            // Add event listeners for real-time filtering
+            document.getElementById('searchInput').addEventListener('input', filterProducts);
+            document.getElementById('assetTypeFilter').addEventListener('change', filterProducts);
+            document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+            document.getElementById('calibrationFilter').addEventListener('change', filterProducts);
+
+            // Initial results summary
+            const totalProducts = document.querySelectorAll('.product-row').length;
+            const totalModels = document.querySelectorAll('.model-category').length;
+            updateResultsSummary(totalProducts, totalModels);
         });
-    });
     </script>
 </body>
 </html>

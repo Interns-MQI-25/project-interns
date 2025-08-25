@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> - Product Management System</title>
+    <title><%= title %> - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
+    <link href="/css/styles.css" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
@@ -28,9 +30,11 @@
         <%- include('partials/navbar') %>
     <% } %>
     
-    <main class="<%= typeof user !== 'undefined' && user ? 'ml-64 p-6' : '' %>">
-        <%- include('partials/messages') %>
-        <%- body %>
+    <main class="ml-64 transition-all duration-300" id="mainContent">
+        <div class="p-3 sm:p-4 lg:p-6 <% if (typeof user !== 'undefined' && user) { %>pt-6<% } %>">
+            <%- include('partials/messages') %>
+            <%- body %>
+        </div>
     </main>
 
     <script src="/js/main.js"></script>

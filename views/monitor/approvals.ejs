@@ -3,50 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Approvals - Product Management System</title>
+    <title>Product Approvals - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-64 p-6">
-        <%- include('../partials/messages') %>
-        
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Product Request Approvals</h1>
-            <p class="text-gray-600">Review and approve employee product requests</p>
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <div class="mb-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Approvals</h1>
+                <p class="text-gray-600">Review and approve employee requests and returns</p>
+            </div>
         </div>
         
-        <!-- Pending Requests -->
-        <div class="bg-white shadow rounded-lg">
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        
+        <!-- Pending Product Requests -->
+        <div class="bg-white shadow rounded-lg mb-8">
             <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Pending Requests
-                </h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                <div class="mb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Pending Product Requests
+                    </h3>
+                </div>
+                <div class="max-h-96 overflow-y-auto">
+                    <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Employee
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Department
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
                                     Product
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                    Employee
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                    Department
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
                                     Quantity
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Purpose
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
                                     Requested Date
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
+                                    Return Date
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
+                                    Remarks
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                                     Actions
                                 </th>
                             </tr>
@@ -54,48 +66,56 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             <% if (requests && requests.length > 0) { %>
                                 <% requests.forEach(request => { %>
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <%= request.employee_name %>
+                                    <tr class="<%= request.is_own_request ? 'bg-gray-100 opacity-60' : '' %>">
+                                        <td class="px-4 py-4" style="max-width: 200px;">
+                                            <div class="text-sm font-medium <%= request.is_own_request ? 'text-gray-500' : 'text-gray-900' %> break-words whitespace-normal leading-tight"><%= request.product_name %></div>
+                                            <% if (request.purpose) { %>
+                                                <div class="text-xs text-gray-400 mt-1 break-words whitespace-normal">Purpose: <%= request.purpose %></div>
+                                            <% } %>
+                                            <% if (request.is_own_request) { %>
+                                                <div class="text-xs text-orange-500 mt-1 font-medium">Your Request</div>
+                                            <% } %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= request.department_name %>
+                                        <td class="px-3 py-4 text-sm text-gray-500">
+                                            <div class="break-words"><%= request.employee_name %></div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= request.product_name %>
+                                        <td class="px-3 py-4 text-sm text-gray-500">
+                                            <div class="break-words"><%= request.department_name %></div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             <%= request.quantity %>
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
-                                            <div class="truncate" title="<%= request.purpose %>">
-                                                <%= request.purpose %>
-                                            </div>
+                                        <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <%= new Date(request.requested_at).toLocaleDateString() %><br>
+                                            <span class="text-xs text-gray-400"><%= new Date(request.requested_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) %></span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <%= new Date(request.requested_at).toLocaleDateString() %>
+                                        <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <% if (request.return_date) { %>
+                                                <%= new Date(request.return_date).toLocaleDateString() %>
+                                            <% } else { %>
+                                                <span class="text-gray-400">Not specified</span>
+                                            <% } %>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                            <form method="POST" action="/monitor/process-request" class="inline-block">
-                                                <input type="hidden" name="request_id" value="<%= request.request_id %>">
-                                                <input type="hidden" name="action" value="approved">
-                                                <button type="submit" class="text-green-600 hover:text-green-900">
+                                        <td class="px-3 py-4">
+                                            <input type="text" id="remarks_<%= request.request_id %>" placeholder="Add remarks..." class="w-full text-xs border border-gray-300 rounded px-2 py-1" <%= request.is_own_request ? 'disabled' : '' %>>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                            <% if (request.is_own_request) { %>
+                                                <span class="text-gray-400 text-xs">Cannot approve own request</span>
+                                            <% } else { %>
+                                                <button onclick="processRequest('<%= request.request_id %>', 'approved')" class="text-green-600 hover:text-green-900">
                                                     <i class="fas fa-check"></i> Approve
                                                 </button>
-                                            </form>
-                                            <form method="POST" action="/monitor/process-request" class="inline-block">
-                                                <input type="hidden" name="request_id" value="<%= request.request_id %>">
-                                                <input type="hidden" name="action" value="rejected">
-                                                <button type="submit" class="text-red-600 hover:text-red-900">
+                                                <button onclick="processRequest('<%= request.request_id %>', 'rejected')" class="text-red-600 hover:text-red-900">
                                                     <i class="fas fa-times"></i> Reject
                                                 </button>
-                                            </form>
+                                            <% } %>
                                         </td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                         No pending requests
                                     </td>
                                 </tr>
@@ -105,6 +125,180 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Pending Return Requests -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="mb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Pending Return Requests
+                    </h3>
+                </div>
+                <div class="max-h-96 overflow-y-auto">
+                    <table class="w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
+                                    Product
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                    Employee
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                    Department
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                    Quantity
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
+                                    Assigned Date
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8">
+                                    Return Date
+                                </th>
+                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
+                                    Remarks
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% if (returnRequests && returnRequests.length > 0) { %>
+                                <% returnRequests.forEach(returnRequest => { %>
+                                    <tr>
+                                        <td class="px-4 py-4" style="max-width: 200px;">
+                                            <div class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-tight"><%= returnRequest.product_name %></div>
+                                            <% if (returnRequest.return_reason) { %>
+                                                <div class="text-xs text-gray-400 mt-1 break-words whitespace-normal">Reason: <%= returnRequest.return_reason %></div>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-3 py-4 text-sm text-gray-500">
+                                            <div class="break-words"><%= returnRequest.employee_name %></div>
+                                        </td>
+                                        <td class="px-3 py-4 text-sm text-gray-500">
+                                            <div class="break-words"><%= returnRequest.department_name %></div>
+                                        </td>
+                                        <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                            <%= returnRequest.quantity %>
+                                        </td>
+                                        <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <%= new Date(returnRequest.assigned_at).toLocaleDateString() %>
+                                        </td>
+                                        <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <% if (returnRequest.return_date) { %>
+                                                <%= new Date(returnRequest.return_date).toLocaleDateString() %>
+                                            <% } else { %>
+                                                <span class="text-gray-400">Not specified</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-3 py-4">
+                                            <input type="text" id="return_remarks_<%= returnRequest.assignment_id %>" placeholder="Add remarks..." class="w-full text-xs border border-gray-300 rounded px-2 py-1">
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                            <button onclick="processReturn('<%= returnRequest.assignment_id %>', 'approve')" class="text-green-600 hover:text-green-900">
+                                                <i class="fas fa-check"></i> Approve
+                                            </button>
+                                            <button onclick="processReturn('<%= returnRequest.assignment_id %>', 'reject')" class="text-red-600 hover:text-red-900">
+                                                <i class="fas fa-times"></i> Reject
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                        No pending return requests
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        </div> <!-- End scrollable content area -->
     </main>
+
+    <script>
+        function processRequest(requestId, action) {
+            if (!requestId) {
+                alert('Error: Missing request ID. Cannot process request.');
+                return;
+            }
+            const remarks = document.getElementById('remarks_' + requestId).value;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/monitor/process-request';
+            
+            const requestIdInput = document.createElement('input');
+            requestIdInput.type = 'hidden';
+            requestIdInput.name = 'request_id';
+            requestIdInput.value = requestId;
+            
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = action;
+            
+            const remarksInput = document.createElement('input');
+            remarksInput.type = 'hidden';
+            remarksInput.name = 'remarks';
+            remarksInput.value = remarks;
+            
+            form.appendChild(requestIdInput);
+            form.appendChild(actionInput);
+            form.appendChild(remarksInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+        
+        function processReturn(assignmentId, action) {
+            if (!assignmentId) {
+                alert('Error: Missing assignment ID. Cannot process return request.');
+                return;
+            }
+            
+            // Add confirmation dialog
+            const actionText = action === 'approve' ? 'approve' : 'reject';
+            if (!confirm(`Are you sure you want to ${actionText} this return request?`)) {
+                return;
+            }
+            
+            const remarks = document.getElementById('return_remarks_' + assignmentId).value;
+            
+            console.log('Processing return:', { assignmentId, action, remarks });
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/monitor/process-return';
+            
+            const assignmentIdInput = document.createElement('input');
+            assignmentIdInput.type = 'hidden';
+            assignmentIdInput.name = 'assignment_id';
+            assignmentIdInput.value = assignmentId;
+            
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = action;
+            
+            const remarksInput = document.createElement('input');
+            remarksInput.type = 'hidden';
+            remarksInput.name = 'remarks';
+            remarksInput.value = remarks;
+            
+            form.appendChild(assignmentIdInput);
+            form.appendChild(actionInput);
+            form.appendChild(remarksInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+
 </body>
+
 </html>

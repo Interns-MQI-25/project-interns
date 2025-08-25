@@ -3,283 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor Dashboard - Product Management System</title>
+    <title>Monitor Dashboard - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-64 p-6">
-        <%- include('../partials/messages') %>
-        
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Monitor Dashboard</h1>
-            <p class="text-gray-600">Welcome back, <%= user.full_name %>!</p>
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            <div class="mb-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Monitor Dashboard</h1>
+                <p class="text-gray-600">Welcome back, <%= user.full_name %>!</p>
+            </div>
         </div>
         
-        <!-- Dashboard Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+            <!-- Dashboard Cards -->
+        <div class="flex justify-center items-start min-h-full">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 w-full max-w-md sm:max-w-2xl">
             <!-- Approvals Card -->
-            <a href="/monitor/approvals" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
-                <div class="p-4 md:p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-check-circle text-xl md:text-2xl text-green-600"></i>
-                            </div>
+            <a href="/monitor/approvals" class="group">
+                <div class="bg-white hover:bg-green-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-green-200 aspect-square">
+                    <div class="text-center h-full flex flex-col justify-center items-center">
+                        <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-1">
+                            <i class="fas fa-check-circle text-lg text-green-600"></i>
                         </div>
-                        <div class="ml-4 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Approvals
-                                </dt>
-                                <dd>
-                                    <div class="text-base md:text-lg font-medium text-gray-900">
-                                        Pending Requests
-                                    </div>
-                                    <% if (stats && stats.pendingRequests > 0) { %>
-                                        <div class="text-xs text-green-600 font-medium mt-1">
-                                            <%= stats.pendingRequests %> pending
-                                        </div>
-                                    <% } %>
-                                </dd>
-                            </dl>
-                        </div>
+                        <h3 class="text-base font-medium text-gray-800">Approvals</h3>
+                        <p class="text-xs text-gray-500">Pending Requests</p>
                     </div>
                 </div>
             </a>
-            
+
             <!-- Records Card -->
-            <a href="/monitor/records" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
-                <div class="p-4 md:p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-history text-xl md:text-2xl text-blue-600"></i>
-                            </div>
+            <a href="/monitor/records" class="group">
+                <div class="bg-white hover:bg-blue-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-blue-200 aspect-square">
+                    <div class="text-center h-full flex flex-col justify-center items-center">
+                        <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-1">
+                            <i class="fas fa-history text-lg text-blue-600"></i>
                         </div>
-                        <div class="ml-4 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Records
-                                </dt>
-                                <dd>
-                                    <div class="text-base md:text-lg font-medium text-gray-900">
-                                        Assignment History
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
+                        <h3 class="text-base font-medium text-gray-800">Records</h3>
+                        <p class="text-xs text-gray-500">Assignment History</p>
                     </div>
                 </div>
             </a>
             
             <!-- Stock Card -->
-            <a href="/monitor/stock" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
-                <div class="p-4 md:p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-boxes text-xl md:text-2xl text-purple-600"></i>
-                            </div>
+            <a href="/monitor/stock" class="group">
+                <div class="bg-white hover:bg-purple-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-purple-200 aspect-square">
+                    <div class="text-center h-full flex flex-col justify-center items-center">
+                        <div class="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center mb-1">
+                            <i class="fas fa-boxes text-lg text-purple-600"></i>
                         </div>
-                        <div class="ml-4 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Stock
-                                </dt>
-                                <dd>
-                                    <div class="text-base md:text-lg font-medium text-gray-900">
-                                        View Inventory
-                                    </div>
-                                    <% if (stats && stats.totalProducts > 0) { %>
-                                        <div class="text-xs text-purple-600 font-medium mt-1">
-                                            <%= stats.totalProducts %> products
-                                        </div>
-                                    <% } %>
-                                </dd>
-                            </dl>
-                        </div>
+                        <h3 class="text-base font-medium text-gray-800">Stock</h3>
+                        <p class="text-xs text-gray-500">View Inventory</p>
                     </div>
                 </div>
             </a>
-            
+
             <!-- Inventory Card -->
-            <a href="/monitor/inventory" class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
-                <div class="p-4 md:p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-warehouse text-xl md:text-2xl text-orange-600"></i>
-                            </div>
+            <a href="/monitor/inventory" class="group">
+                <div class="bg-white hover:bg-orange-50 rounded-lg shadow hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-orange-200 aspect-square">
+                    <div class="text-center h-full flex flex-col justify-center items-center">
+                        <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mb-1">
+                            <i class="fas fa-warehouse text-lg text-orange-600"></i>
                         </div>
-                        <div class="ml-4 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Inventory
-                                </dt>
-                                <dd>
-                                    <div class="text-base md:text-lg font-medium text-gray-900">
-                                        Manage Products
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
+                        <h3 class="text-base font-medium text-gray-800">Inventory</h3>
+                        <p class="text-xs text-gray-500">Manage Products</p>
                     </div>
                 </div>
             </a>
-        </div>
-        
-        <!-- Quick Stats -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-            <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200">
-                <div class="p-4 md:p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-clock text-xl md:text-2xl text-yellow-600"></i>
-                            </div>
-                        </div>
-                        <div class="ml-4 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Pending Requests
-                                </dt>
-                                <dd>
-                                    <div class="text-xl md:text-2xl font-bold text-gray-900">
-                                        <%= stats ? stats.pendingRequests : 0 %>
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                    <div class="mt-3 md:mt-4">
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            <span>Awaiting approval</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200">
-                <div class="p-4 md:p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-check text-xl md:text-2xl text-green-600"></i>
-                            </div>
-                        </div>
-                        <div class="ml-4 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Approved Today
-                                </dt>
-                                <dd>
-                                    <div class="text-xl md:text-2xl font-bold text-gray-900">
-                                        <%= stats ? stats.approvedToday : 0 %>
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                    <div class="mt-3 md:mt-4">
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-calendar-day mr-1"></i>
-                            <span>Processed today</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200 sm:col-span-2 lg:col-span-1">
-                <div class="p-4 md:p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-cube text-xl md:text-2xl text-blue-600"></i>
-                            </div>
-                        </div>
-                        <div class="ml-4 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">
-                                    Total Products
-                                </dt>
-                                <dd>
-                                    <div class="text-xl md:text-2xl font-bold text-gray-900">
-                                        <%= stats ? stats.totalProducts : 0 %>
-                                    </div>
-                                </dd>
-                            </dl>
-                        </div>
-                    </div>
-                    <div class="mt-3 md:mt-4">
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-warehouse mr-1"></i>
-                            <span>In inventory</span>
-                        </div>
-                    </div>
-                </div>
+
+
             </div>
         </div>
-        
-        <!-- Recent Activity -->
-        <% if (typeof recentActivity !== 'undefined' && recentActivity && recentActivity.length > 0) { %>
-        <div class="bg-white shadow rounded-lg mb-8">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Recent Activity
-                </h3>
-                <div class="flow-root">
-                    <ul class="-mb-8">
-                        <% recentActivity.slice(0, 5).forEach((activity, index) => { %>
-                            <li>
-                                <div class="relative pb-8">
-                                    <% if (index !== recentActivity.slice(0, 5).length - 1) { %>
-                                        <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"></span>
-                                    <% } %>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                                                <i class="fas fa-box-open text-white text-xs"></i>
-                                            </span>
-                                        </div>
-                                        <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                                            <div>
-                                                <p class="text-sm text-gray-500">
-                                                    <span class="font-medium text-gray-900"><%= activity.performed_by_name %></span>
-                                                    <%= activity.action %> <%= activity.quantity %> units of
-                                                    <span class="font-medium text-gray-900"><%= activity.product_name %></span>
-                                                </p>
-                                                <% if (activity.notes) { %>
-                                                    <p class="text-xs text-gray-400"><%= activity.notes %></p>
-                                                <% } %>
-                                            </div>
-                                            <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                                                <%= new Date(activity.performed_at).toLocaleDateString() %>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                        <% }); %>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <% } else { %>
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Recent Activity
-                </h3>
-                <div class="text-gray-500">
-                    <p>No recent activity to display.</p>
-                </div>
-            </div>
-        </div>
-        <% } %>
+        </div> <!-- End scrollable content area -->
     </main>
 </body>
 </html>

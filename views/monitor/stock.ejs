@@ -3,265 +3,1112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Management - Monitor Dashboard</title>
+    <title>Stock - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
 </head>
 <body class="bg-gray-50">
     <%- include('../partials/navbar') %>
     
-    <main class="ml-64 p-6">
-        <%- include('../partials/messages') %>
-        
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Stock Management</h1>
-            <p class="text-gray-600">Real-time inventory tracking and management</p>
-        </div>
-
-        <!-- Search and Filter Controls -->
-        <div class="bg-white shadow rounded-lg mb-6 p-4">
-            <div class="flex flex-col md:flex-row gap-4">
-                <div class="flex-1">
-                    <input type="text" id="searchInput" placeholder="Search products..." 
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+<main class="ml-0 md:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    <%= error %>
                 </div>
-                <div class="flex gap-2">
-                    <select id="assetFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="">All Asset Types</option>
-                        <option value="Hardware">Hardware</option>
-                        <option value="Software">Software</option>
-                        <option value="Equipment">Equipment</option>
-                        <option value="Tool">Tool</option>
-                    </select>
-                    <button onclick="clearFilters()" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
-                        <i class="fas fa-times mr-1"></i>Clear
-                    </button>
+            <% } %>
+            
+            <div class="mb-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Product Stock</h1>
+                        <p class="text-gray-600">Add and manage products & Browse available products and request assignments.</p>
+                    </div>
+                    
+                    <!-- Add Product Button -->
+                    <div>
+                        <button type="button" onclick="openModal()" class="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" style="background-color: #009A9A;">
+                            <i class="fas fa-plus mr-2"></i>Add Product
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Stock Analytics Cards -->
-        <% if (typeof stockStats !== 'undefined' && stockStats && stockStats.length > 0) { %>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8" id="statsCards">
-            <% stockStats.forEach(stat => { %>
-                <div class="bg-white overflow-hidden shadow rounded-lg stat-card" data-asset-type="<%= stat.asset_type %>">
-                    <div class="p-5">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-cube text-2xl text-purple-600"></i>
+            <!-- Search and Filter Section -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <!-- Search Input -->
+                        <div class="flex-1">
+                            <label for="search-input" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <div class="relative">
+                                <input type="text" id="search-input" placeholder="Search by name, category, or model..." 
+                                       class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
                             </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="text-sm font-medium text-gray-500 truncate">
-                                        <%= stat.asset_type %>
-                                    </dt>
-                                    <dd>
-                                        <div class="text-lg font-medium text-gray-900">
-                                            <%= stat.total_items %> items
-                                        </div>
-                                        <div class="text-xs text-gray-500">
-                                            Available: <%= stat.available_quantity %>
-                                        </div>
-                                        <% if (stat.calibration_items > 0) { %>
-                                            <div class="text-xs text-orange-600">
-                                                Cal Req: <%= stat.calibration_items %>
-                                            </div>
-                                        <% } %>
-                                    </dd>
-                                </dl>
-                            </div>
+                        </div>
+                        
+                        <!-- Asset Type Filter -->
+                        <div class="sm:w-48">
+                            <label for="asset-type-filter" class="block text-sm font-medium text-gray-700 mb-2">Asset Type</label>
+                            <select id="asset-type-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
+                                <option value="">All Types</option>
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
+                        </div>
+                        
+                        <!-- Availability Filter -->
+                        <div class="sm:w-48">
+                            <label for="availability-filter" class="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                            <select id="availability-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#009A9A] focus:border-[#009A9A]">
+                                <option value="">All Products</option>
+                                <option value="available">Available Only</option>
+                                <option value="assigned">Assigned Only</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Search Button -->
+                        <div class="flex items-end">
+                            <button id="search-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" style="background-color: #009A9A;">
+                                <i class="fas fa-search mr-2"></i>
+                                Search
+                            </button>
+                        </div>
+                        
+                        <!-- Clear Filters Button -->
+                        <div class="flex items-end">
+                            <button id="clear-filters-btn" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                <i class="fas fa-times mr-1"></i>
+                                Clear
+                            </button>
                         </div>
                     </div>
                 </div>
-            <% }); %>
+            </div>
         </div>
-        <% } %>
+        
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-hidden p-4 sm:p-6">
+
+        <!-- Modal -->
+        <div id="productModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Add New Product
+                    </h3>
+                    <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <form action="/monitor/add-product" method="POST" enctype="multipart/form-data" class="space-y-6" id="productForm">
+                    <!-- Basic Information -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Product Name *</label>
+                            <input type="text" id="name" name="name" required 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        
+                        <div>
+                            <label for="product_category" class="block text-sm font-medium text-gray-700">Product Category *</label>
+                            <select name="product_category" id="productCategory" required onchange="toggleCalibrationFields()" 
+                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">Select Category</option>
+                                <option value="hardware">Hardware</option>
+                                <option value="test_equipment">Test Equipment</option>
+                                <option value="software">Software</option>
+                                <option value="tooling">Tooling</option>
+                                <option value="consumables">Consumables</option>
+                                <option value="measuring_instrument">Measuring Instrument</option>
+                                <option value="embedded_devices">Embedded devices</option>
+                                <option value="lab_equipment">Lab Equipment</option>
+                                <option value="prototypes">Prototypes</option>
+                                <option value="accessories">Accessories</option>
+                                <option value="network_equipment">Network Equipment</option>
+                                <option value="miscellaneous">Miscellaneous</option>
+                            </select>
+                        </div>
+                        
+                        <div id="typeDiv">
+                            <label for="type" class="block text-sm font-medium text-gray-700">Type *</label>
+                            <input type="text" id="type" name="type" required placeholder="Enter type (e.g., Laptop, Desktop)" 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                        
+                        <div id="modelDiv">
+                            <label for="model" class="block text-sm font-medium text-gray-700">Model *</label>
+                            <input type="text" id="model" name="model" required placeholder="Enter Model no. mentioned on the product e.g., Dell Inspiron 15" 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="serial" class="block text-sm font-medium text-gray-700">Product Serial Number *</label>
+                            <input type="text" id="serial" name="serial" required placeholder="Enter Unique Serial no mentioned on the product" 
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date *</label>
+                            <input type="date" id="purchase_date" name="purchase_date" required
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="pr_no" class="block text-sm font-medium text-gray-700">PR No *</label>
+                            <input type="text" id="pr_no" name="pr_no" required placeholder="Enter SAP Purchase Request Number"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="po_number" class="block text-sm font-medium text-gray-700">PO Number *</label>
+                            <input type="text" id="po_number" name="po_number" required placeholder="Enter SAP Purchase Order Number"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="inward_date" class="block text-sm font-medium text-gray-700">Inward Date *</label>
+                            <input type="date" id="inward_date" name="inward_date" required
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div>
+                            <label for="inwarded_by" class="block text-sm font-medium text-gray-700">Inwarded By</label>
+                            <input type="text" id="inwarded_by" name="inwarded_by" 
+                                   value="<%= user && user.full_name ? user.full_name : '' %><%= user && user.department_name ? ' - ' + user.department_name : '' %>" readonly
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-700 cursor-not-allowed">
+                        </div>
+                    </div>
+
+                    <!-- Calibration Section -->
+                    <div id="calibrationSection" class="hidden">
+                        <h4 class="text-md font-medium text-gray-800 mb-3">🔬 Calibration Information</h4>
+                        
+                        <div class="bg-blue-50 rounded-lg p-3 mb-4">
+                            <label class="flex items-center space-x-3">
+                                <input type="checkbox" name="requires_calibration" id="requiresCalibration" onchange="toggleCalibrationDetails()" 
+                                       class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                                <span class="text-sm font-medium text-gray-700">This hardware requires calibration</span>
+                            </label>
+                        </div>
+                        
+                        <div id="calibrationDetails" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="last_calibration_date" class="block text-sm font-medium text-gray-700">Last Calibration Date</label>
+                                <input type="date" id="last_calibration_date" name="last_calibration_date" 
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Calibration Frequency</label>
+                                <div class="flex space-x-2">
+                                    <select name="calibration_frequency_years" id="calibration_frequency_years" class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <% for(let i=0; i<=10; i++) { %>
+                                            <option value="<%= i %>"><%= i %> Year<%= i !== 1 ? 's' : '' %></option>
+                                        <% } %>
+                                    </select>
+                                    <select name="calibration_frequency_months" id="calibration_frequency_months" class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <% for(let i=0; i<12; i++) { %>
+                                            <option value="<%= i %>"><%= i %> Month<%= i !== 1 ? 's' : '' %></option>
+                                        <% } %>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="next_calibration_date" class="block text-sm font-medium text-gray-700">Next Calibration Date</label>
+                                <input type="date" id="next_calibration_date" name="next_calibration_date" readonly
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="calibration_notes" class="block text-sm font-medium text-gray-700">Calibration Notes</label>
+                                <textarea id="calibration_notes" name="calibration_notes" rows="2" 
+                                          placeholder="Special calibration requirements or notes..." 
+                                          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Software Section -->
+                    <div id="softwareSection" class="hidden">
+                        <h4 class="text-md font-medium text-gray-800 mb-3">💻 Software Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="version_number" class="block text-sm font-medium text-gray-700">Version Number</label>
+                                <input type="text" id="version_number" name="version_number"
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="software_license_type" class="block text-sm font-medium text-gray-700">License Type</label>
+                                <select name="software_license_type" id="software_license_type"
+                                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        onchange="showLicenseTypeDetails()">
+                                    <option value="">Select Type</option>
+                                    <option value="free">Free</option>
+                                    <option value="perpetual">Perpetual License</option>
+                                    <option value="subscription">Subscription License</option>
+                                    <option value="concurrent">Concurrent License</option>
+                                    <option value="floating">Floating/Network License</option>
+                                    <option value="node_locked">Node-Locked License</option>
+                                    <option value="trial_educational">Trial/Educational License</option>
+                                </select>
+                                <div id="licenseTypeDetails" class="mt-2 hidden">
+                                    <div id="licenseTypeDescription" class="text-xs text-gray-700 bg-gray-100 rounded p-2 mb-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- License Details: Only for Licensed -->
+                        <div id="licenseDetails" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label for="license_start_date" class="block text-sm font-medium text-gray-700">License Start Date</label>
+                                <input type="date" id="license_start_date" name="license_start_date"
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Renewal Frequency</label>
+                                <div class="flex space-x-2">
+                                    <select name="renewal_frequency_years" id="renewal_frequency_years"
+                                            class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <% for(let i=0; i<=10; i++) { %>
+                                            <option value="<%= i %>"><%= i %> Year<%= i !== 1 ? 's' : '' %></option>
+                                        <% } %>
+                                    </select>
+                                    <select name="renewal_frequency_months" id="renewal_frequency_months"
+                                            class="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                        <% for(let i=0; i<12; i++) { %>
+                                            <option value="<%= i %>"><%= i %> Month<%= i !== 1 ? 's' : '' %></option>
+                                        <% } %>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="next_renewal_date" class="block text-sm font-medium text-gray-700">Next Renewal Date</label>
+                                <input type="date" id="next_renewal_date" name="next_renewal_date" readonly
+                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Attachments Section -->
+                    <div class="border-t pt-6">
+                        <h4 class="text-md font-medium text-gray-800 mb-3">📎 File Attachments</h4>
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <label for="attachments" class="block text-sm font-medium text-gray-700 mb-2">
+                                Upload Files (Images, PDF, DOC, TXT)
+                            </label>
+                            <input type="file" 
+                                   id="attachments" 
+                                   name="attachments" 
+                                   multiple 
+                                   accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
+                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <div class="mt-2 text-sm text-gray-500">
+                                <p>• Maximum 10 files, 10MB per file</p>
+                                <p>• Supported formats: JPG, PNG, GIF, WebP, PDF, DOC, DOCX, TXT, CSV, XLS, XLSX</p>
+                            </div>
+                            <div id="filePreview" class="mt-3 space-y-2"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-6 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" style="background-color: #009A9A;">
+                            <i class="fas fa-save mr-2"></i>Save Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
         
         <!-- Stock Table -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Product Inventory
-                </h3>
+        <div class="bg-white shadow rounded-lg flex flex-col h-full">
+            <!-- Fixed Header Section -->
+            <div class="flex-shrink-0 px-4 py-5 sm:px-6 sm:py-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Available Products (<span id="total-products"><%= (products && products.length) || 0 %></span> items)
+                    </h3>
+                    <div class="text-sm text-gray-700">
+                        Showing <span id="showing-from">1</span> to <span id="showing-to">15</span> of <span id="total-count">0</span> results
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Scrollable Table Content -->
+            <div class="flex-1 overflow-y-auto">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-gray-50 sticky top-0 z-10">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model/Serial</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Product Name
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Action
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Asset Type
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Category
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Model
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Files
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Availability
+                                </th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="productTableBody">
-                            <% if (products && products.length > 0) { %>
-                                <% products.forEach(product => { %>
-                                    <tr class="product-row" data-asset-type="<%= product.asset_type %>" data-search-text="<%= (product.product_name + ' ' + product.product_category + ' ' + (product.model_number || '') + ' ' + (product.serial_number || '')).toLowerCase() %>">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900"><%= product.product_name %></div>
-                                            <div class="text-sm text-gray-500"><%= product.product_category %></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                <%= product.asset_type %>
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div><%= product.model_number || 'N/A' %></div>
-                                            <div class="text-xs"><%= product.serial_number || 'N/A' %></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div class="font-semibold">Total: <%= (product.quantity || 0) + (product.currently_assigned || 0) %></div>
-                                            <div class="text-green-600">Available: <%= product.quantity || 0 %></div>
-                                            <div class="text-yellow-600">Assigned: <%= product.currently_assigned || 0 %></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <% if (product.quantity > 0) { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">In Stock</span>
-                                            <% } else { %>
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Out of Stock</span>
-                                            <% } %>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr id="noResultsRow">
-                                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                        No products found
-                                    </td>
-                                </tr>
-                            <% } %>
+                        <tbody class="bg-white divide-y divide-gray-200" id="products-table">
+                            <!-- Products will be populated by JavaScript -->
                         </tbody>
                     </table>
                 </div>
             </div>
+                
+            <!-- Fixed Pagination Controls -->
+            <div class="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+                    <div class="flex justify-between flex-1 sm:hidden">
+                        <button id="prev-mobile" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            Previous
+                        </button>
+                        <button id="next-mobile" class="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            Next
+                        </button>
+                    </div>
+                    <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-center">
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <button id="prev-desktop" class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50">
+                                    <span class="sr-only">Previous</span>
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <div id="page-numbers" class="flex">
+                                    <!-- Page numbers will be populated by JavaScript -->
+                                </div>
+                                <button id="next-desktop" class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50">
+                                    <span class="sr-only">Next</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+        </div> <!-- End scrollable content area -->
     </main>
 
+    <!-- Product data for JavaScript -->
+    <script id="products-data" type="application/json">
+        <%- JSON.stringify(products || []) %>
+    </script>
+
     <script>
-        const searchInput = document.getElementById('searchInput');
-        const assetFilter = document.getElementById('assetFilter');
-        const productRows = document.querySelectorAll('.product-row');
-        const statsCards = document.querySelectorAll('.stat-card');
-        const noResultsRow = document.getElementById('noResultsRow');
+        // Pagination variables
+        let allProducts = [];
+        let filteredProducts = [];
+        let currentPage = 1;
+        const itemsPerPage = 15;
 
-        function filterProducts() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const assetType = assetFilter.value;
-            let visibleCount = 0;
-
-            productRows.forEach(row => {
-                const searchText = row.dataset.searchText;
-                const rowAssetType = row.dataset.assetType;
-                
-                const matchesSearch = searchText.includes(searchTerm);
-                const matchesAsset = !assetType || rowAssetType === assetType;
-                
-                if (matchesSearch && matchesAsset) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-
-            // Show/hide no results message
-            if (noResultsRow) {
-                noResultsRow.style.display = visibleCount === 0 ? '' : 'none';
+        // Initialize with server data
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const productsData = document.getElementById('products-data').textContent;
+                allProducts = JSON.parse(productsData);
+            } catch (e) {
+                console.error('Error parsing products data:', e);
+                allProducts = [];
+            }
+            filteredProducts = [...allProducts];
+            populateAssetTypeFilter();
+            displayProducts();
+            setupPagination();
+            setupFilterEventListeners();
+            
+            // Initialize product modal functionality
+            const productCategory = document.getElementById('productCategory');
+            if (productCategory) {
+                productCategory.addEventListener('change', function() {
+                    toggleCalibrationFields();
+                    toggleSoftwareFields();
+                    updateTypePlaceholder();
+                });
+                updateTypePlaceholder(); // Set initial placeholder
             }
 
-            // Highlight active stats cards
-            statsCards.forEach(card => {
-                const cardAssetType = card.dataset.assetType;
-                if (assetType && cardAssetType === assetType) {
-                    card.classList.add('ring-2', 'ring-blue-500');
-                } else {
-                    card.classList.remove('ring-2', 'ring-blue-500');
+            // Set max date for all date inputs in the product form
+            const today = new Date().toISOString().split('T')[0];
+            const dateInputs = document.querySelectorAll('input[type="date"]');
+            dateInputs.forEach(input => {
+                input.setAttribute('max', today);
+            });
+
+            // Calibration auto-calc
+            const lastCalInput = document.getElementById('last_calibration_date');
+            const monthsInput = document.getElementById('calibration_frequency_months');
+            const yearsInput = document.getElementById('calibration_frequency_years');
+            if (lastCalInput && monthsInput && yearsInput) {
+                lastCalInput.addEventListener('change', calculateNextCalibrationDate);
+                monthsInput.addEventListener('change', calculateNextCalibrationDate);
+                yearsInput.addEventListener('change', calculateNextCalibrationDate);
+            }
+
+            // Renewal auto-calc
+            const startInput = document.getElementById('license_start_date');
+            const monthsInputRenewal = document.getElementById('renewal_frequency_months');
+            const yearsInputRenewal = document.getElementById('renewal_frequency_years');
+            if (startInput && monthsInputRenewal && yearsInputRenewal) {
+                startInput.addEventListener('change', calculateNextRenewalDate);
+                monthsInputRenewal.addEventListener('change', calculateNextRenewalDate);
+                yearsInputRenewal.addEventListener('change', calculateNextRenewalDate);
+            }
+            
+            // Close modal when clicking outside request modal
+            document.addEventListener('click', function(event) {
+                const modal = document.getElementById('requestModal');
+                if (modal && event.target === modal) {
+                    closeRequestModal();
                 }
             });
-        }
 
-        function clearFilters() {
-            searchInput.value = '';
-            assetFilter.value = '';
-            filterProducts();
-        }
-
-        function filterByAssetType(assetType) {
-            assetFilter.value = assetType;
-            filterProducts();
-        }
-
-        // Add click functionality to stats cards
-        statsCards.forEach(card => {
-            card.addEventListener('click', () => {
-                const assetType = card.dataset.assetType;
-                filterByAssetType(assetType);
-            });
-            card.style.cursor = 'pointer';
+            // File upload preview functionality
+            const attachmentsInput = document.getElementById('attachments');
+            if (attachmentsInput) {
+                attachmentsInput.addEventListener('change', function(e) {
+                    const files = e.target.files;
+                    const preview = document.getElementById('filePreview');
+                    preview.innerHTML = '';
+                    
+                    if (files.length > 0) {
+                        for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            const fileDiv = document.createElement('div');
+                            fileDiv.className = 'flex items-center justify-between p-2 bg-gray-50 rounded border';
+                            
+                            const fileName = file.name.length > 30 ? 
+                                file.name.substring(0, 30) + '...' : file.name;
+                            
+                            fileDiv.innerHTML = `
+                                <div class="flex items-center">
+                                    <i class="fas fa-file mr-2 text-gray-500"></i>
+                                    <span class="text-sm font-medium">${fileName}</span>
+                                    <span class="text-xs text-gray-500 ml-2">(${formatFileSize(file.size)})</span>
+                                </div>
+                                <button type="button" onclick="removeFileFromPreview(this, ${i})" 
+                                        class="text-red-500 hover:text-red-700">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            `;
+                            preview.appendChild(fileDiv);
+                        }
+                    }
+                });
+            }
         });
 
-        searchInput.addEventListener('input', filterProducts);
-        assetFilter.addEventListener('change', filterProducts);
-
-        // Auto-refresh every 30 seconds for real-time data
-        setInterval(() => {
-            location.reload();
-        }, 30000);
-    </script>
-</body>
-</html>ment.getElementById('noResultsRow');
-
-        function filterProducts() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const assetType = assetFilter.value;
-            let visibleCount = 0;
-
-            productRows.forEach(row => {
-                const searchText = row.dataset.searchText;
-                const rowAssetType = row.dataset.assetType;
-                
-                const matchesSearch = searchText.includes(searchTerm);
-                const matchesAsset = !assetType || rowAssetType === assetType;
-                
-                if (matchesSearch && matchesAsset) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
+        // Function to remove file from preview
+        function removeFileFromPreview(button, index) {
+            const attachmentsInput = document.getElementById('attachments');
+            const dt = new DataTransfer();
+            const files = attachmentsInput.files;
+            
+            for (let i = 0; i < files.length; i++) {
+                if (i !== index) {
+                    dt.items.add(files[i]);
                 }
-            });
-
-            // Show/hide no results message
-            if (noResultsRow) {
-                noResultsRow.style.display = visibleCount === 0 ? '' : 'none';
             }
+            
+            attachmentsInput.files = dt.files;
+            button.parentElement.remove();
+        }
 
-            // Filter stats cards
-            statsCards.forEach(card => {
-                const cardAssetType = card.dataset.assetType;
-                if (!assetType || cardAssetType === assetType) {
-                    card.style.display = '';
-                } else {
-                    card.style.display = 'none';
+        // Function to format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Function to load and display product attachments
+        async function loadProductAttachments(productId) {
+            try {
+                const response = await fetch(`/monitor/api/product-attachments/${productId}`);
+                const attachments = await response.json();
+                
+                const filesContainer = document.getElementById(`files-${productId}`);
+                
+                if (attachments.length === 0) {
+                    filesContainer.innerHTML = `
+                        <span class="text-xs text-gray-500">No files</span>
+                    `;
+                    return;
                 }
+                
+                let filesHtml = `
+                    <div class="space-y-1">
+                        <div class="text-xs font-medium text-gray-700">${attachments.length} file(s):</div>
+                `;
+                
+                attachments.forEach(attachment => {
+                    filesHtml += `
+                        <div class="flex items-center justify-between p-1 bg-gray-50 rounded text-xs">
+                            <div class="flex items-center">
+                                <i class="${attachment.file_icon} mr-1"></i>
+                                <span class="truncate max-w-[120px]" title="${attachment.original_filename}">
+                                    ${attachment.original_filename.length > 15 ? 
+                                        attachment.original_filename.substring(0, 15) + '...' : 
+                                        attachment.original_filename}
+                                </span>
+                                <span class="text-gray-500 ml-1">(${attachment.formatted_size})</span>
+                            </div>
+                            <a href="${attachment.download_url}" 
+                               class="text-blue-600 hover:text-blue-800 ml-1"
+                               title="Download ${attachment.original_filename}">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    `;
+                });
+                
+                filesHtml += `</div>`;
+                filesContainer.innerHTML = filesHtml;
+                
+            } catch (error) {
+                console.error('Error loading attachments:', error);
+                const filesContainer = document.getElementById(`files-${productId}`);
+                filesContainer.innerHTML = `
+                    <span class="text-xs text-red-500">Error loading files</span>
+                `;
+            }
+        }
+
+        // Populate asset type filter dropdown
+        function populateAssetTypeFilter() {
+            const assetTypeSelect = document.getElementById('asset-type-filter');
+            const assetTypes = [...new Set(allProducts.map(product => product.asset_type).filter(Boolean))];
+            
+            // Clear existing options except "All Types"
+            assetTypeSelect.innerHTML = '<option value="">All Types</option>';
+            
+            // Add asset type options
+            assetTypes.forEach(assetType => {
+                const option = document.createElement('option');
+                option.value = assetType;
+                option.textContent = assetType;
+                assetTypeSelect.appendChild(option);
             });
         }
 
-        function clearFilters() {
-            searchInput.value = '';
-            assetFilter.value = '';
-            filterProducts();
+        // Setup filter event listeners
+        function setupFilterEventListeners() {
+            document.getElementById('search-btn').addEventListener('click', filterProducts);
+            document.getElementById('asset-type-filter').addEventListener('change', filterProducts);
+            document.getElementById('availability-filter').addEventListener('change', filterProducts);
+            document.getElementById('clear-filters-btn').addEventListener('click', clearFilters);
+            document.getElementById('search-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    filterProducts();
+                }
+            });
+            // Real-time search as user types
+            document.getElementById('search-input').addEventListener('input', filterProducts);
         }
 
-        searchInput.addEventListener('input', filterProducts);
-        assetFilter.addEventListener('change', filterProducts);
+        // Pagination functions
+        function displayProducts() {
+            const tbody = document.getElementById('products-table');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageProducts = filteredProducts.slice(startIndex, endIndex);
+            
+            tbody.innerHTML = '';
+            
+            if (pageProducts.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                            <div class="text-gray-400">
+                                <i class="fas fa-box-open text-4xl mb-2"></i>
+                                <p>No products found</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            pageProducts.forEach(product => {
+                const row = document.createElement('tr');
+                const isAvailable = getAvailabilityStatus(product);
+                const availableQty = (product.quantity || 0) - (product.assigned_quantity || 0);
+                
+                // Add fading class for unavailable products
+                if (!isAvailable.available) {
+                    row.classList.add('opacity-50', 'bg-gray-50');
+                }
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-box text-gray-500"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${product.product_name || 'N/A'}</div>
+                                <div class="text-sm text-gray-500">${product.asset_type || 'N/A'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        ${isAvailable.available ? 
+                            `<button class="request-btn inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" 
+                                style="background-color: #009A9A;" 
+                                data-product-id="${product.product_id}" 
+                                data-product-name="${escapeHtml(product.product_name)}">
+                                <i class="fas fa-plus mr-1"></i>Request
+                            </button>` : 
+                            `<span class="text-xs text-gray-500">Not Available</span>`}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            ${product.asset_type || 'N/A'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${product.product_category || 'N/A'}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900">${product.model_number || 'N/A'}</div>
+                        ${product.serial_number ? `<div class="text-sm text-gray-500">S/N: ${product.serial_number}</div>` : ''}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div id="files-${product.product_id}" class="text-sm">
+                            <button onclick="loadProductAttachments(${product.product_id})" 
+                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50">
+                                <i class="fas fa-paperclip mr-1"></i>
+                                View Files
+                            </button>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isAvailable.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${isAvailable.available ? 'Available' : 'Assigned'}
+                            </span>
+                            ${!isAvailable.available && isAvailable.userInfo ? 
+                                `<div class="text-xs text-gray-500 mt-1">
+                                    <div><strong>Used by:</strong> ${isAvailable.userInfo}</div>
+                                </div>` : ''}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            updatePaginationInfo();
+            
+            // Add event listeners for request buttons
+            document.querySelectorAll('.request-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = this.getAttribute('data-product-id');
+                    const productName = this.getAttribute('data-product-name');
+                    const availableQty = this.getAttribute('data-available-qty');
+                    openRequestModal(productId, productName, availableQty);
+                });
+            });
+        }
 
-        // Auto-refresh every 30 seconds
-        setInterval(() => {
-            location.reload();
-        }, 30000);
+        function setupPagination() {
+            // Setup pagination event listeners
+            document.getElementById('prev-mobile').addEventListener('click', () => changePage(currentPage - 1));
+            document.getElementById('next-mobile').addEventListener('click', () => changePage(currentPage + 1));
+            document.getElementById('prev-desktop').addEventListener('click', () => changePage(currentPage - 1));
+            document.getElementById('next-desktop').addEventListener('click', () => changePage(currentPage + 1));
+            
+            updatePaginationControls();
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            
+            currentPage = page;
+            displayProducts();
+            updatePaginationControls();
+        }
+
+        function updatePaginationInfo() {
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(currentPage * itemsPerPage, filteredProducts.length);
+            
+            document.getElementById('showing-from').textContent = filteredProducts.length > 0 ? startIndex : 0;
+            document.getElementById('showing-to').textContent = endIndex;
+            document.getElementById('total-count').textContent = filteredProducts.length;
+            document.getElementById('total-products').textContent = filteredProducts.length;
+        }
+
+        function updatePaginationControls() {
+            const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+            
+            // Update button states
+            const prevButtons = [document.getElementById('prev-mobile'), document.getElementById('prev-desktop')];
+            const nextButtons = [document.getElementById('next-mobile'), document.getElementById('next-desktop')];
+            
+            prevButtons.forEach(btn => {
+                btn.disabled = currentPage === 1;
+                btn.classList.toggle('opacity-50', currentPage === 1);
+                btn.classList.toggle('cursor-not-allowed', currentPage === 1);
+            });
+            
+            nextButtons.forEach(btn => {
+                btn.disabled = currentPage === totalPages || totalPages === 0;
+                btn.classList.toggle('opacity-50', currentPage === totalPages || totalPages === 0);
+                btn.classList.toggle('cursor-not-allowed', currentPage === totalPages || totalPages === 0);
+            });
+            
+            // Update page numbers
+            const pageNumbersContainer = document.getElementById('page-numbers');
+            pageNumbersContainer.innerHTML = '';
+            
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.className = `relative inline-flex items-center px-4 py-2 text-sm font-medium border ${
+                    i === currentPage 
+                        ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' 
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                }`;
+                pageButton.textContent = i;
+                pageButton.addEventListener('click', () => changePage(i));
+                pageNumbersContainer.appendChild(pageButton);
+            }
+        }
+
+        // Search and filter functionality with error handling
+        function filterProducts() {
+            const assetType = document.getElementById('asset-type-filter').value;
+            const availability = document.getElementById('availability-filter').value;
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
+            
+            filteredProducts = allProducts.filter(product => {
+                // Asset type filter
+                const matchesAssetType = !assetType || product.asset_type === assetType;
+                
+                // Availability filter
+                let matchesAvailability = true;
+                if (availability) {
+                    const productAvailability = getAvailabilityStatus(product);
+                    if (availability === 'available') {
+                        matchesAvailability = productAvailability.available;
+                    } else if (availability === 'assigned') {
+                        matchesAvailability = !productAvailability.available;
+                    }
+                }
+                
+                // Search filter
+                const matchesSearch = !search || 
+                    (product.product_name && product.product_name.toLowerCase().includes(search)) ||
+                    (product.product_category && product.product_category.toLowerCase().includes(search)) ||
+                    (product.model_number && product.model_number.toLowerCase().includes(search)) ||
+                    (product.serial_number && product.serial_number.toLowerCase().includes(search));
+                
+                return matchesAssetType && matchesAvailability && matchesSearch;
+            });
+            
+            currentPage = 1; // Reset to first page after filtering
+            displayProducts();
+            updatePaginationControls();
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('search-input').value = '';
+            document.getElementById('asset-type-filter').value = '';
+            document.getElementById('availability-filter').value = '';
+            
+            filteredProducts = [...allProducts];
+            currentPage = 1;
+            displayProducts();
+            updatePaginationControls();
+        }
+
+        function updateTable(products) {
+            allProducts = products;
+            filteredProducts = [...allProducts];
+            currentPage = 1;
+            displayProducts();
+            updatePaginationControls();
+        }
+
+        function getAvailabilityStatus(product) {
+            const totalQty = product.quantity || 0;
+            const assignedQty = product.assigned_quantity || 0;
+            const availableQty = totalQty - assignedQty;
+            
+            if (availableQty > 0) {
+                return {
+                    available: true,
+                    userInfo: null
+                };
+            } else {
+                return {
+                    available: false,
+                    userInfo: product.current_users || 'Currently assigned'
+                };
+            }
+        }
+
+        // Escape HTML to prevent XSS and quote issues
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Product Modal Functions
+        function openModal() {
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('productModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        function toggleCalibrationFields() {
+            const category = document.getElementById('productCategory').value;
+            const calibrationSection = document.getElementById('calibrationSection');
+            if (category === 'hardware') {
+                calibrationSection.classList.remove('hidden');
+            } else {
+                calibrationSection.classList.add('hidden');
+                document.getElementById('requiresCalibration').checked = false;
+                document.getElementById('calibrationDetails').classList.add('hidden');
+            }
+            toggleSoftwareFields(); // Call software toggle here as well
+        }
+
+        function toggleCalibrationDetails() {
+            const requiresCalibration = document.getElementById('requiresCalibration').checked;
+            const calibrationDetails = document.getElementById('calibrationDetails');
+            if (requiresCalibration) {
+                calibrationDetails.classList.remove('hidden');
+            } else {
+                calibrationDetails.classList.add('hidden');
+            }
+        }
+
+        // --- Software Section ---
+        function toggleSoftwareFields() {
+            const category = document.getElementById('productCategory').value;
+            const typeDiv = document.getElementById('typeDiv');
+            const modelDiv = document.getElementById('modelDiv');
+            const softwareSection = document.getElementById('softwareSection');
+            if (category === 'software') {
+                // Hide Type and Model fields
+                typeDiv.classList.add('hidden');
+                modelDiv.classList.add('hidden');
+                // Show Software Section
+                softwareSection.classList.remove('hidden');
+            } else {
+                // Show Type and Model fields
+                typeDiv.classList.remove('hidden');
+                modelDiv.classList.remove('hidden');
+                // Hide Software Section
+                softwareSection.classList.add('hidden');
+            }
+        }
+
+        function showLicenseTypeDetails() {
+            const descriptions = {
+                licensed: "A license purchased for a specific user or device.",
+                free: "No license required; software is free to use.",
+                perpetual: "A one-time purchase license that does not expire.",
+                subscription: "A license that is valid for a set period and requires renewal.",
+                concurrent: "Allows a set number of users to use the software at the same time.",
+                floating: "A license shared across a network, available to any device but limited by the number of licenses.",
+                node_locked: "Tied to a specific device or hardware.",
+                trial_educational: "A temporary or educational-use license, often with restrictions."
+            };
+            const select = document.getElementById('software_license_type');
+            const detailsBox = document.getElementById('licenseTypeDetails');
+            const descBox = document.getElementById('licenseTypeDescription');
+            const licenseDetails = document.getElementById('licenseDetails');
+            const value = select.value;
+            if (descriptions[value]) {
+                descBox.textContent = descriptions[value];
+                detailsBox.classList.remove('hidden');
+            } else {
+                descBox.textContent = '';
+                detailsBox.classList.add('hidden');
+            }
+            // Show license details only for "subscription"
+            if (value === 'subscription') {
+                licenseDetails.classList.remove('hidden');
+            } else {
+                licenseDetails.classList.add('hidden');
+            }
+        }
+
+        // --- Calibration: Auto-calculate next calibration date ---
+        function calculateNextCalibrationDate() {
+            const lastDateInput = document.getElementById('last_calibration_date');
+            const yearsInput = document.getElementById('calibration_frequency_years');
+            const monthsInput = document.getElementById('calibration_frequency_months');
+            const nextDateInput = document.getElementById('next_calibration_date');
+            if (!lastDateInput || !monthsInput || !yearsInput || !nextDateInput) return;
+
+            const lastDate = lastDateInput.value;
+            const months = parseInt(monthsInput.value, 10) || 0;
+            const years = parseInt(yearsInput.value, 10) || 0;
+            const totalMonths = months + (years * 12);
+
+            if (lastDate && totalMonths > 0) {
+                const date = new Date(lastDate);
+                date.setMonth(date.getMonth() + totalMonths);
+                const nextDate = date.toISOString().split('T')[0];
+                nextDateInput.value = nextDate;
+            } else {
+                nextDateInput.value = '';
+            }
+        }
+
+        // Auto-calculate next renewal date
+        function calculateNextRenewalDate() {
+            const startInput = document.getElementById('license_start_date');
+            const yearsInputRenewal = document.getElementById('renewal_frequency_years');
+            const monthsInputRenewal = document.getElementById('renewal_frequency_months');
+            const nextInput = document.getElementById('next_renewal_date');
+            if (!startInput || !monthsInputRenewal || !yearsInputRenewal || !nextInput) return;
+
+            const startDate = startInput.value;
+            const years = parseInt(yearsInputRenewal.value, 10) || 0;
+            const months = parseInt(monthsInputRenewal.value, 10) || 0;
+            const totalMonths = months + (years * 12);
+
+            if (startDate && totalMonths > 0) {
+                let date = new Date(startDate);
+                date.setMonth(date.getMonth() + totalMonths);
+                nextInput.value = date.toISOString().split('T')[0];
+            } else {
+                nextInput.value = '';
+            }
+        }
+
+        // --- Product Type Placeholder ---
+        const typePlaceholders = {
+            hardware: "Enter (e.g., Laptop, Desktop, Printer etc)",
+            software: "Enter (e.g., Antivirus, Office Suite, IDE etc)",
+            test_equipment: "Enter (e.g.,multimeter, HIL)",
+            tooling: "Enter (e.g., fixers, jigs , hand tools etc)",
+            consumables: "Enter (e.g., fuses, cables, small components regurlarly replaced etc)",
+            measuring_instrument: "Enter (e.g., Calibrated euipment like temparature or voltage sensors etc)",
+            embedded_devices: "Enter (e.g., Controllers, microcontrollers, ECUs etc)",
+            lab_equipment: "Enter (e.g.,Environmental Chambers, load banks,soldering stations etc)",
+            prototypes: "Enter (e.g., Custom-built experimental devices)",
+            accessories: "Enter (e.g., Add-ons like connectors, probes, adaptors etc)",
+            network_equipment: "Enter (e.g., Routers, Switches, Access Points etc)",
+            miscellaneous: "Enter (e.g., Other, Custom Item)"
+        };
+
+        function updateTypePlaceholder() {
+            const category = document.getElementById('productCategory').value.trim().toLowerCase();
+            const typeInput = document.getElementById('type');
+            typeInput.placeholder = typePlaceholders[category] || "Enter type";
+        }
+
+        function openRequestModal(productId, productName, availableQty) {
+            // Create modal HTML
+            const modalHTML = `
+                <div id="requestModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                        <div class="mt-3">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Request Product</h3>
+                            <form action="/monitor/request-product" method="POST" onsubmit="handleFormSubmit(event)">
+                                <input type="hidden" name="product_id" value="${productId}">
+                                
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Product <span class="text-red-500">*</span></label>
+                                    <input type="text" value="${productName}" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Return Date <span class="text-red-500">*</span></label>
+                                    <input type="date" name="return_date" required min="${new Date().toISOString().split('T')[0]}" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Purpose</label>
+                                    <textarea name="purpose" rows="3" placeholder="Describe the purpose for this request..."
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                </div>
+                                
+                                <div class="flex justify-end space-x-3">
+                                    <button type="button" onclick="closeRequestModal()" 
+                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" 
+                                            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+                                        Submit Request
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+        
+        function closeRequestModal() {
+            const modal = document.getElementById('requestModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        function handleFormSubmit(event) {
+            // Let the form submit normally, then redirect
+            setTimeout(() => {
+                window.location.href = '/monitor/records';
+            }, 100);
+        }
     </script>
 </body>
 </html>

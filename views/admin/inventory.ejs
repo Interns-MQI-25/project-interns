@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management - Marquardt India Pvt. Ltd.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-50">
+
+    <%- include('../partials/navbar') %>
+    
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
+        <!-- Fixed Header Section -->
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <div class="mb-4">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Inventory Management</h1>
+                    <p class="text-gray-600">View and manage complete product inventory categorized by model</p>
+                </div>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="bg-white rounded-lg shadow p-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Search Bar -->
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Search products, models, serial numbers, assigned employees..." 
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- Asset Type Filter -->
+                    <div>
+                        <select id="assetTypeFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Asset Types</option>
+                            <% if (products && products.length > 0) { %>
+                                <%
+                                    const assetTypes = [...new Set(products.map(p => p.asset_type).filter(Boolean))];
+                                %>
+                                <% assetTypes.forEach(type => { %>
+                                    <option value="<%= type %>"><%= type %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div>
+                        <select id="categoryFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Categories</option>
+                            <% if (products && products.length > 0) { %>
+                                <%
+                                    const categories = [...new Set(products.map(p => p.product_category).filter(Boolean))];
+                                %>
+                                <% categories.forEach(category => { %>
+                                    <option value="<%= category %>"><%= category %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <!-- Calibration Status Filter -->
+                    <div>
+                        <select id="calibrationFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Calibration Status</option>
+                            <option value="Current">Current</option>
+                            <option value="Due Soon">Due Soon</option>
+                            <option value="Overdue">Overdue</option>
+                            <option value="Not Required">Not Required</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Assignment Status Filter -->
+                    <div>
+                        <select id="assignmentFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Assignment Status</option>
+                            <option value="assigned">Currently Assigned</option>
+                            <option value="available">Available</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <a href="/admin/upload-products" class="px-3 py-1 text-sm text-white rounded-full hover:bg-opacity-90" style="background-color: #009A9A;">
+                        <i class="fas fa-upload mr-1"></i>Upload Products
+                    </a>
+                    <button onclick="clearAllFilters()" class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200">
+                        <i class="fas fa-times mr-1"></i>Clear Filters
+                    </button>
+                    <button onclick="expandAllCategories()" class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200">
+                        <i class="fas fa-expand-alt mr-1"></i>Expand All
+                    </button>
+                    <button onclick="collapseAllCategories()" class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200">
+                        <i class="fas fa-compress-alt mr-1"></i>Collapse All
+                    </button>
+                    <button onclick="exportToExcel()" class="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-full hover:bg-green-200">
+                        <i class="fas fa-file-excel mr-1"></i>Export to Excel
+                    </button>
+                </div>
+
+                <!-- Results Summary -->
+                <div id="resultsSummary" class="mt-2 text-sm text-gray-600"></div>
+            </div>
+        </div>
+        
+        <!-- Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        
+        <!-- Products List Categorized by Model -->
+        <% if (products && products.length > 0) { %>
+            <%
+                // Group products by model number
+                const productsByModel = {};
+                products.forEach(product => {
+                    const modelKey = product.model_number || 'No Model';
+                    if (!productsByModel[modelKey]) {
+                        productsByModel[modelKey] = [];
+                    }
+                    productsByModel[modelKey].push(product);
+                });
+                
+                // Sort model keys
+                const sortedModels = Object.keys(productsByModel).sort();
+            %>
+            
+            <!-- Model Categories -->
+            <% sortedModels.forEach((model, index) => { %>
+                <div class="model-category bg-white shadow rounded-lg mb-6" data-model="<%= model %>">
+                    <div class="bg-gray-100 px-4 py-3 border-b border-gray-200 rounded-t-lg">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                                <i class="fas fa-tag mr-2 text-blue-600"></i>
+                                Model: <%= model %>
+                                <span class="ml-2 text-sm font-normal text-gray-600 model-count">
+                                    (<%= productsByModel[model].length %> products)
+                                </span>
+                            </h3>
+                            <button onclick="toggleCategory('category-<%= index %>')" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-chevron-down transition-transform duration-200" id="icon-<%= index %>"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="category-<%= index %>" class="category-content">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="overflow-x-auto w-full">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Product Details
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Asset Type
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Serial Number
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Total Stock
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Currently Assigned
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Available
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Calibration
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Next Calibration Date
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Assigned To
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Added By
+                                            </th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Added Date
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <% productsByModel[model].forEach(product => { %>
+                                            <tr class="product-row hover:bg-gray-50" 
+                                                data-product-name="<%= product.product_name %>"
+                                                data-model="<%= product.model_number || '' %>"
+                                                data-category="<%= product.product_category || '' %>"
+                                                data-asset-type="<%= product.asset_type || '' %>"
+                                                data-serial="<%= product.serial_number || '' %>"
+                                                data-calibration="<%= product.calibration_required ? (product.calibration_status || 'Current') : 'Not Required' %>"
+                                                data-added-by="<%= product.added_by_name || 'System' %>"
+                                                data-assigned-to="<%= product.assigned_to_details || '' %>"
+                                                data-total-stock="<%= (product.quantity || 0) + (product.currently_assigned || 0) %>"
+                                                data-assigned-count="<%= product.currently_assigned || 0 %>"
+                                                data-available-count="<%= product.quantity || 0 %>">
+                                                <td class="px-6 py-4 max-w-32">
+                                                    <div class="text-sm font-medium text-gray-900 break-words leading-tight">
+                                                        <%= product.product_name %>
+                                                    </div>
+                                                    <div class="text-sm text-gray-500 break-words leading-tight">
+                                                        <%= product.product_category %>
+                                                    </div>
+                                                    <% if (product.description) { %>
+                                                        <div class="text-xs text-gray-400 break-words leading-tight">
+                                                            <%= product.description.substring(0, 50) %>...
+                                                        </div>
+                                                    <% } %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                        <%= product.asset_type %>
+                                                    </span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= product.serial_number || 'N/A' %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span class="font-semibold"><%= (product.quantity || 0) + (product.currently_assigned || 0) %></span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span class="font-semibold text-yellow-600"><%= product.currently_assigned || 0 %></span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span class="font-semibold text-green-600"><%= product.quantity || 0 %></span>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <% if (product.calibration_required) { %>
+                                                        <% if (product.calibration_status === 'Overdue') { %>
+                                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                                Overdue
+                                                            </span>
+                                                        <% } else if (product.calibration_status === 'Due Soon') { %>
+                                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                                Due Soon
+                                                            </span>
+                                                        <% } else { %>
+                                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                                Current
+                                                            </span>
+                                                        <% } %>
+                                                    <% } else { %>
+                                                        <span class="text-gray-400">Not Required</span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <% if (product.calibration_required && product.next_calibration_date) { %>
+                                                        <div class="text-sm text-gray-900">
+                                                            <%= new Date(product.next_calibration_date).toLocaleDateString() %>
+                                                        </div>
+                                                        <div class="text-xs text-gray-500">
+                                                            (Every <%= product.calibration_frequency || 'N/A' %> years)
+                                                        </div>
+                                                    <% } else { %>
+                                                        <span class="text-gray-400">N/A</span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="px-6 py-4 text-sm text-gray-500">
+                                                    <% if (product.assigned_to_details) { %>
+                                                        <div class="max-w-xs">
+                                                            <% const assignments = product.assigned_to_details.split('; '); %>
+                                                            <% assignments.forEach((assignment, index) => { %>
+                                                                <div class="mb-1">
+                                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                                        <%= assignment %>
+                                                                    </span>
+                                                                </div>
+                                                            <% }); %>
+                                                        </div>
+                                                    <% } else { %>
+                                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                            Available
+                                                        </span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= product.added_by_name || 'System' %>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <%= new Date(product.added_at).toLocaleDateString() %>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Model Summary -->
+                            <div class="mt-4 bg-gray-50 p-4 rounded-lg model-summary">
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <%
+                                        const modelProducts = productsByModel[model];
+                                        const totalStock = modelProducts.reduce((sum, p) => sum + (p.quantity || 0) + (p.currently_assigned || 0), 0);
+                                        const totalAssigned = modelProducts.reduce((sum, p) => sum + (p.currently_assigned || 0), 0);
+                                        const totalAvailable = modelProducts.reduce((sum, p) => sum + (p.quantity || 0), 0);
+                                    %>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-gray-900 total-stock"><%= totalStock %></div>
+                                        <div class="text-gray-600">Total Stock</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-yellow-600 total-assigned"><%= totalAssigned %></div>
+                                        <div class="text-gray-600">Assigned</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-green-600 total-available"><%= totalAvailable %></div>
+                                        <div class="text-gray-600">Available</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-semibold text-blue-600 product-count"><%= modelProducts.length %></div>
+                                        <div class="text-gray-600">Products</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+            
+        <% } else { %>
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6 text-center">
+                    <div class="text-gray-500">
+                        <i class="fas fa-box-open text-4xl mb-4"></i>
+                        <p class="text-lg font-medium">No products found</p>
+                        <p class="text-sm">Add some products to see them categorized by model</p>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+        
+        </div> <!-- End scrollable content area -->
+    </main>
+
+    <script>
+        // Search and Filter functionality
+        function filterProducts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const assetTypeFilter = document.getElementById('assetTypeFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const calibrationFilter = document.getElementById('calibrationFilter').value;
+            const assignmentFilter = document.getElementById('assignmentFilter').value;
+
+            const productRows = document.querySelectorAll('.product-row');
+            const modelCategories = document.querySelectorAll('.model-category');
+            
+            let totalVisible = 0;
+            let visibleModels = 0;
+
+            modelCategories.forEach(modelCategory => {
+                const rows = modelCategory.querySelectorAll('.product-row');
+                let visibleInModel = 0;
+                
+                rows.forEach(row => {
+                    const productName = row.dataset.productName.toLowerCase();
+                    const model = row.dataset.model.toLowerCase();
+                    const category = row.dataset.category.toLowerCase();
+                    const assetType = row.dataset.assetType.toLowerCase();
+                    const serial = row.dataset.serial.toLowerCase();
+                    const calibration = row.dataset.calibration;
+                    const addedBy = row.dataset.addedBy.toLowerCase();
+                    const assignedTo = row.dataset.assignedTo.toLowerCase();
+
+                    // Search filter
+                    const matchesSearch = !searchTerm || 
+                        productName.includes(searchTerm) ||
+                        model.includes(searchTerm) ||
+                        category.includes(searchTerm) ||
+                        assetType.includes(searchTerm) ||
+                        serial.includes(searchTerm) ||
+                        addedBy.includes(searchTerm) ||
+                        assignedTo.includes(searchTerm);
+
+                    // Asset type filter
+                    const matchesAssetType = !assetTypeFilter || assetType === assetTypeFilter.toLowerCase();
+
+                    // Category filter
+                    const matchesCategory = !categoryFilter || category === categoryFilter.toLowerCase();
+
+                    // Calibration filter
+                    const matchesCalibration = !calibrationFilter || calibration === calibrationFilter;
+
+                    // Assignment filter
+                    const matchesAssignment = !assignmentFilter || 
+                        (assignmentFilter === 'assigned' && assignedTo.length > 0) ||
+                        (assignmentFilter === 'available' && assignedTo.length === 0);
+
+                    const isVisible = matchesSearch && matchesAssetType && matchesCategory && matchesCalibration && matchesAssignment;
+                    
+                    row.style.display = isVisible ? '' : 'none';
+                    if (isVisible) {
+                        visibleInModel++;
+                        totalVisible++;
+                    }
+                });
+
+                // Update model category visibility and count
+                const modelCount = modelCategory.querySelector('.model-count');
+                const totalProducts = rows.length;
+                
+                if (visibleInModel > 0) {
+                    modelCategory.style.display = '';
+                    modelCount.textContent = `(${visibleInModel} of ${totalProducts} products)`;
+                    visibleModels++;
+                    updateModelSummary(modelCategory);
+                } else {
+                    modelCategory.style.display = 'none';
+                }
+            });
+
+            // Update results summary
+            updateResultsSummary(totalVisible, visibleModels);
+        }
+
+        function updateModelSummary(modelCategory) {
+            const visibleRows = modelCategory.querySelectorAll('.product-row:not([style*="display: none"])');
+            const summary = modelCategory.querySelector('.model-summary');
+            
+            let totalStock = 0, totalAssigned = 0, totalAvailable = 0;
+            
+            visibleRows.forEach(row => {
+                // Use data attributes instead of parsing HTML content
+                const stock = parseInt(row.dataset.totalStock) || 0;
+                const assigned = parseInt(row.dataset.assignedCount) || 0;
+                const available = parseInt(row.dataset.availableCount) || 0;
+                
+                totalStock += stock;
+                totalAssigned += assigned;
+                totalAvailable += available;
+            });
+            
+            // Update only if we found the summary elements
+            if (summary) {
+                const totalStockEl = summary.querySelector('.total-stock');
+                const totalAssignedEl = summary.querySelector('.total-assigned');
+                const totalAvailableEl = summary.querySelector('.total-available');
+                const productCountEl = summary.querySelector('.product-count');
+                
+                if (totalStockEl) totalStockEl.textContent = totalStock;
+                if (totalAssignedEl) totalAssignedEl.textContent = totalAssigned;
+                if (totalAvailableEl) totalAvailableEl.textContent = totalAvailable;
+                if (productCountEl) productCountEl.textContent = visibleRows.length;
+            }
+        }
+
+        function updateResultsSummary(totalVisible, visibleModels) {
+            const summary = document.getElementById('resultsSummary');
+            if (totalVisible === 0) {
+                summary.textContent = 'No products match your filters';
+                summary.className = 'mt-2 text-sm text-red-600';
+            } else {
+                summary.textContent = `Showing ${totalVisible} products in ${visibleModels} models`;
+                summary.className = 'mt-2 text-sm text-gray-600';
+            }
+        }
+
+        function clearAllFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('assetTypeFilter').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('calibrationFilter').value = '';
+            document.getElementById('assignmentFilter').value = '';
+            filterProducts();
+        }
+
+        function expandAllCategories() {
+            const categories = document.querySelectorAll('.category-content');
+            const icons = document.querySelectorAll('[id^="icon-"]');
+            
+            categories.forEach(category => {
+                category.style.display = 'block';
+            });
+            
+            icons.forEach(icon => {
+                icon.style.transform = 'rotate(0deg)';
+            });
+        }
+
+        function collapseAllCategories() {
+            const categories = document.querySelectorAll('.category-content');
+            const icons = document.querySelectorAll('[id^="icon-"]');
+            
+            categories.forEach(category => {
+                category.style.display = 'none';
+            });
+            
+            icons.forEach(icon => {
+                icon.style.transform = 'rotate(-90deg)';
+            });
+        }
+
+        function toggleCategory(categoryId) {
+            const content = document.getElementById(categoryId);
+            const icon = document.getElementById(categoryId.replace('category-', 'icon-'));
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'none';
+                icon.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        function exportToExcel() {
+            // Get all visible product rows
+            const visibleRows = document.querySelectorAll('.product-row:not([style*="display: none"])');
+            
+            // Prepare data for export
+            const data = [];
+            
+            // Add headers
+            data.push([
+                'Product Name',
+                'Product Category', 
+                'Model Number',
+                'Asset Type',
+                'Serial Number',
+                'Total Stock',
+                'Currently Assigned',
+                'Available',
+                'Calibration Status',
+                'Next Calibration Date',
+                'Assigned To',
+                'Added By',
+                'Added Date',
+                'Description'
+            ]);
+
+            // Add data rows
+            visibleRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                
+                // Extract product details from first cell
+                const productDetailsCell = cells[0];
+                const productName = productDetailsCell.querySelector('.text-sm.font-medium').textContent.trim();
+                const productCategory = productDetailsCell.querySelector('.text-sm.text-gray-500').textContent.trim();
+                const description = productDetailsCell.querySelector('.text-xs.text-gray-400') ? 
+                    productDetailsCell.querySelector('.text-xs.text-gray-400').textContent.trim().replace('...', '') : '';
+
+                // Extract other data
+                const modelNumber = row.dataset.model || '';
+                const assetType = cells[1].querySelector('span').textContent.trim();
+                const serialNumber = cells[2].textContent.trim();
+                const totalStock = cells[3].querySelector('span').textContent.trim();
+                const currentlyAssigned = cells[4].querySelector('span').textContent.trim();
+                const available = cells[5].querySelector('span').textContent.trim();
+                
+                // Extract calibration info
+                const calibrationCell = cells[6];
+                let calibrationStatus = '';
+                
+                const calibrationSpan = calibrationCell.querySelector('span');
+                if (calibrationSpan) {
+                    calibrationStatus = calibrationSpan.textContent.trim();
+                } else {
+                    calibrationStatus = calibrationCell.textContent.trim();
+                }
+
+                // Extract next calibration date
+                const nextCalibrationCell = cells[7];
+                let nextCalibrationDate = '';
+                if (nextCalibrationCell) {
+                    const dateDiv = nextCalibrationCell.querySelector('.text-sm.text-gray-900');
+                    if (dateDiv) {
+                        nextCalibrationDate = dateDiv.textContent.trim();
+                    } else {
+                        nextCalibrationDate = nextCalibrationCell.textContent.trim();
+                    }
+                }
+
+                // Extract assigned to info (now column 8)
+                const assignedCell = cells[8];
+                const assignedSpans = assignedCell.querySelectorAll('span');
+                let assignedTo = '';
+                if (assignedSpans.length > 0) {
+                    assignedTo = Array.from(assignedSpans).map(span => span.textContent.trim()).join('; ');
+                }
+
+                const addedBy = cells[9].textContent.trim();
+                const addedDate = cells[10].textContent.trim();
+
+                data.push([
+                    productName,
+                    productCategory,
+                    modelNumber,
+                    assetType,
+                    serialNumber,
+                    totalStock,
+                    currentlyAssigned,
+                    available,
+                    calibrationStatus,
+                    nextCalibrationDate,
+                    assignedTo,
+                    addedBy,
+                    addedDate,
+                    description
+                ]);
+            });
+
+            // Create workbook and worksheet
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            
+            // Set column widths
+            const colWidths = [
+                {wch: 25}, // Product Name
+                {wch: 20}, // Product Category
+                {wch: 15}, // Model Number
+                {wch: 15}, // Asset Type
+                {wch: 15}, // Serial Number
+                {wch: 12}, // Total Stock
+                {wch: 15}, // Currently Assigned
+                {wch: 12}, // Available
+                {wch: 15}, // Calibration Status
+                {wch: 15}, // Next Calibration Date
+                {wch: 30}, // Assigned To
+                {wch: 15}, // Added By
+                {wch: 12}, // Added Date
+                {wch: 40}  // Description
+            ];
+            ws['!cols'] = colWidths;
+
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+
+            // Generate filename with current date
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const filename = `Marquardt_Inventory_${dateStr}.xlsx`;
+
+            // Save file
+            XLSX.writeFile(wb, filename);
+            
+            // Show success message
+            const summary = document.getElementById('resultsSummary');
+            const originalText = summary.textContent;
+            const originalClass = summary.className;
+            
+            summary.textContent = `✓ Exported ${data.length - 1} products to ${filename}`;
+            summary.className = 'mt-2 text-sm text-green-600';
+            
+            // Reset message after 3 seconds
+            setTimeout(() => {
+                summary.textContent = originalText;
+                summary.className = originalClass;
+            }, 3000);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const categories = document.querySelectorAll('.category-content');
+            categories.forEach(category => {
+                category.style.display = 'block';
+            });
+
+            // Add event listeners for real-time filtering
+            document.getElementById('searchInput').addEventListener('input', filterProducts);
+            document.getElementById('assetTypeFilter').addEventListener('change', filterProducts);
+            document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+            document.getElementById('calibrationFilter').addEventListener('change', filterProducts);
+            document.getElementById('assignmentFilter').addEventListener('change', filterProducts);
+
+            // Initial results summary
+            const totalProducts = document.querySelectorAll('.product-row').length;
+            const totalModels = document.querySelectorAll('.model-category').length;
+            updateResultsSummary(totalProducts, totalModels);
+        });
+    </script>
+</body>
+</html>

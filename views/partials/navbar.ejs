@@ -1,97 +1,266 @@
-<!-- Sidebar -->
-<div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
+<!-- Mobile Menu Button -->
+<button id="openSidebarBtn" class="lg:hidden fixed top-4 left-4 z-60 bg-white text-gray-800 px-3 py-2 rounded-lg shadow-lg hover:bg-gray-50 transition-all duration-200">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+    <!-- Menu -->
+</button>
+
+<!-- Mobile Overlay -->
+<div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden"></div>
+
+<!-- Responsive Sidebar -->
+<div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-2xl border-r border-gray-200 transition-transform duration-300 transform -translate-x-full lg:translate-x-0">
     <div class="flex flex-col h-full">
-        <!-- Logo -->
-        <div class="flex items-center justify-center h-16 bg-primary-600 text-white">
-            <h1 class="text-xl font-bold">PMS</h1>
+        <!-- Logo Header + Close Button -->
+        <div class="flex items-center justify-between h-14 sm:h-16 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 sm:px-6 flex-shrink-0">
+            <div class="flex items-center space-x-2">
+                <img class="h-8 sm:h-10 justify-center w-auto" src="/images/Marquardt_Logo.png" alt="Marquardt Logo" onerror="this.style.display='none'">
+                <div class="flex flex-col">
+                </div>
+            </div>
+            <button id="closeSidebarBtn" class="lg:hidden ml-2 text-black hover:text-gray-300 focus:outline-none" title="Close Sidebar">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
         
         <!-- User Info -->
-        <div class="p-4 bg-gray-50 border-b">
+        <div class="p-3 sm:p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 flex-shrink-0">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-black font-bold shadow-md text-sm sm:text-base">
                     <%= user.full_name.charAt(0).toUpperCase() %>
                 </div>
-                <div>
-                    <p class="font-medium text-gray-900"><%= user.full_name %></p>
-                    <p class="text-sm text-gray-500">
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-gray-900 truncate text-sm sm:text-base"><%= user.full_name %></p>
+                    <p class="text-xs sm:text-sm text-gray-500 truncate">
                         <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
                     </p>
                 </div>
             </div>
         </div>
         
-        <!-- Navigation -->
-        <nav class="flex-1 px-4 py-6 space-y-2">
-            <a href="/dashboard" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                <i class="fas fa-tachometer-alt mr-3"></i>
-                Dashboard
+        <!-- Navigation - Scrollable middle section -->
+        <nav class="flex-1 px-3 sm:px-4 py-4 sm:py-6 space-y-1 overflow-y-auto min-h-0">
+            <a href="/dashboard" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="dashboard">
+                <i class="fas fa-tachometer-alt mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                <span class="font-medium text-sm sm:text-base">Dashboard</span>
             </a>
             
             <% if (user.role === 'employee') { %>
+                <a href="/employee/my-products" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-laptop mr-3"></i>
+                    My Products
+                </a>
+                <!-- <a href="/employee/records" class="slex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100" data-page="records">
+                    <div class="flex items-center">
+                        <i class="fas fa-history mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                        <span class="font-medium text-sm sm:text-base">Records</span>
+                    </div>
+                    <span id="employeeUpdatesCount" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 font-bold min-w-[20px] text-center" style="display: none;">0</span>
+                </a> -->
                 <a href="/employee/records" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
                     <i class="fas fa-history mr-3"></i>
                     Records
-                </a>
-                <a href="/employee/requests" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-plus-circle mr-3"></i>
-                    Requests
                 </a>
                 <a href="/employee/stock" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
                     <i class="fas fa-boxes mr-3"></i>
                     Stock
                 </a>
             <% } else if (user.role === 'monitor') { %>
-                <a href="/monitor/approvals" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-check-circle mr-3"></i>
-                    Approvals
+                <a href="/monitor/my-products" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-laptop mr-3"></i>
+                    My Products
                 </a>
-                <a href="/monitor/records" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-history mr-3"></i>
-                    Records
+                <a href="/monitor/my-history" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-user-clock mr-3"></i>
+                    My History
                 </a>
-                <a href="/monitor/stock" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-boxes mr-3"></i>
-                    Stock
+                <a href="/monitor/approvals" class="sidebar-link group flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="approvals">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                        <span class="font-medium text-sm sm:text-base">Approvals</span>
+                    </div>
+                    <span id="pendingRequestsCount" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 font-bold min-w-[20px] text-center" style="display: none;">0</span>
                 </a>
-                <a href="/monitor/inventory" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-warehouse mr-3"></i>
-                    Inventory
+                <a href="/monitor/records" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="records">
+                    <i class="fas fa-history mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Records</span>
                 </a>
-                <a href="/monitor/reports" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-chart-bar mr-3"></i>
-                    Reports
+                <a href="/monitor/stock" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="stock">
+                    <i class="fas fa-boxes mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Stock</span>
+                </a>
+                <a href="/monitor/inventory" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="inventory">
+                    <i class="fas fa-warehouse mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Inventory</span>
+                </a>
+                <a href="/monitor/reports" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="reports">
+                    <i class="fas fa-chart-bar mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Reports</span>
                 </a>
             <% } else if (user.role === 'admin') { %>
-                <a href="/admin/employees" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-users mr-3"></i>
-                    Employees
+                <a href="/admin/employees" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="employees">
+                    <i class="fas fa-users mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Employees</span>
                 </a>
-                <a href="/admin/monitors" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-user-shield mr-3"></i>
-                    Manage Monitors
+                <a href="/admin/clearance" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="clearance">
+                    <i class="fas fa-clipboard-check mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Employee Clearance</span>
                 </a>
-                <a href="/admin/history" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-history mr-3"></i>
-                    System History
+                <a href="/admin/monitors" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="monitors">
+                    <i class="fas fa-user-shield mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Manage Monitors</span>
                 </a>
-                <a href="/admin/stock" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-boxes mr-3"></i>
-                    Stock Management
+                <a href="/admin/history" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="history">
+                    <i class="fas fa-history mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">System History</span>
                 </a>
-                <a href="/admin/registration-requests" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                    <i class="fas fa-user-plus mr-3"></i>
-                    Registration Requests
+                <a href="/admin/stock" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="stock">
+                    <i class="fas fa-boxes mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Stock Management</span>
+                </a>
+                <a href="/admin/inventory" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="inventory">
+                    <i class="fas fa-warehouse mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Inventory</span>
+                </a>
+                <a href="/admin/registration-requests" class="sidebar-link group block px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="registration">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-user-plus mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                            <span class="font-medium text-sm sm:text-base">Registration Requests</span>
+                        </div>
+                        <span id="pendingRegistrationsCount" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 font-bold min-w-[20px] text-center" style="display: none;">0</span>
+                    </div>
+                </a>
+                <a href="/admin/account" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="account">
+                    <i class="fas fa-user-circle mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">View Account</span>
                 </a>
             <% } %>
         </nav>
         
-        <!-- Logout -->
-        <div class="p-4 border-t">
-            <a href="/logout" class="flex items-center px-4 py-2 text-red-600 rounded-lg hover:bg-red-50">
-                <i class="fas fa-sign-out-alt mr-3"></i>
-                Logout
+        <!-- Logout - Always visible at bottom -->
+        <div class="p-3 sm:p-4 border-t bg-gray-50 flex-shrink-0">
+            <a href="/logout" class="flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-red-600 rounded-lg hover:bg-red-50 transition-all duration-200 group">
+                <i class="fas fa-sign-out-alt mr-3 group-hover:scale-110 transition-transform text-sm sm:text-base"></i>
+                <span class="font-medium text-sm sm:text-base">Logout</span>
             </a>
         </div>
     </div>
 </div>
+
+<script>
+function updateLiveCounts() {
+    fetch('/api/live-counts')
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('API response not ok: ' + res.status);
+            }
+            return res.json();
+        })
+        .then(data => {
+            // Update pending requests count (for monitors)
+            const pendingRequestsCount = document.getElementById('pendingRequestsCount');
+            if (pendingRequestsCount) {
+                pendingRequestsCount.textContent = data.pendingRequests || 0;
+                if (data.pendingRequests > 0) {
+                    pendingRequestsCount.style.display = 'inline-block';
+                } else {
+                    pendingRequestsCount.style.display = 'none';
+                }
+            }
+            
+            // Update pending registrations count (for admins)
+            const pendingRegistrationsCount = document.getElementById('pendingRegistrationsCount');
+            if (pendingRegistrationsCount) {
+                pendingRegistrationsCount.textContent = data.pendingRegistrations || 0;
+                if (data.pendingRegistrations > 0) {
+                    pendingRegistrationsCount.style.display = 'inline-block';
+                } else {
+                    pendingRegistrationsCount.style.display = 'none';
+                }
+            }
+            
+            // Update employee updates count (for employees)
+            const employeeUpdatesCount = document.getElementById('employeeUpdatesCount');
+            if (employeeUpdatesCount) {
+                console.log('Employee updates count:', data.employeeUpdates);
+                employeeUpdatesCount.textContent = data.employeeUpdates || 0;
+                if (data.employeeUpdates > 0) {
+                    employeeUpdatesCount.style.display = 'inline-block';
+                    console.log('Showing employee updates badge with count:', data.employeeUpdates);
+                } else {
+                    employeeUpdatesCount.style.display = 'none';
+                    console.log('Hiding employee updates badge');
+                }
+            } else {
+                console.log('employeeUpdatesCount element not found');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating live counts:', error);
+        });
+}
+
+// Active page highlighting
+function setActiveNavLink() {
+    const currentPath = window.location.pathname;
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    
+    sidebarLinks.forEach(link => {
+        link.classList.remove('bg-primary-100', 'text-primary-700', 'border-primary-500');
+        link.classList.add('text-gray-600');
+        
+        const linkHref = link.getAttribute('href');
+        if (linkHref && currentPath.includes(linkHref) && linkHref !== '/') {
+            link.classList.remove('text-gray-600');
+            link.classList.add('bg-primary-100', 'text-primary-700');
+        }
+    });
+}
+
+// Sidebar open/close logic
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize live counts
+    updateLiveCounts();
+    setInterval(updateLiveCounts, 5000);
+    
+    // Set active navigation link
+    setActiveNavLink();
+
+    // Mobile sidebar controls
+    const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+    const openSidebarBtn = document.getElementById('openSidebarBtn');
+    const sidebar = document.getElementById('sidebar');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    
+    if (closeSidebarBtn && sidebar && openSidebarBtn) {
+        closeSidebarBtn.addEventListener('click', function() {
+            sidebar.classList.add('-translate-x-full');
+            if (mobileOverlay) mobileOverlay.classList.add('hidden');
+        });
+
+        openSidebarBtn.addEventListener('click', function() {
+            sidebar.classList.remove('-translate-x-full');
+            if (mobileOverlay) mobileOverlay.classList.remove('hidden');
+        });
+        
+        if (mobileOverlay) {
+            mobileOverlay.addEventListener('click', function() {
+                sidebar.classList.add('-translate-x-full');
+                mobileOverlay.classList.add('hidden');
+            });
+        }
+    }
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 1024) { // lg breakpoint
+            sidebar.classList.remove('-translate-x-full');
+            if (mobileOverlay) mobileOverlay.classList.add('hidden');
+        }
+    });
+});
+</script>

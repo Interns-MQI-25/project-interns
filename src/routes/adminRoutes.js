@@ -598,6 +598,20 @@ module.exports = (pool, requireAuth, requireRole) => {
                         if (!productData.quantity) {
                             productData.quantity = 1;
                         }
+                        
+                        // Set default values for new columns if empty
+                        if (!productData.sap_equipment_no) {
+                            productData.sap_equipment_no = 'N/A';
+                        }
+                        if (!productData.sap_maintenance_plan_no) {
+                            productData.sap_maintenance_plan_no = 'N/A';
+                        }
+                        if (!productData.cost_center) {
+                            productData.cost_center = 'N/A';
+                        }
+                        if (!productData.cost) {
+                            productData.cost = null;
+                        }
 
                         // Convert boolean fields
                         if (typeof productData.is_available === 'string') {
@@ -697,6 +711,10 @@ module.exports = (pool, requireAuth, requireRole) => {
                 calibration_required: false,
                 calibration_frequency: '1 Year',
                 calibration_due_date: '2025-12-31',
+                sap_equipment_no: 'SAP-EQ-001',
+                sap_maintenance_plan_no: 'SAP-MP-001',
+                cost_center: 'CC-RDT-001',
+                cost: 15000.50,
                 pr_no: 1234,
                 po_number: 'PO-2024-001',
                 inward_date: '2024-01-15',
@@ -748,6 +766,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 SELECT 
                     p.*,
                     u.full_name as added_by_name,
+                    iw.full_name as inwarded_by_name,
                     COALESCE((
                         SELECT COUNT(*) 
                         FROM product_assignments pa 
@@ -776,6 +795,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                     ) as assigned_to_details
                 FROM products p
                 LEFT JOIN users u ON p.added_by = u.user_id
+                LEFT JOIN users iw ON p.inwarded_by = iw.user_id
                 LEFT JOIN product_assignments pa ON p.product_id = pa.product_id AND pa.is_returned = FALSE
                 LEFT JOIN employees emp ON pa.employee_id = emp.employee_id
                 LEFT JOIN users emp_user ON emp.user_id = emp_user.user_id

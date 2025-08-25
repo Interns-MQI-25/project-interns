@@ -10,7 +10,7 @@ env_variables:
   SESSION_SECRET: 'pms-production-secret-key-2025-change-me-in-production'
   EMAIL_USER: 'priyanshu17ks.edu@gmail.com'
   EMAIL_PASS: 'bztn fcvu zaig dztn'
-  ADMIN_EMAIL: 'priyanshu17ks@gmail.com'
+  ADMIN_EMAIL: 'priyanshu17ks.edu@gmail.com'
 
 beta_settings:
   cloud_sql_instances: mqi-ims:us-central1:product-management-db
@@ -24,3 +24,6 @@ handlers:
 - url: /.*
   script: auto
   secure: always
+
+network:
+  session_affinity: true

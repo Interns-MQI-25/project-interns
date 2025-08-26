@@ -23,6 +23,8 @@ const multer = require('multer');
 const xlsx = require('xlsx');
 const fs = require('fs');
 const { sendRegistrationApprovalEmail, sendRegistrationRejectionEmail } = require('../utils/emailService');
+// Live feed manager for real-time events
+const liveFeed = require('../utils/liveFeed');
 
 // Import file upload utilities
 const { 
@@ -461,6 +463,16 @@ module.exports = (pool, requireAuth, requireRole) => {
                     console.log('Activity logging failed (table may not exist):', logError.message);
                 }
 
+                // Fetch updated product for live feed
+                const [updatedProductRows] = await connection.execute(
+                    'SELECT * FROM products WHERE product_id = ?',
+                    [productId]
+                );
+                const updatedProduct = updatedProductRows[0];
+                // Emit live feed event
+                if (updatedProduct) {
+                    liveFeed.notifyProductUpdated(updatedProduct, req.session.user.full_name || req.session.user.username || 'Admin');
+                }
                 await connection.commit();
                 req.flash('success', `Product "${product_name}" updated successfully`);
 
@@ -635,7 +647,18 @@ module.exports = (pool, requireAuth, requireRole) => {
                         const columnNames = columns.join(', ');
 
                         const insertQuery = `INSERT INTO products (${columnNames}) VALUES (${placeholders})`;
-                        await connection.execute(insertQuery, values);
+                        const [insertResult] = await connection.execute(insertQuery, values);
+
+                        // Fetch inserted product for live feed
+                        let insertedProduct = null;
+                        if (insertResult && insertResult.insertId) {
+                            const [rows] = await connection.execute('SELECT * FROM products WHERE product_id = ?', [insertResult.insertId]);
+                            insertedProduct = rows[0];
+                        }
+                        // Emit live feed event
+                        if (insertedProduct) {
+                            liveFeed.notifyProductAdded(insertedProduct, req.session.user.full_name || req.session.user.username || 'Admin');
+                        }
 
                         successCount++;
 

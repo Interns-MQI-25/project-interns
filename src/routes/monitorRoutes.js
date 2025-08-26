@@ -598,6 +598,14 @@ module.exports = (pool, requireAuth, requireRole) => {
             if (requestDetails.length > 0) {
                 const request = requestDetails[0];
                 
+                // Notify live feed
+                const liveFeed = require('../utils/liveFeed');
+                if (action === 'approved') {
+                    liveFeed.notifyRequestApproved(request, req.session.user.full_name);
+                } else if (action === 'rejected') {
+                    liveFeed.notifyRequestRejected(request, req.session.user.full_name);
+                }
+                
                 // Log the approval/rejection activity
                 if (action === 'approved') {
                     if (ActivityLogger && ActivityLogger.logRequestApproval) {
@@ -616,10 +624,13 @@ module.exports = (pool, requireAuth, requireRole) => {
                     }
                     
                     // Create product assignment with return date
-                    await pool.execute(
+                    const [assignmentResult] = await pool.execute(
                         'INSERT INTO product_assignments (product_id, employee_id, monitor_id, quantity, return_date) VALUES (?, ?, ?, ?, ?)',
                         [request.product_id, request.employee_id, req.session.user.user_id, request.quantity, request.return_date]
                     );
+                    
+                    // Notify assignment
+                    liveFeed.notifyProductAssigned(request, request.employee_name, req.session.user.full_name);
                 }
             }
             
@@ -804,6 +815,7 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Monitor: Add Product Route
     router.post('/add-product', requireAuth, requireRole(['monitor', 'admin']), upload.array('attachments', 10), async (req, res) => {
+        const liveFeed = require('../utils/liveFeed');
         const { 
             name, 
             product_category, 
@@ -912,6 +924,15 @@ module.exports = (pool, requireAuth, requireRole) => {
                 }
                 
                 await connection.commit();
+                
+                // Notify live feed
+                liveFeed.notifyProductAdded({
+                    product_name: name,
+                    product_category: product_category,
+                    asset_type: type,
+                    model_number: model
+                }, req.session.user.full_name);
+                
                 req.flash('success', `Product added successfully to inventory${req.files && req.files.length > 0 ? ` with ${req.files.length} attachment(s)` : ''}`);
             } catch (error) {
                 await connection.rollback();

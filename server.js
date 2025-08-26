@@ -62,6 +62,8 @@ const adminRoutes = require('./src/routes/adminRoutes');
 const employeeRoutes = require('./src/routes/employeeRoutes');
 const monitorRoutes = require('./src/routes/monitorRoutes');
 const resetPasswordRoutes = require('./src/routes/resetPassword');
+const liveFeedRoutes = require('./src/routes/liveFeedRoutes');
+const activityRoutes = require('./src/routes/activityRoutes');
 
 /**
  * Activity Logger Import with Fallback
@@ -168,6 +170,8 @@ app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
 app.use('/employee', employeeRoutes(pool, requireAuth, requireRole));
 app.use('/monitor', monitorRoutes(pool, requireAuth, requireRole));
 app.use('/reset', resetPasswordRoutes(pool));
+app.use('/', liveFeedRoutes);
+app.use('/', activityRoutes(pool, requireAuth, requireRole));
 
 /**
  * Live Counts API Endpoint
@@ -313,7 +317,7 @@ app.post('/login', async (req, res) => {
         // Ensure users table exists and create default admin accounts
         await pool.execute('CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE, full_name VARCHAR(100), email VARCHAR(100), password VARCHAR(255), role VARCHAR(20) DEFAULT "admin", is_active BOOLEAN DEFAULT TRUE)');
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['test', 'Test User', 'test@example.com', testHash, 'admin', 1]);
-        await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Guddi.Somling@marquardt.com', guddiHash, 'admin', 1]);
+        await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Somling.Guddi@marquardt.com', guddiHash, 'admin', 1]);
         
         // Find user with exact username match (case sensitive)
         const [users] = await pool.execute('SELECT * FROM users WHERE BINARY username = ? AND is_active = 1', [username]);

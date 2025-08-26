@@ -657,7 +657,14 @@ module.exports = (pool, requireAuth, requireRole) => {
                         [remarks || 'Return approved', assignment_id]
                     );
                 }
-                
+                // Fetch product for live feed
+                const [products] = await pool.execute('SELECT * FROM products WHERE product_id = ?', [assignment.product_id]);
+                const product = products[0];
+                // Emit live feed event
+                if (product) {
+                    const liveFeed = require('../utils/liveFeed');
+                    liveFeed.notifyProductReturned(product, req.session.user.full_name || req.session.user.username || 'Monitor/Admin');
+                }
                 console.log(`Return approved: Assignment ${assignment_id}, Product ${assignment.product_id}`);
                 req.flash('success', 'Return approved successfully. Product is now available for request.');
                 

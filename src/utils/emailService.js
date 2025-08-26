@@ -1,3 +1,23 @@
+// Send password reset email (for forgot password flow)
+const sendPasswordResetEmail = async (userEmail, userName, resetLink) => {
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: userEmail,
+        subject: 'Password Reset Request - Marquardt Inventory Management System',
+        html: `
+            <h2>Password Reset Request</h2>
+            <p>Dear ${userName},</p>
+            <p>We received a request to reset your password for the Marquardt Inventory Management System.</p>
+            <p>If you did not request this, you can ignore this email.</p>
+            <p>To reset your password, click the link below (valid for 30 minutes):</p>
+            <p><a href="${resetLink}" style="background-color: #3B82F6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
+            <p>If the button above does not work, copy and paste this URL into your browser:</p>
+            <p>${resetLink}</p>
+            <p>Best regards,<br>Marquardt India Team</p>
+        `
+    };
+    return transporter.sendMail(mailOptions);
+};
 /**
  * @fileoverview Email Service Utility - Handles all email notifications and communications
  * 
@@ -14,7 +34,14 @@
 
 const nodemailer = require('nodemailer');
 
-// Create transporter
+/**
+ * Email Transporter Configuration
+ * 
+ * Creates and configures Nodemailer transporter using Gmail SMTP service.
+ * Utilizes environment variables for secure credential management.
+ * 
+ * @constant {nodemailer.Transporter} transporter - Configured email transporter
+ */
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -164,8 +191,6 @@ const sendRegistrationConfirmation = async (userEmail, userName) => {
 };
 
 // Send reminder email to monitors about pending product requests
-
-// Send reminder email to monitors about pending product requests
 const sendProductRequestReminder = async (monitorEmails, pendingCount) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -183,35 +208,66 @@ const sendProductRequestReminder = async (monitorEmails, pendingCount) => {
     return transporter.sendMail(mailOptions);
 };
 
-// Send reminder email to monitors about pending return requests
-const sendReturnRequestReminder = async (monitorEmails, pendingCount) => {
+/**
+ * Send Temporary Password Email
+ * 
+ * Sends temporary password to users who forgot their password.
+ * Includes temporary password and link to reset password page.
+ * 
+ * @async
+ * @function sendTemporaryPasswordEmail
+ * @param {string} userEmail - Recipient's email address
+ * @param {string} userName - Recipient's full name for personalization
+ * @param {string} tempPassword - Generated temporary password
+ * @returns {Promise<Object>} Email send result from Nodemailer
+ * @throws {Error} When email sending fails
+ */
+const sendTemporaryPasswordEmail = async (userEmail, userName, tempPassword) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
-        to: monitorEmails.join(','),
-        subject: `Reminder: ${pendingCount} Pending Return Request${pendingCount > 1 ? 's' : ''} - MQI Inventory`,
+        to: userEmail,
+        subject: 'Temporary Password - Marquardt Inventory Management System',
         html: `
-            <h2>🔄 Pending Return Requests Reminder</h2>
-            <p>Dear Monitor,</p>
-            <p>You have <strong>${pendingCount}</strong> pending return request${pendingCount > 1 ? 's' : ''} awaiting your approval.</p>
-            <p><a href="https://mqi-ims.uc.r.appspot.com/monitor/approvals" style="background-color: #F59E0B; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Review Returns</a></p>
-            <p>Best regards,<br>Marquardt India Inventory System</p>
+            <h2>Password Reset Request</h2>
+            <p>Dear ${userName},</p>
+            <p>You requested a password reset. Here is your temporary password:</p>
+            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                <strong style="font-size: 18px; color: #1f2937;">${tempPassword}</strong>
+            </div>
+            <p><strong>Important:</strong> This temporary password will expire in 15 minutes for security reasons.</p>
+            <p><a href="https://mqi-ims.uc.r.appspot.com/reset-password?email=${encodeURIComponent(userEmail)}" style="background-color: #005670; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Set New Password</a></p>
+            <p>If you didn't request this password reset, please ignore this email.</p>
+            <p>Best regards,<br>Marquardt India Team</p>
         `
     };
     
     return transporter.sendMail(mailOptions);
 };
 
-/**
- * Module Exports
- * 
- * Exports all email service functions for use throughout the application.
- * Functions are used by authentication routes and admin management systems.
- */
+// Send reminder email to monitors about pending return requests
+// const sendReturnRequestReminder = async (monitorEmails, pendingCount) => {
+//     const mailOptions = {
+//         from: process.env.EMAIL_USER,
+//         to: monitorEmails.join(','),
+//         subject: `Reminder: ${pendingCount} Pending Return Request${pendingCount > 1 ? 's' : ''} - MQI Inventory`,
+//         html: `
+//             <h2>🔄 Pending Return Requests Reminder</h2>
+//             <p>Dear Monitor,</p>
+//             <p>You have <strong>${pendingCount}</strong> pending return request${pendingCount > 1 ? 's' : ''} awaiting your approval.</p>
+//             <p><a href="https://mqi-ims.uc.r.appspot.com/monitor/approvals" style="background-color: #F59E0B; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Review Returns</a></p>
+//             <p>Best regards,<br>Marquardt India Inventory System</p>
+//         `
+//     };
+    
+//     return transporter.sendMail(mailOptions);
+// };
+
 module.exports = {
     sendRegistrationApprovalEmail,
     sendRegistrationRejectionEmail,
     sendNewRegistrationNotification,
     sendRegistrationConfirmation,
     sendProductRequestReminder,
-    sendReturnRequestReminder
+    sendTemporaryPasswordEmail,
+    sendPasswordResetEmail
 };

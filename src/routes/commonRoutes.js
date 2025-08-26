@@ -1,7 +1,17 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
-const { sendNewRegistrationNotification, sendRegistrationConfirmation } = require('../utils/emailService');
+const { sendNewRegistrationNotification, sendRegistrationConfirmation, sendTemporaryPasswordEmail } = require('../utils/emailService');
+
+// Generate random temporary password
+function generateTempPassword() {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
 
 // Common routes module (auth, dashboard, etc.)
 module.exports = (pool, requireAuth, requireRole) => {
@@ -21,101 +31,120 @@ module.exports = (pool, requireAuth, requireRole) => {
     });
 
     // Forgot Password routes
-    router.get('/auth/forgot-password', (req, res) => {
-        res.render('auth/forgot-password', { messages: req.flash(), user: req.session.user || null });
+    router.get('/forgot-password', (req, res) => {
+        res.render('auth/forgot-password', { messages: req.flash() });
     });
 
-    // Change Password page route
-    router.get('/auth/change-password', requireAuth, (req, res) => {
-        res.render('auth/forgot-password', { messages: req.flash(), user: req.session.user || null });
-    });
-
-    router.post('/auth/forgot-password', async (req, res) => {
+    router.post('/forgot-password', async (req, res) => {
         const { email } = req.body;
 
         if (!email) {
             req.flash('error', 'Email is required.');
-            return res.redirect('/auth/forgot-password');
+            return res.redirect('/forgot-password');
         }
 
         try {
             // Check if user exists with the email
             const [users] = await pool.execute(
-                'SELECT * FROM users WHERE email = ?',
+                'SELECT * FROM users WHERE email = ? AND is_active = TRUE',
                 [email]
             );
 
             if (users.length === 0) {
                 req.flash('error', 'No account found with that email.');
-                return res.redirect('/auth/forgot-password');
+                return res.redirect('/forgot-password');
             }
 
-            // TODO: Implement sending password reset email with token
-            // For now, just flash success message
-            req.flash('success', 'If an account with that email exists, a password reset link has been sent.');
+            const user = users[0];
+            const tempPassword = generateTempPassword();
+            const hashedTempPassword = await bcrypt.hash(tempPassword, 10);
+            const expiryTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+            // Store temporary password in database
+            await pool.execute(
+                'UPDATE users SET temp_password = ?, temp_password_expires = ? WHERE user_id = ?',
+                [hashedTempPassword, expiryTime, user.user_id]
+            );
+
+            // Send temporary password email
+            await sendTemporaryPasswordEmail(email, user.full_name, tempPassword);
+
+            req.flash('success', 'Temporary password sent to your email. It will expire in 15 minutes.');
             res.redirect('/login');
         } catch (error) {
             console.error('Forgot password error:', error);
             req.flash('error', 'An error occurred while processing your request.');
-            res.redirect('/auth/forgot-password');
+            res.redirect('/forgot-password');
         }
     });
 
-    // Change Password routes
-    router.post('/auth/change-password', requireAuth, async (req, res) => {
-        const { current_password, new_password, confirm_new_password } = req.body;
+    // Reset Password routes
+    router.get('/reset-password', (req, res) => {
+        const { email } = req.query;
+        if (!email) {
+            req.flash('error', 'Invalid reset link.');
+            return res.redirect('/login');
+        }
+        res.render('auth/reset-password', { messages: req.flash(), email });
+    });
 
-        if (!current_password || !new_password || !confirm_new_password) {
-            req.flash('error', 'All password fields are required.');
-            return res.redirect('/auth/forgot-password');
+    router.post('/reset-password', async (req, res) => {
+        const { email, temp_password, new_password, confirm_password } = req.body;
+
+        if (!email || !temp_password || !new_password || !confirm_password) {
+            req.flash('error', 'All fields are required.');
+            return res.redirect(`/reset-password?email=${encodeURIComponent(email)}`);
         }
 
-        if (new_password !== confirm_new_password) {
-            req.flash('error', 'New password and confirmation do not match.');
-            return res.redirect('/auth/forgot-password');
+        if (new_password !== confirm_password) {
+            req.flash('error', 'New passwords do not match.');
+            return res.redirect(`/reset-password?email=${encodeURIComponent(email)}`);
         }
 
         try {
-            // Get user from session
-            const userId = req.session.user.user_id;
-
-            // Fetch current password hash from DB
+            // Get user with temporary password
             const [users] = await pool.execute(
-                'SELECT password FROM users WHERE user_id = ?',
-                [userId]
+                'SELECT * FROM users WHERE email = ? AND is_active = TRUE AND temp_password IS NOT NULL',
+                [email]
             );
 
             if (users.length === 0) {
-                req.flash('error', 'User not found.');
-                return res.redirect('/auth/forgot-password');
+                req.flash('error', 'Invalid or expired reset request.');
+                return res.redirect('/forgot-password');
             }
 
             const user = users[0];
 
-            // Verify current password
-            const isMatch = await bcrypt.compare(current_password, user.password);
-            if (!isMatch) {
-                req.flash('error', 'Current password is incorrect.');
-                return res.redirect('/auth/forgot-password');
+            // Check if temporary password has expired
+            if (new Date() > new Date(user.temp_password_expires)) {
+                req.flash('error', 'Temporary password has expired. Please request a new one.');
+                return res.redirect('/forgot-password');
             }
 
-            // Hash new password
-            const hashedPassword = await bcrypt.hash(new_password, 10);
+            // Verify temporary password
+            const isValidTemp = await bcrypt.compare(temp_password, user.temp_password);
+            if (!isValidTemp) {
+                req.flash('error', 'Invalid temporary password.');
+                return res.redirect(`/reset-password?email=${encodeURIComponent(email)}`);
+            }
 
-            // Update password in DB
+            // Hash new password and update
+            const hashedNewPassword = await bcrypt.hash(new_password, 10);
             await pool.execute(
-                'UPDATE users SET password = ? WHERE user_id = ?',
-                [hashedPassword, userId]
+                'UPDATE users SET password = ?, temp_password = NULL, temp_password_expires = NULL WHERE user_id = ?',
+                [hashedNewPassword, user.user_id]
             );
 
-            req.flash('success', 'Password changed successfully.');
-            res.redirect('/employee/account');
+            req.flash('success', 'Password updated successfully. You can now login with your new password.');
+            res.redirect('/login');
         } catch (error) {
-            console.error('Change password error:', error);
-            req.flash('error', 'An error occurred while changing password.');
-            res.redirect('/auth/forgot-password');
+            console.error('Reset password error:', error);
+            req.flash('error', 'An error occurred while resetting password.');
+            res.redirect(`/reset-password?email=${encodeURIComponent(email)}`);
         }
     });
+
+
 
     router.post('/login', async (req, res) => {
         const { username, password } = req.body;

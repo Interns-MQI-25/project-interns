@@ -33,7 +33,17 @@
                     <%= user.full_name.charAt(0).toUpperCase() %>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-gray-900 truncate text-sm sm:text-base"><%= user.full_name %></p>
+                    <% if (user.full_name.length > 15) { %>
+                        <% const words = user.full_name.split(' '); %>
+                        <% const firstLine = words.slice(0, -1).join(' '); %>
+                        <% const secondLine = words[words.length - 1]; %>
+                        <p class="font-semibold text-gray-900 text-sm sm:text-base leading-tight">
+                            <%= firstLine %><br>
+                            <span class="ml-8"><%= secondLine %></span>
+                        </p>
+                    <% } else { %>
+                        <p class="font-semibold text-gray-900 truncate text-sm sm:text-base"><%= user.full_name %></p>
+                    <% } %>
                     <p class="text-xs sm:text-sm text-gray-500 truncate">
                         <%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %>
                     </p>
@@ -155,6 +165,22 @@
                 <i class="fas fa-sign-out-alt mr-3 group-hover:scale-110 transition-transform text-sm sm:text-base"></i>
                 <span class="font-medium text-sm sm:text-base">Logout</span>
             </a>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Feed Modal -->
+<div id="activityFeedModal" class="fixed inset-0 z-100 flex items-center justify-center bg-black bg-opacity-40 hidden">
+    <div class="bg-white rounded-lg shadow-2xl w-full max-w-md mx-2 relative animate-fadeIn">
+        <button id="closeActivityFeedModal" class="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl font-bold focus:outline-none" title="Close">
+            &times;
+        </button>
+        <div class="p-4 border-b flex items-center">
+            <i class="fas fa-rss text-blue-600 mr-2"></i>
+            <span class="font-semibold text-lg text-gray-800">Recent Activity</span>
+        </div>
+        <div id="activityFeedContent" class="p-4 max-h-96 overflow-y-auto text-sm text-gray-700 space-y-2">
+            <div class="text-center text-gray-400">Loading live feed...</div>
         </div>
     </div>
 </div>
@@ -318,5 +344,55 @@ document.addEventListener('DOMContentLoaded', function() {
             if (mobileOverlay) mobileOverlay.classList.add('hidden');
         }
     });
+    
+    // Activity Feed Modal logic
+    const activityFeedBtn = document.getElementById('activityFeedBtn');
+    const activityFeedModal = document.getElementById('activityFeedModal');
+    const closeActivityFeedModal = document.getElementById('closeActivityFeedModal');
+    const activityFeedContent = document.getElementById('activityFeedContent');
+    let eventSource = null;
+
+    if (activityFeedBtn && activityFeedModal && closeActivityFeedModal) {
+        activityFeedBtn.addEventListener('click', function() {
+            activityFeedModal.classList.remove('hidden');
+            if (!eventSource) {
+                // Connect to live feed SSE endpoint
+                eventSource = new EventSource('/live-feed');
+                activityFeedContent.innerHTML = '';
+                eventSource.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        const time = new Date(data.timestamp || Date.now()).toLocaleString();
+                        // Enhanced: Show user and product details if available
+                        let details = '';
+                        if (data.user && data.product) {
+                            details = `<span class='text-blue-700 font-semibold'>${data.user}</span> <span class='text-gray-600'>→</span> <span class='text-green-700 font-semibold'>${data.product}</span>`;
+                        } else if (data.user) {
+                            details = `<span class='text-blue-700 font-semibold'>${data.user}</span>`;
+                        } else if (data.product) {
+                            details = `<span class='text-green-700 font-semibold'>${data.product}</span>`;
+                        }
+                        const msg = `<div class='border-b pb-2 mb-2'>${details ? details + '<br>' : ''}<span class='font-medium'>${data.message}</span><br><span class='text-xs text-gray-400'>${time}</span></div>`;
+                        activityFeedContent.insertAdjacentHTML('afterbegin', msg);
+                    } catch (e) {
+                        // fallback for non-JSON events
+                        activityFeedContent.insertAdjacentHTML('afterbegin', `<div>${event.data}</div>`);
+                    }
+                };
+                eventSource.onerror = function() {
+                    activityFeedContent.insertAdjacentHTML('afterbegin', `<div class='text-red-500'>Live feed connection lost.</div>`);
+                };
+            }
+        });
+        closeActivityFeedModal.addEventListener('click', function() {
+            activityFeedModal.classList.add('hidden');
+        });
+        // Optional: close modal on overlay click
+        activityFeedModal.addEventListener('click', function(e) {
+            if (e.target === activityFeedModal) {
+                activityFeedModal.classList.add('hidden');
+            }
+        });
+    }
 });
 </script>

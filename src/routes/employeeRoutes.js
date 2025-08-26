@@ -133,10 +133,37 @@ module.exports = (pool, requireAuth, requireRole) => {
                 console.error('Requests query error:', err);
             }
             
-            res.render('employee/records', { user: req.session.user, assignments, requests });
+            // Get extension requests for this employee
+            let extensionRequests = [];
+            try {
+                const [columnCheck] = await pool.execute(`
+                    SELECT COLUMN_NAME 
+                    FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_NAME = 'product_assignments' 
+                    AND COLUMN_NAME = 'extension_status' 
+                    AND TABLE_SCHEMA = DATABASE()
+                `);
+                
+                if (columnCheck.length > 0) {
+                    const [extensionResults] = await pool.execute(`
+                        SELECT pa.*, p.product_name, u.full_name as monitor_name
+                        FROM product_assignments pa
+                        JOIN products p ON pa.product_id = p.product_id
+                        JOIN employees e ON pa.employee_id = e.employee_id
+                        JOIN users u ON pa.monitor_id = u.user_id
+                        WHERE e.user_id = ? AND pa.extension_status IN ('requested', 'approved', 'rejected')
+                        ORDER BY pa.extension_requested_at DESC
+                    `, [req.session.user.user_id]);
+                    extensionRequests = extensionResults || [];
+                }
+            } catch (err) {
+                console.error('Extension requests query error:', err);
+            }
+            
+            res.render('employee/records', { user: req.session.user, assignments, requests, extensionRequests });
         } catch (error) {
             console.error('Records error:', error);
-            res.render('employee/records', { user: req.session.user, assignments: [], requests: [] });
+            res.render('employee/records', { user: req.session.user, assignments: [], requests: [], extensionRequests: [] });
         }
     });
 
@@ -371,6 +398,20 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
 
         try {
+            // Check if extension columns exist
+            const [columnCheck] = await pool.execute(`
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_NAME = 'product_assignments' 
+                AND COLUMN_NAME = 'extension_status' 
+                AND TABLE_SCHEMA = DATABASE()
+            `);
+            
+            if (columnCheck.length === 0) {
+                req.flash('error', 'Extension functionality not available. Please contact administrator.');
+                return res.redirect('/employee/my-products');
+            }
+            
             const [assignments] = await pool.execute(
                 'SELECT * FROM product_assignments WHERE assignment_id = ? AND is_returned = 0',
                 [assignment_id]
@@ -444,19 +485,49 @@ module.exports = (pool, requireAuth, requireRole) => {
     // Employee: My Products Route
     router.get('/my-products', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
-            const [myProducts] = await pool.execute(`
-                SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status, pa.returned_at, pa.remarks,
-                       pa.extension_requested, pa.extension_reason, pa.new_return_date, pa.extension_status, pa.extension_requested_at, pa.extension_remarks,
-                       p.product_name, p.asset_type, p.model_number, p.serial_number,
-                       u.full_name as monitor_name, ext_user.full_name as extension_processed_by_name
-                FROM product_assignments pa
-                JOIN products p ON pa.product_id = p.product_id
-                JOIN employees e ON pa.employee_id = e.employee_id
-                JOIN users u ON pa.monitor_id = u.user_id
-                LEFT JOIN users ext_user ON pa.extension_processed_by = ext_user.user_id
-                WHERE e.user_id = ? AND pa.is_returned = 0
-                ORDER BY pa.assigned_at DESC
-            `, [req.session.user.user_id]);
+            // Check if extension columns exist
+            const [columnCheck] = await pool.execute(`
+                SELECT COLUMN_NAME 
+                FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_NAME = 'product_assignments' 
+                AND COLUMN_NAME = 'extension_status' 
+                AND TABLE_SCHEMA = DATABASE()
+            `);
+            
+            let query;
+            if (columnCheck.length > 0) {
+                // Extension columns exist, include them in query
+                query = `
+                    SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status, pa.returned_at, pa.remarks,
+                           pa.extension_requested, pa.extension_reason, pa.new_return_date, pa.extension_status, pa.extension_requested_at, pa.extension_remarks,
+                           p.product_name, p.asset_type, p.model_number, p.serial_number,
+                           u.full_name as monitor_name, ext_user.full_name as extension_processed_by_name
+                    FROM product_assignments pa
+                    JOIN products p ON pa.product_id = p.product_id
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    JOIN users u ON pa.monitor_id = u.user_id
+                    LEFT JOIN users ext_user ON pa.extension_processed_by = ext_user.user_id
+                    WHERE e.user_id = ? AND pa.is_returned = 0
+                    ORDER BY pa.assigned_at DESC
+                `;
+            } else {
+                // Extension columns don't exist, use basic query
+                query = `
+                    SELECT pa.assignment_id, pa.assigned_at, pa.return_date, pa.is_returned, pa.return_status, pa.returned_at, pa.remarks,
+                           NULL as extension_requested, NULL as extension_reason, NULL as new_return_date, 'none' as extension_status, 
+                           NULL as extension_requested_at, NULL as extension_remarks,
+                           p.product_name, p.asset_type, p.model_number, p.serial_number,
+                           u.full_name as monitor_name, NULL as extension_processed_by_name
+                    FROM product_assignments pa
+                    JOIN products p ON pa.product_id = p.product_id
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    JOIN users u ON pa.monitor_id = u.user_id
+                    WHERE e.user_id = ? AND pa.is_returned = 0
+                    ORDER BY pa.assigned_at DESC
+                `;
+            }
+            
+            const [myProducts] = await pool.execute(query, [req.session.user.user_id]);
             
             res.render('employee/my-products', { 
                 user: req.session.user,

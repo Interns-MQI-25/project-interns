@@ -93,6 +93,77 @@
             </div>
         </div>
         
+        <!-- My Extension Requests -->
+        <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">My Extension Requests (<%= myExtensionRequests ? myExtensionRequests.length : 0 %> items)</h3>
+                <div class="overflow-x-auto w-full">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Return Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Return Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% if (myExtensionRequests && myExtensionRequests.length > 0) { %>
+                                <% myExtensionRequests.forEach(extension => { %>
+                                    <tr>
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                            <%= extension.product_name || 'N/A' %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <% if (extension.return_date) { %>
+                                                <%= new Date(extension.return_date).toLocaleDateString() %>
+                                            <% } else { %>
+                                                N/A
+                                            <% } %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <% if (extension.new_return_date) { %>
+                                                <%= new Date(extension.new_return_date).toLocaleDateString() %>
+                                            <% } else { %>
+                                                N/A
+                                            <% } %>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500">
+                                            <%= extension.extension_reason || 'No reason provided' %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <% if (extension.extension_status === 'approved') { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">✓ Approved</span>
+                                            <% } else if (extension.extension_status === 'rejected') { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">✗ Rejected</span>
+                                            <% } else { %>
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">⏳ Pending</span>
+                                            <% } %>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <% if (extension.extension_requested_at) { %>
+                                                <%= new Date(extension.extension_requested_at).toLocaleDateString() %>
+                                            <% } else { %>
+                                                N/A
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                        No extension requests found
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
         <!-- My Assignment History -->
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <div class="px-4 py-5 sm:p-6">
@@ -167,15 +238,15 @@
                                             <% } else if (assignment.remarks && assignment.remarks.startsWith('RETURN_REJECTED')) { %>
                                                 <form action="/monitor/return-product" method="POST" onsubmit="return confirm('Your previous return request was rejected. Do you want to request return again?');">
                                                     <input type="hidden" name="assignment_id" value="<%= assignment.assignment_id %>" />
-                                                    <button type="submit" class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-sm text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                                        <i class="fas fa-redo mr-1"></i> Request Again
+                                                    <button type="submit" class="inline-flex items-center px-3 py-2 border border-red-300 rounded-md text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors">
+                                                        <i class="fas fa-redo mr-2"></i> Request Again
                                                     </button>
                                                 </form>
                                             <% } else { %>
                                                 <form action="/monitor/return-product" method="POST" onsubmit="return confirm('Are you sure you want to request return of this product?');">
                                                     <input type="hidden" name="assignment_id" value="<%= assignment.assignment_id %>" />
-                                                    <button type="submit" class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                                        <i class="fas fa-box-open mr-1"></i> Request Return
+                                                    <button type="submit" class="inline-flex items-center px-3 py-2 border border-orange-300 rounded-md text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors">
+                                                        <i class="fas fa-box-open mr-2"></i> Request Return
                                                     </button>
                                                 </form>
                                             <% } %>

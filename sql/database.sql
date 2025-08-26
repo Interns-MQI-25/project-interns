@@ -29,7 +29,9 @@ CREATE TABLE users (
     is_super_admin BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    is_active BOOLEAN DEFAULT TRUE
+    is_active BOOLEAN DEFAULT TRUE,
+    temp_password VARCHAR(255) NULL,
+    temp_password_expires TIMESTAMP NULL
 );
 
 -- Create departments table

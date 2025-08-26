@@ -20,7 +20,10 @@ mysqld --user=mysql --skip-networking --socket=/tmp/mysql_init.sock &
 MYSQL_PID=$!
 
 # Wait for MySQL to start
-sleep 10
+until mysqladmin ping -h"localhost" --socket=/tmp/mysql_init.sock --silent; do
+  echo "Waiting for MySQL to be ready..."
+  sleep 2
+done
 
 # Import database schema
 echo "📥 Importing database schema..."

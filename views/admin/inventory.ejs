@@ -206,7 +206,22 @@
                                                 data-assigned-to="<%= product.assigned_to_details || '' %>"
                                                 data-total-stock="<%= (product.quantity || 0) + (product.currently_assigned || 0) %>"
                                                 data-assigned-count="<%= product.currently_assigned || 0 %>"
-                                                data-available-count="<%= product.quantity || 0 %>">
+                                                data-available-count="<%= product.quantity || 0 %>"
+                                                data-item-number="<%= product.item_number || 'N/A' %>"
+                                                data-sap-equipment-no="<%= product.sap_equipment_no || 'N/A' %>"
+                                                data-sap-maintenance-plan-no="<%= product.sap_maintenance_plan_no || 'N/A' %>"
+                                                data-cost-center="<%= product.cost_center || 'N/A' %>"
+                                                data-cost="<%= product.cost || 'N/A' %>"
+                                                data-calibration-frequency="<%= product.calibration_frequency || 'N/A' %>"
+                                                data-pr-no="<%= product.pr_no || 'N/A' %>"
+                                                data-po-number="<%= product.po_number || 'N/A' %>"
+                                                data-inward-date="<%= product.inward_date ? new Date(product.inward_date).toLocaleDateString() : 'N/A' %>"
+                                                data-inwarded-by="<%= product.inwarded_by_name || 'N/A' %>"
+                                                data-version-number="<%= product.version_number || 'N/A' %>"
+                                                data-software-license-type="<%= product.software_license_type || 'N/A' %>"
+                                                data-license-start="<%= product.license_start ? new Date(product.license_start).toLocaleDateString() : 'N/A' %>"
+                                                data-renewal-frequency="<%= product.renewal_frequency || 'N/A' %>"
+                                                data-next-renewal-date="<%= product.next_renewal_date ? new Date(product.next_renewal_date).toLocaleDateString() : 'N/A' %>">
                                                 <td class="px-6 py-4 max-w-32">
                                                     <div class="text-sm font-medium text-gray-900 break-words leading-tight">
                                                         <%= product.product_name %>
@@ -524,16 +539,31 @@
             
             // Add headers
             data.push([
+                'Item Number',
                 'Product Name',
                 'Product Category', 
                 'Model Number',
                 'Asset Type',
                 'Serial Number',
+                'SAP Equipment No',
+                'SAP Maintenance Plan No',
+                'Cost Center',
+                'Cost',
                 'Total Stock',
                 'Currently Assigned',
                 'Available',
                 'Calibration Status',
+                'Calibration Frequency',
                 'Next Calibration Date',
+                'PR No',
+                'PO Number',
+                'Inward Date',
+                'Inwarded By',
+                'Version Number',
+                'Software License Type',
+                'License Start',
+                'Renewal Frequency',
+                'Next Renewal Date',
                 'Assigned To',
                 'Added By',
                 'Added Date',
@@ -593,17 +623,49 @@
                 const addedBy = cells[9].textContent.trim();
                 const addedDate = cells[10].textContent.trim();
 
+                // Extract additional data from row dataset or default to N/A
+                const itemNumber = row.dataset.itemNumber || 'N/A';
+                const sapEquipmentNo = row.dataset.sapEquipmentNo || 'N/A';
+                const sapMaintenancePlanNo = row.dataset.sapMaintenancePlanNo || 'N/A';
+                const costCenter = row.dataset.costCenter || 'N/A';
+                const cost = row.dataset.cost || 'N/A';
+                const calibrationFrequency = row.dataset.calibrationFrequency || 'N/A';
+                const prNo = row.dataset.prNo || 'N/A';
+                const poNumber = row.dataset.poNumber || 'N/A';
+                const inwardDate = row.dataset.inwardDate || 'N/A';
+                const inwardedBy = row.dataset.inwardedBy || 'N/A';
+                const versionNumber = row.dataset.versionNumber || 'N/A';
+                const softwareLicenseType = row.dataset.softwareLicenseType || 'N/A';
+                const licenseStart = row.dataset.licenseStart || 'N/A';
+                const renewalFrequency = row.dataset.renewalFrequency || 'N/A';
+                const nextRenewalDate = row.dataset.nextRenewalDate || 'N/A';
+
                 data.push([
+                    itemNumber,
                     productName,
                     productCategory,
                     modelNumber,
                     assetType,
                     serialNumber,
+                    sapEquipmentNo,
+                    sapMaintenancePlanNo,
+                    costCenter,
+                    cost,
                     totalStock,
                     currentlyAssigned,
                     available,
                     calibrationStatus,
+                    calibrationFrequency,
                     nextCalibrationDate,
+                    prNo,
+                    poNumber,
+                    inwardDate,
+                    inwardedBy,
+                    versionNumber,
+                    softwareLicenseType,
+                    licenseStart,
+                    renewalFrequency,
+                    nextRenewalDate,
                     assignedTo,
                     addedBy,
                     addedDate,
@@ -617,16 +679,31 @@
             
             // Set column widths
             const colWidths = [
+                {wch: 12}, // Item Number
                 {wch: 25}, // Product Name
                 {wch: 20}, // Product Category
                 {wch: 15}, // Model Number
                 {wch: 15}, // Asset Type
                 {wch: 15}, // Serial Number
+                {wch: 18}, // SAP Equipment No
+                {wch: 20}, // SAP Maintenance Plan No
+                {wch: 15}, // Cost Center
+                {wch: 12}, // Cost
                 {wch: 12}, // Total Stock
                 {wch: 15}, // Currently Assigned
                 {wch: 12}, // Available
                 {wch: 15}, // Calibration Status
+                {wch: 15}, // Calibration Frequency
                 {wch: 15}, // Next Calibration Date
+                {wch: 12}, // PR No
+                {wch: 15}, // PO Number
+                {wch: 12}, // Inward Date
+                {wch: 15}, // Inwarded By
+                {wch: 15}, // Version Number
+                {wch: 18}, // Software License Type
+                {wch: 12}, // License Start
+                {wch: 15}, // Renewal Frequency
+                {wch: 15}, // Next Renewal Date
                 {wch: 30}, // Assigned To
                 {wch: 15}, // Added By
                 {wch: 12}, // Added Date

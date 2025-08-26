@@ -172,50 +172,39 @@ module.exports = (pool, requireAuth, requireRole) => {
             // Get pending return requests
             let returnRequests = [];
             try {
-                // First check if return_status column exists
-                const [columnCheck] = await pool.execute(`
-                    SELECT COLUMN_NAME 
-                    FROM INFORMATION_SCHEMA.COLUMNS 
-                    WHERE TABLE_NAME = 'product_assignments' 
-                    AND COLUMN_NAME = 'return_status' 
-                    AND TABLE_SCHEMA = DATABASE()
-                `);
-                
-                if (columnCheck.length > 0) {
-                    // Column exists, use it - exclude current monitor's own return requests
-                    const [returnResults] = await pool.execute(`
-                        SELECT pa.*, p.product_name, u.full_name as employee_name, d.department_name
-                        FROM product_assignments pa
-                        JOIN products p ON pa.product_id = p.product_id
-                        JOIN employees e ON pa.employee_id = e.employee_id
-                        JOIN users u ON e.user_id = u.user_id
-                        JOIN departments d ON e.department_id = d.department_id
-                        WHERE (pa.remarks = 'RETURN_REQUESTED' OR pa.return_status = 'requested') 
-                        AND e.employee_id != ?
-                        ORDER BY pa.assigned_at ASC
-                    `, [currentMonitorEmployeeId]);
-                    returnRequests = returnResults || [];
-                } else {
-                    console.log('return_status column does not exist in GCP environment. Checking for manual return requests...');
-                    // Fallback: look for assignments that might need return processing
-                    // This is a temporary solution - you should add the return_status column
-                    const [returnResults] = await pool.execute(`
-                        SELECT pa.*, p.product_name, u.full_name as employee_name, d.department_name
-                        FROM product_assignments pa
-                        JOIN products p ON pa.product_id = p.product_id
-                        JOIN employees e ON pa.employee_id = e.employee_id
-                        JOIN users u ON e.user_id = u.user_id
-                        JOIN departments d ON e.department_id = d.department_id
-                        WHERE pa.is_returned = 0 
-                        AND e.employee_id != ?
-                        AND (pa.remarks = 'RETURN_REQUESTED' OR pa.return_status = 'requested')
-                        ORDER BY pa.assigned_at ASC
-                    `, [currentMonitorEmployeeId]);
-                    returnRequests = returnResults || [];
-                }
+                const [returnResults] = await pool.execute(`
+                    SELECT pa.*, p.product_name, u.full_name as employee_name, d.department_name
+                    FROM product_assignments pa
+                    JOIN products p ON pa.product_id = p.product_id
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    JOIN users u ON e.user_id = u.user_id
+                    JOIN departments d ON e.department_id = d.department_id
+                    WHERE (pa.remarks = 'RETURN_REQUESTED' OR pa.return_status = 'requested') 
+                    AND e.employee_id != ?
+                    ORDER BY pa.assigned_at ASC
+                `, [currentMonitorEmployeeId]);
+                returnRequests = returnResults || [];
             } catch (err) {
                 console.log('Return requests query failed:', err.message);
-                console.log('This might be due to missing return_status column in GCP database');
+            }
+            
+            // Get pending extension requests
+            let extensionRequests = [];
+            try {
+                const [extensionResults] = await pool.execute(`
+                    SELECT pa.*, p.product_name, u.full_name as employee_name, d.department_name
+                    FROM product_assignments pa
+                    JOIN products p ON pa.product_id = p.product_id
+                    JOIN employees e ON pa.employee_id = e.employee_id
+                    JOIN users u ON e.user_id = u.user_id
+                    JOIN departments d ON e.department_id = d.department_id
+                    WHERE pa.extension_status = 'requested'
+                    AND e.employee_id != ?
+                    ORDER BY pa.extension_requested_at ASC
+                `, [currentMonitorEmployeeId]);
+                extensionRequests = extensionResults || [];
+            } catch (err) {
+                console.log('Extension requests query failed:', err.message);
             }
             
             console.log('Found pending requests:', requests.length);
@@ -224,7 +213,8 @@ module.exports = (pool, requireAuth, requireRole) => {
             res.render('monitor/approvals', { 
                 user: req.session.user, 
                 requests: requests || [], 
-                returnRequests: returnRequests || [] 
+                returnRequests: returnRequests || [],
+                extensionRequests: extensionRequests || []
             });
         } catch (error) {
             console.error('Approvals error:', error);
@@ -590,6 +580,32 @@ module.exports = (pool, requireAuth, requireRole) => {
             req.flash('error', 'Error processing request');
         }
         
+        res.redirect('/monitor/approvals');
+    });
+
+    // Monitor: Process Extension Request Route
+    router.post('/process-extension', requireAuth, requireRole(['monitor', 'admin']), async (req, res) => {
+        const { assignment_id, action, extension_remarks } = req.body;
+
+        try {
+            if (action === 'approve') {
+                await pool.execute(
+                    'UPDATE product_assignments SET extension_status = "approved", extension_processed_by = ?, extension_processed_at = NOW(), extension_remarks = ?, return_date = new_return_date WHERE assignment_id = ?',
+                    [req.session.user.user_id, extension_remarks || 'Extension approved', assignment_id]
+                );
+                req.flash('success', 'Extension request approved successfully.');
+            } else if (action === 'reject') {
+                await pool.execute(
+                    'UPDATE product_assignments SET extension_status = "rejected", extension_processed_by = ?, extension_processed_at = NOW(), extension_remarks = ? WHERE assignment_id = ?',
+                    [req.session.user.user_id, extension_remarks || 'Extension rejected', assignment_id]
+                );
+                req.flash('success', 'Extension request rejected.');
+            }
+        } catch (error) {
+            console.error('Process extension error:', error);
+            req.flash('error', 'Error processing extension request.');
+        }
+
         res.redirect('/monitor/approvals');
     });
 

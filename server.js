@@ -194,32 +194,6 @@ app.get('/api/live-counts', requireAuth, async (req, res) => {
             'SELECT COUNT(*) as count FROM registration_requests WHERE status = "pending"'
         );
         
-        // Get pending returns count for monitors
-        let pendingReturns = 0;
-        if (req.session.user.role === 'monitor') {
-            const [returns] = await pool.execute(`
-                SELECT COUNT(*) as count 
-                FROM product_assignments pa
-                JOIN employees e ON pa.employee_id = e.employee_id
-                WHERE (pa.remarks = 'RETURN_REQUESTED' OR pa.return_status = 'requested')
-                AND e.user_id != ?
-            `, [req.session.user.user_id]);
-            pendingReturns = returns[0].count;
-        }
-        
-        // Get pending returns count for monitors
-        let pendingReturns = 0;
-        if (req.session.user.role === 'monitor') {
-            const [returns] = await pool.execute(`
-                SELECT COUNT(*) as count 
-                FROM product_assignments pa
-                JOIN employees e ON pa.employee_id = e.employee_id
-                WHERE (pa.remarks = 'RETURN_REQUESTED' OR pa.return_status = 'requested')
-                AND e.user_id != ?
-            `, [req.session.user.user_id]);
-            pendingReturns = returns[0].count;
-        }
-        
         // Get employee-specific updates (approved/rejected requests in last 7 days)
         let employeeUpdates = 0;
         if (req.session.user.role === 'employee') {
@@ -255,14 +229,12 @@ app.get('/api/live-counts', requireAuth, async (req, res) => {
         // Log counts for debugging purposes
         console.log('API Debug - Pending requests:', pendingRequests[0].count);
         console.log('API Debug - Pending registrations:', pendingRegistrations[0].count);
-        console.log('API Debug - Pending returns:', pendingReturns);
         console.log('API Debug - Employee updates:', employeeUpdates);
         
         // Return counts as JSON response for frontend dashboard updates
         res.json({
             pendingRequests: pendingRequests[0].count,
             pendingRegistrations: pendingRegistrations[0].count,
-            pendingReturns: pendingReturns,
             employeeUpdates: employeeUpdates
         });
     } catch (error) {
@@ -340,15 +312,10 @@ app.post('/login', async (req, res) => {
         // Create default admin users with hashed passwords
         const testHash = await bcrypt.hash('password', 10);
         const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
+        // const vennuHash = await bcrypt.hash('Vennu@123', 10);
 
         // Ensure users table exists and create default admin accounts
         await pool.execute('CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE, full_name VARCHAR(100), email VARCHAR(100), password VARCHAR(255), role VARCHAR(20) DEFAULT "admin", is_active BOOLEAN DEFAULT TRUE)');
-        
-        // Update existing admin user or create new one
-        await pool.execute('INSERT INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE password = VALUES(password)', ['admin', 'System Administrator', 'admin@company.com', adminHash, 'admin', 1]);
-        
-        // Force update admin password
-        await pool.execute('UPDATE users SET password = ? WHERE username = "admin"', [adminHash]);
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['test', 'Test User', 'test@example.com', testHash, 'admin', 1]);
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Somling.Guddi@marquardt.com', guddiHash, 'admin', 1]);
         
@@ -361,14 +328,8 @@ app.post('/login', async (req, res) => {
         }
         
         const user = users[0];
-        
-        // Special case for admin with password admin123
-        let isValid = false;
-        if (username === 'admin' && password === 'admin123') {
-            isValid = true;
-        } else {
-            isValid = await bcrypt.compare(password, user.password);
-        }
+        // Verify password using bcrypt comparison
+        const isValid = await bcrypt.compare(password, user.password);
         
         if (!isValid) {
             req.flash('error', 'Invalid username or password');
@@ -537,14 +498,6 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV}`);
     console.log(`DB Host: ${process.env.DB_HOST}`);
-    
-    // Start email reminder service
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        startReminderService(pool);
-        console.log('📧 Email reminder service started');
-    } else {
-        console.log('⚠️ Email credentials not found - reminder service disabled');
-    }
 }).on('error', (err) => {
     console.error('Server failed to start:', err);
     process.exit(1); // Exit if server cannot start

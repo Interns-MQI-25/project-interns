@@ -189,28 +189,27 @@ const sendProductRequestReminder = async (monitorEmails, pendingCount) => {
 };
 
 // Send reminder email to monitors about pending return requests
-const sendReturnRequestReminder = async (monitorEmails, pendingCount) => {
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: monitorEmails.join(','),
-        subject: `Reminder: ${pendingCount} Pending Return Request${pendingCount > 1 ? 's' : ''} - MQI Inventory`,
-        html: `
-            <h2>🔄 Pending Return Requests Reminder</h2>
-            <p>Dear Monitor,</p>
-            <p>You have <strong>${pendingCount}</strong> pending return request${pendingCount > 1 ? 's' : ''} awaiting your approval.</p>
-            <p><a href="https://mqi-ims.uc.r.appspot.com/monitor/approvals" style="background-color: #F59E0B; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Review Returns</a></p>
-            <p>Best regards,<br>Marquardt India Inventory System</p>
-        `
-    };
+// const sendReturnRequestReminder = async (monitorEmails, pendingCount) => {
+//     const mailOptions = {
+//         from: process.env.EMAIL_USER,
+//         to: monitorEmails.join(','),
+//         subject: `Reminder: ${pendingCount} Pending Return Request${pendingCount > 1 ? 's' : ''} - MQI Inventory`,
+//         html: `
+//             <h2>🔄 Pending Return Requests Reminder</h2>
+//             <p>Dear Monitor,</p>
+//             <p>You have <strong>${pendingCount}</strong> pending return request${pendingCount > 1 ? 's' : ''} awaiting your approval.</p>
+//             <p><a href="https://mqi-ims.uc.r.appspot.com/monitor/approvals" style="background-color: #F59E0B; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Review Returns</a></p>
+//             <p>Best regards,<br>Marquardt India Inventory System</p>
+//         `
+//     };
     
-    return transporter.sendMail(mailOptions);
-};
+//     return transporter.sendMail(mailOptions);
+// };
 
 module.exports = {
     sendRegistrationApprovalEmail,
     sendRegistrationRejectionEmail,
     sendNewRegistrationNotification,
     sendRegistrationConfirmation,
-    sendProductRequestReminder,
-    sendReturnRequestReminder
+    sendProductRequestReminder
 };

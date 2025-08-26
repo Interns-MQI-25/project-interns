@@ -325,6 +325,16 @@ module.exports = (pool, requireAuth, requireRole) => {
                 [employee[0].employee_id, product_id, 1, purpose || 'No purpose specified', expected_return_date]
             );
             
+            // Notify live feed
+            const liveFeed = require('../utils/liveFeed');
+            if (productDetails.length > 0) {
+                liveFeed.notifyRequestSubmitted({
+                    product_name: productDetails[0].product_name,
+                    purpose: purpose || 'No purpose specified',
+                    return_date: expected_return_date
+                }, req.session.user.full_name);
+            }
+            
             // Log the product request activity
             if (productDetails.length > 0 && ActivityLogger && ActivityLogger.logProductRequest) {
                 try {

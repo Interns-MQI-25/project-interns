@@ -247,6 +247,10 @@ module.exports = (pool, requireAuth, requireRole) => {
                 console.error('Failed to send admin notification email:', emailError);
             }
             
+            // Notify live feed
+            const liveFeed = require('../utils/liveFeed');
+            liveFeed.notifyUserRegistered({ username, full_name, email });
+            
             req.flash('success', 'Registration request submitted. Please wait for admin approval.');
             res.redirect('/login');
         } catch (error) {

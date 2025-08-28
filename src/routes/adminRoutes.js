@@ -17,7 +17,6 @@
  */
 
 const express = require('express');
-const router = express.Router();
 const path = require('path');
 const multer = require('multer');
 const xlsx = require('xlsx');
@@ -82,6 +81,7 @@ const excelUpload = multer({
  * app.use('/admin', adminRoutes(pool, requireAuth, requireRole));
  */
 module.exports = (pool, requireAuth, requireRole) => {
+    const router = express.Router();
     
     /**
      * Admin Dashboard Route
@@ -526,18 +526,46 @@ module.exports = (pool, requireAuth, requireRole) => {
                 return res.redirect('/admin/upload-products');
             }
 
-            // Read the Excel file from memory buffer
+            // Read the Excel/CSV file from memory buffer
             const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
             const sheetName = workbook.SheetNames[0]; // Use first sheet
             const sheet = workbook.Sheets[sheetName];
-            
             // Convert to JSON with header row as keys
             const data = xlsx.utils.sheet_to_json(sheet, { header: 1 });
-            
             if (data.length < 2) {
                 req.flash('error', 'Excel file must contain at least a header row and one data row.');
                 return res.redirect('/admin/upload-products');
             }
+
+            // Map audit CSV headers to DB columns
+            const auditToDbMap = {
+                'No.': 'item_number',
+                'Type': 'asset_type',
+                'Product Type': 'product_category',
+                'Product Description': 'product_name',
+                'Model Number': 'model_number',
+                'Brand /Make': 'brand',
+                'Product Serial Number': 'serial_number',
+                'Manufacturer Identification No.': 'manufacturer_id',
+                'Cost Centre': 'cost_center',
+                'COST': 'cost',
+                'Purchase': 'purchase',
+                'Identification Number ': 'identification_number',
+                'MQI Serial Number(If Applicable)': 'mqi_serial_number',
+                'Quantities': 'quantity',
+                'Inward Date (MMM-YY)': 'inward_date',
+                'Project': 'project',
+                'Issued Person': 'issued_person',
+                'Asset Tag Number': 'asset_tag_number',
+                'Liscense Renewal required.': 'license_renewal_required',
+                'Calibration required ': 'calibration_required',
+                'Calibrated On': 'calibrated_on',
+                'Next Calibration Due on': 'calibration_due_date',
+                'Frequency for Calibration': 'calibration_frequency',
+                'SAP Equipement No.': 'sap_equipment_no',
+                'SAP Maintainance Plan No': 'sap_maintenance_plan_no',
+                // Add more mappings as needed
+            };
 
             const headers = data[0].map(h => h ? h.toString().trim() : '');
             const rows = data.slice(1);
@@ -549,34 +577,19 @@ module.exports = (pool, requireAuth, requireRole) => {
                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products'
                 ORDER BY ORDINAL_POSITION
             `);
-
-            // Filter out auto-increment and system columns
             const expectedColumns = dbColumns
                 .filter(col => !['product_id', 'added_at', 'updated_at'].includes(col.COLUMN_NAME))
                 .map(col => col.COLUMN_NAME);
 
-            // Validate column headers
-            const missingColumns = expectedColumns.filter(col => !headers.includes(col));
-            const extraColumns = headers.filter(col => col && !expectedColumns.includes(col));
-
-            if (missingColumns.length > 0 || extraColumns.length > 0) {
-                let errorMessage = 'Column mismatch detected:\\n';
-                if (missingColumns.length > 0) {
-                    errorMessage += `Missing columns: ${missingColumns.join(', ')}\\n`;
-                }
-                if (extraColumns.length > 0) {
-                    errorMessage += `Extra columns: ${extraColumns.join(', ')}\\n`;
-                }
-                errorMessage += `Expected columns: ${expectedColumns.join(', ')}`;
-                
-                req.flash('error', errorMessage);
-                return res.redirect('/admin/upload-products');
+            // Build a reverse map for DB columns to audit headers
+            const dbToAuditMap = {};
+            for (const [audit, db] of Object.entries(auditToDbMap)) {
+                dbToAuditMap[db] = audit;
             }
 
             // Process and validate data
             const connection = await pool.getConnection();
             await connection.beginTransaction();
-
             try {
                 let successCount = 0;
                 let errorCount = 0;
@@ -592,18 +605,24 @@ module.exports = (pool, requireAuth, requireRole) => {
                             continue;
                         }
 
-                        // Create object from row data
+                        // Create object from row data with proper mapping
                         const productData = {};
                         headers.forEach((header, index) => {
-                            if (header && expectedColumns.includes(header)) {
-                                productData[header] = row[index] || null;
+                            const cellValue = row[index];
+                            if (header && expectedColumns.includes(header) && cellValue !== undefined && cellValue !== '') {
+                                productData[header] = cellValue;
                             }
                         });
-
-                        // Set default values for required fields
-                        if (!productData.added_by) {
-                            productData.added_by = req.session.user.user_id;
+                        
+                        // Skip rows with missing required data
+                        if (!productData.product_name && !productData.asset_type) {
+                            continue;
                         }
+
+                        // Set default values and convert data types
+                        productData.added_by = req.session.user.user_id;
+                        productData.inwarded_by = req.session.user.user_id;
+                        
                         if (productData.is_available === undefined || productData.is_available === null) {
                             productData.is_available = true;
                         }
@@ -611,17 +630,38 @@ module.exports = (pool, requireAuth, requireRole) => {
                             productData.quantity = 1;
                         }
                         
-                        // Set default values for new columns if empty
-                        if (!productData.sap_equipment_no) {
+                        // Convert Excel date serial numbers to proper dates
+                        const dateFields = ['calibration_due_date', 'inward_date', 'license_start', 'next_renewal_date'];
+                        dateFields.forEach(field => {
+                            if (productData[field]) {
+                                // Check if it's a number (Excel serial date)
+                                if (!isNaN(productData[field]) && productData[field] > 1000) {
+                                    const excelDate = new Date((productData[field] - 25569) * 86400 * 1000);
+                                    productData[field] = excelDate.toISOString().split('T')[0];
+                                }
+                                // Check if it's already a valid date string
+                                else if (typeof productData[field] === 'string' && productData[field].match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                    // Keep as is
+                                }
+                                // If it's text that's not a date, set to null
+                                else if (isNaN(Date.parse(productData[field]))) {
+                                    productData[field] = null;
+                                }
+                            }
+                        });
+                        
+
+                        // Only set default values for columns that exist in the DB
+                        if (expectedColumns.includes('sap_equipment_no') && !productData.sap_equipment_no) {
                             productData.sap_equipment_no = 'N/A';
                         }
-                        if (!productData.sap_maintenance_plan_no) {
+                        if (expectedColumns.includes('sap_maintenance_plan_no') && !productData.sap_maintenance_plan_no) {
                             productData.sap_maintenance_plan_no = 'N/A';
                         }
-                        if (!productData.cost_center) {
+                        if (expectedColumns.includes('cost_center') && !productData.cost_center) {
                             productData.cost_center = 'N/A';
                         }
-                        if (!productData.cost) {
+                        if (expectedColumns.includes('cost') && !productData.cost) {
                             productData.cost = null;
                         }
 
@@ -632,20 +672,33 @@ module.exports = (pool, requireAuth, requireRole) => {
                         if (typeof productData.calibration_required === 'string') {
                             productData.calibration_required = ['true', '1', 'yes', 'y'].includes(productData.calibration_required.toLowerCase());
                         }
+                        
+                        // Remove empty string values to use NULL instead
+                        Object.keys(productData).forEach(key => {
+                            if (productData[key] === '' || productData[key] === 'NA' || productData[key] === 'N/A') {
+                                productData[key] = null;
+                            }
+                        });
+                        
+                        // Ensure quantity is a number
+                        if (productData.quantity) {
+                            productData.quantity = parseInt(productData.quantity) || 1;
+                        }
 
-                        // Validate required fields
+                        // Skip rows with missing required fields
                         if (!productData.product_name || !productData.asset_type) {
-                            errors.push(`Row ${rowNumber}: Product name and asset type are required`);
-                            errorCount++;
                             continue;
                         }
 
-                        // Build INSERT query dynamically
-                        const columns = Object.keys(productData).filter(key => productData[key] !== null);
+
+                        // Only insert columns that exist in the DB
+                        const columns = Object.keys(productData).filter(key => expectedColumns.includes(key) && productData[key] !== null);
                         const values = columns.map(key => productData[key]);
+                        if (columns.length === 0) {
+                            throw new Error('No valid columns to insert');
+                        }
                         const placeholders = columns.map(() => '?').join(', ');
                         const columnNames = columns.join(', ');
-
                         const insertQuery = `INSERT INTO products (${columnNames}) VALUES (${placeholders})`;
                         const [insertResult] = await connection.execute(insertQuery, values);
 
@@ -789,12 +842,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                 SELECT 
                     p.*,
                     u.full_name as added_by_name,
-                    iw.full_name as inwarded_by_name,
-                    COALESCE((
-                        SELECT COUNT(*) 
-                        FROM product_assignments pa 
-                        WHERE pa.product_id = p.product_id
-                    ), 0) as total_assignments,
                     COALESCE((
                         SELECT SUM(pa.quantity) 
                         FROM product_assignments pa 
@@ -806,11 +853,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                         WHEN p.calibration_due_date IS NOT NULL THEN 'Current'
                         ELSE 'Not Required'
                     END as calibration_status,
-                    CASE 
-                        WHEN p.calibration_required = 1 AND p.calibration_frequency IS NOT NULL 
-                        THEN DATE_ADD(p.added_at, INTERVAL CAST(p.calibration_frequency AS UNSIGNED) YEAR)
-                        ELSE NULL
-                    END as next_calibration_date,
                     GROUP_CONCAT(
                         CONCAT(emp_user.full_name, ' (', dept.department_name, ')')
                         ORDER BY pa.assigned_at DESC 
@@ -818,7 +860,6 @@ module.exports = (pool, requireAuth, requireRole) => {
                     ) as assigned_to_details
                 FROM products p
                 LEFT JOIN users u ON p.added_by = u.user_id
-                LEFT JOIN users iw ON p.inwarded_by = iw.user_id
                 LEFT JOIN product_assignments pa ON p.product_id = pa.product_id AND pa.is_returned = FALSE
                 LEFT JOIN employees emp ON pa.employee_id = emp.employee_id
                 LEFT JOIN users emp_user ON emp.user_id = emp_user.user_id

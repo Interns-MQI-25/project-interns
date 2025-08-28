@@ -90,6 +90,14 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <% if (product.return_date) { %>
                                                 <%= returnDate.toLocaleDateString() %>
+                                                <% if (product.extension_status === 'requested') { %>
+                                                    <span class="ml-2 px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">Extension Requested</span>
+                                                <% } else if (product.extension_status === 'approved' && product.new_return_date) { %>
+                                                    <br/>
+                                                    <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">Extension Approved: <%= new Date(product.new_return_date).toLocaleDateString() %></span>
+                                                <% } else if (product.extension_status === 'rejected') { %>
+                                                    <span class="ml-2 px-2 py-1 text-xs rounded bg-red-100 text-red-800">Extension Rejected</span>
+                                                <% } %>
                                             <% } else { %>
                                                 <span class="text-gray-400">N/A</span>
                                             <% } %>

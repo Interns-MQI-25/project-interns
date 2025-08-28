@@ -174,19 +174,11 @@ CREATE TABLE product_assignments (
     return_status ENUM('none', 'requested', 'approved') DEFAULT 'none',
     remarks TEXT NULL,
     return_remarks TEXT NULL,
-    extension_requested BOOLEAN DEFAULT FALSE,
-    extension_reason TEXT NULL,
-    new_return_date DATE NULL,
-    extension_status ENUM('none', 'requested', 'approved', 'rejected') DEFAULT 'none',
-    extension_requested_at TIMESTAMP NULL,
-    extension_processed_by INT NULL,
-    extension_processed_at TIMESTAMP NULL,
-    extension_remarks TEXT NULL,
+
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
     FOREIGN KEY (monitor_id) REFERENCES users(user_id),
-    FOREIGN KEY (returned_to) REFERENCES users(user_id),
-    FOREIGN KEY (extension_processed_by) REFERENCES users(user_id)
+    FOREIGN KEY (returned_to) REFERENCES users(user_id)
 );
 
 -- Insert admin users with correct password hashes

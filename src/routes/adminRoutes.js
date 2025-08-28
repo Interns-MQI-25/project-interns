@@ -1905,5 +1905,145 @@ module.exports = (pool, requireAuth, requireRole) => {
         res.redirect('/admin/dashboard');
     });
 
+    // Admin: Manage FST Labs Route
+    router.get('/hil-approvals', requireAuth, requireRole(['admin']), async (req, res) => {
+        try {
+            // Get all labs with current booking status
+            const [labs] = await pool.execute(`
+                SELECT 
+                    hl.*,
+                    hb.project_name as current_project,
+                    u.full_name as booked_by,
+                    hb.end_date,
+                    CASE 
+                        WHEN hb.booking_id IS NOT NULL THEN 'occupied'
+                        ELSE 'available'
+                    END as status
+                FROM hil_labs hl
+                LEFT JOIN hil_bookings hb ON hl.lab_id = hb.lab_id 
+                    AND hb.status = 'active' 
+                    AND hb.start_date <= CURDATE() 
+                    AND hb.end_date >= CURDATE()
+                LEFT JOIN users u ON hb.booked_by = u.user_id
+                WHERE hl.is_active = TRUE
+                ORDER BY hl.lab_name
+            `);
+
+            // Get all active bookings with details
+            const [allBookings] = await pool.execute(`
+                SELECT 
+                    hb.*,
+                    hl.lab_name,
+                    hl.location,
+                    u.full_name as booked_by_name,
+                    d.department_name,
+                    COUNT(hba.user_id) as attendee_count,
+                    GROUP_CONCAT(att_user.full_name SEPARATOR ', ') as attendee_names
+                FROM hil_bookings hb
+                JOIN hil_labs hl ON hb.lab_id = hl.lab_id
+                JOIN users u ON hb.booked_by = u.user_id
+                LEFT JOIN employees e ON u.user_id = e.user_id
+                LEFT JOIN departments d ON e.department_id = d.department_id
+                LEFT JOIN hil_booking_attendees hba ON hb.booking_id = hba.booking_id
+                LEFT JOIN users att_user ON hba.user_id = att_user.user_id
+                WHERE hb.status = 'active'
+                GROUP BY hb.booking_id
+                ORDER BY hb.start_date ASC
+            `);
+
+            res.render('admin/hil-bookings-overview', {
+                user: req.session.user,
+                labs: labs || [],
+                bookings: allBookings || []
+            });
+        } catch (error) {
+            console.error('Manage FST Labs error:', error);
+            res.render('admin/hil-bookings-overview', {
+                user: req.session.user,
+                labs: [],
+                bookings: []
+            });
+        }
+    });
+
+    // Admin: Manage FST Labs Route
+    router.get('/manage-fst-labs', requireAuth, requireRole(['admin']), async (req, res) => {
+        try {
+            // Get all labs with current booking status
+            const [labs] = await pool.execute(`
+                SELECT 
+                    hl.*,
+                    hb.project_name as current_project,
+                    u.full_name as booked_by,
+                    hb.end_date,
+                    CASE 
+                        WHEN hb.booking_id IS NOT NULL THEN 'occupied'
+                        ELSE 'available'
+                    END as status
+                FROM hil_labs hl
+                LEFT JOIN hil_bookings hb ON hl.lab_id = hb.lab_id 
+                    AND hb.status = 'active' 
+                    AND hb.start_date <= CURDATE() 
+                    AND hb.end_date >= CURDATE()
+                LEFT JOIN users u ON hb.booked_by = u.user_id
+                WHERE hl.is_active = TRUE
+                ORDER BY hl.lab_name
+            `);
+
+            // Get all active bookings with details
+            const [allBookings] = await pool.execute(`
+                SELECT 
+                    hb.*,
+                    hl.lab_name,
+                    hl.location,
+                    u.full_name as booked_by_name,
+                    d.department_name,
+                    COUNT(hba.user_id) as attendee_count,
+                    GROUP_CONCAT(att_user.full_name SEPARATOR ', ') as attendee_names
+                FROM hil_bookings hb
+                JOIN hil_labs hl ON hb.lab_id = hl.lab_id
+                JOIN users u ON hb.booked_by = u.user_id
+                LEFT JOIN employees e ON u.user_id = e.user_id
+                LEFT JOIN departments d ON e.department_id = d.department_id
+                LEFT JOIN hil_booking_attendees hba ON hb.booking_id = hba.booking_id
+                LEFT JOIN users att_user ON hba.user_id = att_user.user_id
+                WHERE hb.status = 'active'
+                GROUP BY hb.booking_id
+                ORDER BY hb.start_date ASC
+            `);
+
+            res.render('admin/manage-fst-labs', {
+                user: req.session.user,
+                labs: labs || [],
+                bookings: allBookings || []
+            });
+        } catch (error) {
+            console.error('Manage FST Labs error:', error);
+            res.render('admin/manage-fst-labs', {
+                user: req.session.user,
+                labs: [],
+                bookings: []
+            });
+        }
+    });
+
+    // Admin: Add New HIL Lab Route
+    router.post('/add-hil-lab', requireAuth, requireRole(['admin']), async (req, res) => {
+        const { lab_name, lab_description, location, capacity, equipment_details } = req.body;
+
+        try {
+            await pool.execute(`
+                INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, TRUE)
+            `, [lab_name, lab_description, location, capacity || 1, equipment_details, req.session.user.user_id]);
+
+            req.flash('success', 'HIL lab added successfully');
+        } catch (error) {
+            console.error('Add HIL lab error:', error);
+            req.flash('error', 'Error adding HIL lab');
+        }
+        res.redirect('/admin/manage-fst-labs');
+    });
+
     return router;
 };

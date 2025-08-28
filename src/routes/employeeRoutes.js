@@ -632,6 +632,29 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // API endpoint to get HIL bookings count for dashboard
+    router.get('/api/hil-bookings-count', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            const currentUserId = req.session.user.user_id;
+            
+            // Count active HIL bookings where user is booker or attendee
+            const [hilBookings] = await pool.execute(`
+                SELECT COUNT(DISTINCT hb.booking_id) as count 
+                FROM hil_bookings hb
+                LEFT JOIN hil_booking_attendees hba ON hb.booking_id = hba.booking_id
+                WHERE (hb.booked_by = ? OR hba.user_id = ?) 
+                AND hb.status = 'active'
+                AND hb.start_date <= CURDATE() 
+                AND hb.end_date >= CURDATE()
+            `, [currentUserId, currentUserId]);
+            
+            res.json({ count: hilBookings[0].count });
+        } catch (error) {
+            console.error('Error fetching HIL bookings count:', error);
+            res.json({ count: 0 });
+        }
+    });
+
     // Route: Download file attachment (Employee)
     router.get('/download-attachment/:attachmentId', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
@@ -687,6 +710,54 @@ module.exports = (pool, requireAuth, requireRole) => {
         } catch (error) {
             console.error('Error fetching attachments:', error);
             res.status(500).json({ error: 'Error fetching attachments' });
+        }
+    });
+
+    // Employee: HIL Calendar Route
+    router.get('/hil-calendar', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            res.render('employee/hil-calendar', {
+                user: req.session.user
+            });
+        } catch (error) {
+            console.error('HIL calendar error:', error);
+            res.render('error', { message: 'Error loading calendar' });
+        }
+    });
+
+    // Employee: My HIL Bookings Route
+    router.get('/my-hil-bookings', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            const [myBookings] = await pool.execute(`
+                SELECT DISTINCT
+                    hb.*,
+                    hl.lab_name,
+                    hl.location,
+                    u.full_name as booked_by_name,
+                    CASE 
+                        WHEN hb.booked_by = ? THEN 'Owner'
+                        ELSE 'Attendee'
+                    END as my_role,
+                    DATEDIFF(hb.end_date, CURDATE()) as days_remaining
+                FROM hil_bookings hb
+                JOIN hil_labs hl ON hb.lab_id = hl.lab_id
+                JOIN users u ON hb.booked_by = u.user_id
+                LEFT JOIN hil_booking_attendees hba ON hb.booking_id = hba.booking_id
+                WHERE (hb.booked_by = ? OR hba.user_id = ?)
+                AND hb.status = 'active'
+                ORDER BY hb.created_at DESC
+            `, [req.session.user.user_id, req.session.user.user_id, req.session.user.user_id]);
+            
+            res.render('employee/my-hil-bookings', {
+                user: req.session.user,
+                myBookings: myBookings || []
+            });
+        } catch (error) {
+            console.error('My HIL bookings error:', error);
+            res.render('employee/my-hil-bookings', {
+                user: req.session.user,
+                myBookings: []
+            });
         }
     });
 

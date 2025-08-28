@@ -78,6 +78,15 @@
                     <i class="fas fa-boxes mr-3"></i>
                     Stock
                 </a>
+                <a href="/employee/hil-calendar" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-calendar-alt mr-3"></i>
+                    FST Labs Calendar
+                </a>
+                <a href="/employee/my-hil-bookings" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-list mr-3"></i>
+                    My HIL Bookings
+                </a>
+                
             <% } else if (user.role === 'monitor') { %>
                 <a href="/monitor/my-products" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
                     <i class="fas fa-laptop mr-3"></i>
@@ -144,7 +153,13 @@
                         <span id="pendingRegistrationsCount" class="bg-red-500 text-white text-xs rounded-full px-2 py-1 font-bold min-w-[20px] text-center" style="display: none;">0</span>
                     </div>
                 </a>
-                <a href="/admin/account" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="account">
+               
+               
+                <a href="/admin/manage-fst-labs" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="manage-fst-labs">
+                    <i class="fas fa-flask mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
+                    <span class="font-medium text-sm sm:text-base">Manage FST Labs</span>
+                </a>
+                 <a href="/admin/account" class="sidebar-link group flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-all duration-200" data-page="account">
                     <i class="fas fa-user-circle mr-3 text-gray-400 group-hover:text-primary-600 transition-colors text-sm sm:text-base"></i>
                     <span class="font-medium text-sm sm:text-base">View Account</span>
                 </a>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage HIL Labs - Marquardt India Pvt. Ltd.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body class="bg-gray-50">
+    <%- include('../partials/navbar') %>
+    
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <div class="mb-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Manage HIL Labs</h1>
+                <p class="text-gray-600">Add, edit, and manage Hardware-in-Loop testing facilities</p>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button onclick="showAddLabModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    <i class="fas fa-plus mr-2"></i>Add New Lab
+                </button>
+                <a href="/hil/labs" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    <i class="fas fa-eye mr-2"></i>View Public Labs
+                </a>
+                <a href="/hil/bookings" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    <i class="fas fa-calendar mr-2"></i>View All Bookings
+                </a>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+            <!-- Labs Management -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">HIL Labs Overview</h3>
+                    
+                    <% if (labs && labs.length > 0) { %>
+                        <div class="overflow-x-auto">
+                            <table class="w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lab Details</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location & Capacity</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bookings</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <% labs.forEach(lab => { %>
+                                        <tr>
+                                            <td class="px-4 py-4">
+                                                <div class="flex items-start">
+                                                    <div class="flex-shrink-0">
+                                                        <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                                            <i class="fas fa-flask text-blue-600"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900"><%= lab.lab_name %></div>
+                                                        <% if (lab.lab_description) { %>
+                                                            <div class="text-sm text-gray-500"><%= lab.lab_description.substring(0, 60) %>...</div>
+                                                        <% } %>
+                                                        <% if (lab.created_by_name) { %>
+                                                            <div class="text-xs text-gray-400 mt-1">Created by: <%= lab.created_by_name %></div>
+                                                        <% } %>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900">
+                                                    <div class="flex items-center mb-1">
+                                                        <i class="fas fa-map-marker-alt w-4 text-gray-400"></i>
+                                                        <span class="ml-2"><%= lab.location %></span>
+                                                    </div>
+                                                    <div class="flex items-center">
+                                                        <i class="fas fa-users w-4 text-gray-400"></i>
+                                                        <span class="ml-2"><%= lab.capacity %> people</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="text-center">
+                                                    <div class="text-lg font-semibold text-gray-900"><%= lab.total_bookings %></div>
+                                                    <div class="text-xs text-gray-500">Total</div>
+                                                </div>
+                                                <div class="text-center mt-2">
+                                                    <div class="text-sm font-medium text-green-600"><%= lab.active_bookings %></div>
+                                                    <div class="text-xs text-gray-500">Active</div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <% if (lab.is_active) { %>
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        <i class="fas fa-circle mr-1 text-xs"></i>Active
+                                                    </span>
+                                                <% } else { %>
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        <i class="fas fa-circle mr-1 text-xs"></i>Inactive
+                                                    </span>
+                                                <% } %>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                                <div class="flex space-x-2">
+                                                    <button onclick="editLab(<%= lab.lab_id %>)" class="text-blue-600 hover:text-blue-900">
+                                                        <i class="fas fa-edit mr-1"></i>Edit
+                                                    </button>
+                                                    <% if (lab.active_bookings === 0) { %>
+                                                        <button onclick="toggleLabStatus(<%= lab.lab_id %>, <%= !lab.is_active %>)" 
+                                                                class="<%= lab.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900' %>">
+                                                            <i class="fas fa-<%= lab.is_active ? 'ban' : 'check' %> mr-1"></i>
+                                                            <%= lab.is_active ? 'Deactivate' : 'Activate' %>
+                                                        </button>
+                                                    <% } %>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-8">
+                            <i class="fas fa-flask text-gray-400 text-4xl mb-4"></i>
+                            <p class="text-gray-500 mb-4">No HIL labs configured yet</p>
+                            <button onclick="showAddLabModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                                <i class="fas fa-plus mr-2"></i>Add First Lab
+                            </button>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Lab Modal -->
+    <div id="addLabModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Add New HIL Lab</h3>
+                <form action="/hil/admin/add-lab" method="POST" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="lab_name" class="block text-sm font-medium text-gray-700">Lab Name *</label>
+                            <input type="text" name="lab_name" id="lab_name" required
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="e.g., HIL Lab 1">
+                        </div>
+                        <div>
+                            <label for="location" class="block text-sm font-medium text-gray-700">Location</label>
+                            <input type="text" name="location" id="location"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="e.g., Building A - Floor 2">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="lab_description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea name="lab_description" id="lab_description" rows="3"
+                                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Brief description of the lab's purpose and capabilities"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="capacity" class="block text-sm font-medium text-gray-700">Capacity (People)</label>
+                        <input type="number" name="capacity" id="capacity" min="1" max="50" value="4"
+                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="equipment_details" class="block text-sm font-medium text-gray-700">Equipment Details</label>
+                        <textarea name="equipment_details" id="equipment_details" rows="4"
+                                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="List of available equipment, software, and testing capabilities"></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeAddLabModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md text-sm">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">
+                            <i class="fas fa-plus mr-2"></i>Add Lab
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showAddLabModal() {
+            document.getElementById('addLabModal').classList.remove('hidden');
+        }
+
+        function closeAddLabModal() {
+            document.getElementById('addLabModal').classList.add('hidden');
+        }
+
+        function editLab(labId) {
+            // Implement edit functionality
+            alert('Edit functionality will be implemented in the next version');
+        }
+
+        function toggleLabStatus(labId, newStatus) {
+            const action = newStatus ? 'activate' : 'deactivate';
+            if (confirm(`Are you sure you want to ${action} this lab?`)) {
+                // Implement status toggle
+                alert('Status toggle functionality will be implemented in the next version');
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('addLabModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddLabModal();
+            }
+        });
+    </script>
+</body>
+</html>

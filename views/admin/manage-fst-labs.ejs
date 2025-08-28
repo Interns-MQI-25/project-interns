@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage FST Labs - Marquardt India Pvt. Ltd.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body class="bg-gray-50">
+    <%- include('../partials/navbar') %>
+    
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Manage FST Labs</h1>
+                    <p class="text-gray-600">Manage HIL labs and view live booking data</p>
+                </div>
+                <button onclick="showAddLabModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                    <i class="fas fa-plus mr-2"></i>Add New Lab
+                </button>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+            <!-- Labs Status Overview -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <% if (labs && labs.length > 0) { %>
+                    <% labs.forEach(lab => { %>
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900"><%= lab.lab_name %></h3>
+                                <% if (lab.current_project) { %>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <i class="fas fa-circle mr-1 text-xs"></i>Occupied
+                                    </span>
+                                <% } else { %>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-circle mr-1 text-xs"></i>Available
+                                    </span>
+                                <% } %>
+                            </div>
+                            <div class="space-y-2 text-sm text-gray-600">
+                                <p><i class="fas fa-map-marker-alt mr-2 text-gray-400"></i><%= lab.location %></p>
+                                <p><i class="fas fa-users mr-2 text-gray-400"></i>Capacity: <%= lab.capacity %> people</p>
+                                <% if (lab.equipment_details) { %>
+                                    <p><i class="fas fa-cogs mr-2 text-gray-400"></i><%= lab.equipment_details.substring(0, 50) %>...</p>
+                                <% } %>
+                            </div>
+                            <% if (lab.current_project) { %>
+                                <div class="mt-4 p-3 bg-red-50 rounded-lg">
+                                    <p class="text-sm font-medium text-red-900">Current Booking:</p>
+                                    <p class="text-sm text-red-700"><%= lab.current_project %></p>
+                                    <p class="text-xs text-red-600 mt-1">by <%= lab.booked_by %></p>
+                                    <% if (lab.end_date) { %>
+                                        <p class="text-xs text-red-600">Until: <%= new Date(lab.end_date).toLocaleDateString() %></p>
+                                    <% } %>
+                                </div>
+                            <% } %>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="col-span-full text-center py-12">
+                        <div class="mx-auto h-24 w-24 text-gray-400">
+                            <i class="fas fa-flask text-6xl"></i>
+                        </div>
+                        <h3 class="mt-4 text-lg font-medium text-gray-900">No FST Labs</h3>
+                        <p class="mt-2 text-sm text-gray-500">Add your first FST lab to get started.</p>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Active Bookings List -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Active Bookings</h2>
+                </div>
+                <% if (bookings && bookings.length > 0) { %>
+                    <ul class="divide-y divide-gray-200">
+                        <% bookings.forEach(booking => { %>
+                            <li>
+                                <div class="px-4 py-4 sm:px-6">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-lg font-medium text-gray-900 truncate">
+                                                    <%= booking.project_name %>
+                                                </p>
+                                                <div class="ml-2 flex-shrink-0 flex">
+                                                    <% 
+                                                    const today = new Date();
+                                                    const startDate = new Date(booking.start_date);
+                                                    const endDate = new Date(booking.end_date);
+                                                    let status = 'upcoming';
+                                                    let statusColor = 'blue';
+                                                    if (today >= startDate && today <= endDate) {
+                                                        status = 'active';
+                                                        statusColor = 'green';
+                                                    } else if (today > endDate) {
+                                                        status = 'expired';
+                                                        statusColor = 'red';
+                                                    }
+                                                    %>
+                                                    <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<%= statusColor %>-100 text-<%= statusColor %>-800">
+                                                        <%= status.charAt(0).toUpperCase() + status.slice(1) %>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2 sm:flex sm:justify-between">
+                                                <div class="sm:flex">
+                                                    <p class="flex items-center text-sm text-gray-500">
+                                                        <i class="fas fa-flask mr-1.5 text-gray-400"></i>
+                                                        <%= booking.lab_name %> - <%= booking.location %>
+                                                    </p>
+                                                    <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                                        <i class="fas fa-calendar mr-1.5 text-gray-400"></i>
+                                                        <%= new Date(booking.start_date).toLocaleDateString() %> - <%= new Date(booking.end_date).toLocaleDateString() %>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <p class="flex items-center text-sm text-gray-500">
+                                                    <i class="fas fa-user mr-1.5 text-gray-400"></i>
+                                                    Booked by: <span class="font-medium text-gray-900 ml-1"><%= booking.booked_by_name %></span>
+                                                    <% if (booking.department_name) { %>
+                                                        (<%= booking.department_name %>)
+                                                    <% } %>
+                                                </p>
+                                                <% if (booking.attendee_count > 0 && booking.attendee_names) { %>
+                                                    <p class="flex items-center text-sm text-gray-500 mt-1">
+                                                        <i class="fas fa-users mr-1.5 text-gray-400"></i>
+                                                        Team: <span class="font-medium text-gray-900 ml-1"><%= booking.attendee_names %></span>
+                                                    </p>
+                                                <% } %>
+                                            </div>
+                                            <% if (booking.project_description) { %>
+                                                <div class="mt-2">
+                                                    <p class="text-sm text-gray-600">
+                                                        <span class="font-medium">Description:</span> <%= booking.project_description %>
+                                                    </p>
+                                                </div>
+                                            <% } %>
+                                            <% if (booking.booking_purpose) { %>
+                                                <div class="mt-1">
+                                                    <p class="text-sm text-gray-600">
+                                                        <span class="font-medium">Purpose:</span> <%= booking.booking_purpose %>
+                                                    </p>
+                                                </div>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        <% }); %>
+                    </ul>
+                <% } else { %>
+                    <div class="text-center py-12">
+                        <div class="mx-auto h-24 w-24 text-gray-400">
+                            <i class="fas fa-calendar-alt text-6xl"></i>
+                        </div>
+                        <h3 class="mt-4 text-lg font-medium text-gray-900">No active HIL bookings</h3>
+                        <p class="mt-2 text-sm text-gray-500">No labs are currently booked.</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Lab Modal -->
+    <div id="addLabModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Add New FST Lab</h3>
+                <form id="addLabForm" action="/admin/add-hil-lab" method="POST" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Lab Name *</label>
+                            <input type="text" name="lab_name" required class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Location *</label>
+                            <input type="text" name="location" required class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Lab Description</label>
+                        <textarea name="lab_description" rows="3" class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Capacity *</label>
+                            <input type="number" name="capacity" min="1" value="1" required class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Equipment Details</label>
+                            <input type="text" name="equipment_details" class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" placeholder="e.g., HIL Simulator, ECU Test Bench">
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeAddLabModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                            <i class="fas fa-plus mr-2"></i>Add Lab
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showAddLabModal() {
+            document.getElementById('addLabModal').classList.remove('hidden');
+        }
+
+        function closeAddLabModal() {
+            document.getElementById('addLabModal').classList.add('hidden');
+            document.getElementById('addLabForm').reset();
+        }
+
+        // Auto-refresh page every 30 seconds for live data
+        setInterval(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

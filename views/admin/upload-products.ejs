@@ -17,13 +17,15 @@
         <div class="mb-6">
             <div class="flex justify-between items-center">
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Upload Products</h1>
-                    <p class="text-gray-600">Bulk upload products using Excel file</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900" style="pointer-events:none; user-select:text;">Upload Products</h1>
+                    <p class="text-gray-600" style="pointer-events:none; user-select:text;">Bulk upload products using Excel file</p>
                 </div>
-                <a href="/admin/stock" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    <i class="fas fa-arrow-left mr-2"></i>
-                    Back to Stock
-                </a>
+                <div class="flex gap-2">
+                    <a href="/admin/stock" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Stock
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -31,15 +33,16 @@
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
             <h3 class="text-lg font-semibold text-blue-800 mb-3">
                 <i class="fas fa-info-circle mr-2"></i>
-                Upload Instructions
+                How to Add Products via Excel Upload
             </h3>
             <div class="text-blue-700 space-y-2">
-                <p><strong>1.</strong> Download the template Excel file to see the required format.</p>
-                <p><strong>2.</strong> Fill in your product data using the exact column names provided in the template.</p>
-                <p><strong>3.</strong> All column names must match exactly (case-sensitive).</p>
+                <p><strong>1.</strong> <span class="font-semibold text-blue-900">To add new products, download the template Excel file below.</span></p>
+                <p><strong>2.</strong> Fill in your product data using the <span class="font-semibold">exact column names</span> provided in the template. <span class="text-red-700">All column names must match exactly (case-sensitive).</span></p>
+                <p><strong>3.</strong> Once your data is ready, upload the completed file using the form below. <span class="font-semibold text-blue-900">All products in the uploaded file will be directly added to the inventory.</span></p>
                 <p><strong>4.</strong> Required columns: <code class="bg-blue-100 px-1 rounded">product_name</code>, <code class="bg-blue-100 px-1 rounded">asset_type</code></p>
-                <p><strong>5.</strong> Upload only Excel files (.xlsx, .xls) or CSV files.</p>
-                <p><strong>6.</strong> Maximum file size: 10MB</p>
+                <p><strong>5.</strong> <span class="text-red-600 font-semibold">Note:</span> <code class="bg-red-100 px-1 rounded">added_by</code> and <code class="bg-red-100 px-1 rounded">inwarded_by</code> will be automatically set to current admin. Leave empty or use any text.</p>
+                <p><strong>6.</strong> <span class="text-red-600 font-semibold">Date Format:</span> Excel date serial numbers (like 45627) will be automatically converted to proper dates.</p>
+                <p><strong>7.</strong> Accepted file types: Excel (.xlsx, .xls) or CSV. Maximum file size: 10MB</p>
             </div>
         </div>
 
@@ -85,7 +88,11 @@
                                 <%= column.DATA_TYPE %>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <%= column.IS_NULLABLE === 'NO' ? 'Yes' : 'No' %>
+                                <% if (column.COLUMN_NAME === 'added_by' || column.COLUMN_NAME === 'inwarded_by') { %>
+                                    <span class="text-blue-600">Auto-set</span>
+                                <% } else { %>
+                                    <%= column.IS_NULLABLE === 'NO' ? 'Yes' : 'No' %>
+                                <% } %>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <% 
@@ -98,17 +105,19 @@
                                     'serial_number': 'SN123456',
                                     'is_available': 'true',
                                     'quantity': '1',
-                                    'calibration_required': 'false',
+                                    'added_by': 'Auto-set (ignore)',
+                                    'inwarded_by': 'Auto-set (ignore)',
+                                    'calibration_required': 'Yes/No',
                                     'calibration_frequency': '1 Year',
-                                    'calibration_due_date': '2025-12-31',
+                                    'calibration_due_date': '2025-12-31 or 45627',
                                     'pr_no': '1234',
                                     'po_number': 'PO-2024-001',
-                                    'inward_date': '2024-01-15',
+                                    'inward_date': '2024-01-15 or 45627',
                                     'version_number': 'v1.0',
                                     'software_license_type': 'Standard',
-                                    'license_start': '2024-01-01',
+                                    'license_start': '2024-01-01 or 45627',
                                     'renewal_frequency': '1 Year',
-                                    'next_renewal_date': '2025-01-01'
+                                    'next_renewal_date': '2025-01-01 or 45627'
                                 };
                                 %>
                                 <%= examples[column.COLUMN_NAME] || '-' %>
@@ -122,15 +131,20 @@
 
         <!-- Upload Form -->
         <div class="bg-white shadow rounded-lg p-6">
+            <div class="mb-4">
+                <div class="flex items-center bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded">
+                    <i class="fas fa-exclamation-circle text-yellow-600 mr-3"></i>
+                    <span class="text-yellow-800 font-semibold">This upload will <span class="underline">directly add new products to the inventory</span>. Please double-check your data before submitting.</span>
+                </div>
+            </div>
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
                 <i class="fas fa-upload mr-2"></i>
-                Upload Excel File
+                Upload Excel/CSV File
             </h3>
-            
             <form action="/admin/upload-products" method="POST" enctype="multipart/form-data" class="space-y-4">
                 <div>
                     <label for="excelFile" class="block text-sm font-medium text-gray-700 mb-2">
-                        Select Excel File
+                        Select Excel or CSV File
                     </label>
                     <div class="flex items-center justify-center w-full">
                         <label for="excelFile" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
@@ -146,7 +160,6 @@
                         </label>
                     </div>
                 </div>
-
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-gray-600">
                         <i class="fas fa-exclamation-triangle text-yellow-500 mr-1"></i>
@@ -162,61 +175,62 @@
     </main>
 
     <script>
-        // Handle file selection
-        document.getElementById('excelFile').addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name;
-            const fileNameDisplay = document.getElementById('selectedFileName');
-            
-            if (fileName) {
-                fileNameDisplay.textContent = `Selected: ${fileName}`;
-                fileNameDisplay.classList.remove('hidden');
-            } else {
-                fileNameDisplay.classList.add('hidden');
-            }
-        });
+</script>
 
-        // Handle drag and drop
-        const dropArea = document.querySelector('label[for="excelFile"]');
-        
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, preventDefaults, false);
-        });
+<script>
+window.addEventListener("DOMContentLoaded",function(){
+    (messages.error || []).forEach(msg => { alert(msg); });
+    (messages.success || []).forEach(msg => { alert(msg); });
+    (messages.warning || []).forEach(msg => { alert(msg); });
+    (messages.info || []).forEach(msg => { alert(msg); });
+});
 
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
+// Handle file selection
+document.getElementById('excelFile').addEventListener('change', function(e) {
+    const fileName = e.target.files[0]?.name;
+    const fileNameDisplay = document.getElementById('selectedFileName');
+    if (fileName) {
+        fileNameDisplay.textContent = `Selected: ${fileName}`;
+        fileNameDisplay.classList.remove('hidden');
+    } else {
+        fileNameDisplay.classList.add('hidden');
+    }
+});
 
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropArea.addEventListener(eventName, highlight, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight(e) {
-            dropArea.classList.add('border-blue-500', 'bg-blue-50');
-        }
-
-        function unhighlight(e) {
-            dropArea.classList.remove('border-blue-500', 'bg-blue-50');
-        }
-
-        dropArea.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            
-            if (files.length > 0) {
-                document.getElementById('excelFile').files = files;
-                const fileName = files[0].name;
-                const fileNameDisplay = document.getElementById('selectedFileName');
-                fileNameDisplay.textContent = `Selected: ${fileName}`;
-                fileNameDisplay.classList.remove('hidden');
-            }
-        }
-    </script>
+// Handle drag and drop
+const dropArea = document.querySelector('label[for="excelFile"]');
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, preventDefaults, false);
+});
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+['dragenter', 'dragover'].forEach(eventName => {
+    dropArea.addEventListener(eventName, highlight, false);
+});
+['dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, unhighlight, false);
+});
+function highlight(e) {
+    dropArea.classList.add('border-blue-500', 'bg-blue-50');
+}
+function unhighlight(e) {
+    dropArea.classList.remove('border-blue-500', 'bg-blue-50');
+}
+dropArea.addEventListener('drop', handleDrop, false);
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    if (files.length > 0) {
+        document.getElementById('excelFile').files = files;
+        const fileName = files[0].name;
+        const fileNameDisplay = document.getElementById('selectedFileName');
+        fileNameDisplay.textContent = `Selected: ${fileName}`;
+        fileNameDisplay.classList.remove('hidden');
+    }
+}
+</script>
+</html>
 </body>
 </html>

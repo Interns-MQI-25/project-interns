@@ -540,5 +540,203 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // API: Get single booking details
+    router.get('/api/booking/:bookingId', requireAuth, async (req, res) => {
+        try {
+            const bookingId = req.params.bookingId;
+            const [bookings] = await pool.execute(`
+                SELECT hb.*, hl.lab_name, hl.location
+                FROM hil_bookings hb
+                JOIN hil_labs hl ON hb.lab_id = hl.lab_id
+                WHERE hb.booking_id = ? AND (hb.booked_by = ? OR ? IN (SELECT user_id FROM users WHERE role IN ('admin', 'monitor')))
+            `, [bookingId, req.session.user.user_id, req.session.user.user_id]);
+            
+            if (bookings.length === 0) {
+                return res.status(404).json({ error: 'Booking not found or access denied' });
+            }
+            
+            res.json(bookings[0]);
+        } catch (error) {
+            console.error('Error fetching booking:', error);
+            res.status(500).json({ error: 'Error fetching booking details' });
+        }
+    });
+
+    // API: Update booking
+    router.put('/api/booking/:bookingId', requireAuth, async (req, res) => {
+        try {
+            const bookingId = req.params.bookingId;
+            const { project_name, project_description, start_date, end_date, booking_purpose } = req.body;
+            
+            // Check if user owns this booking
+            const [bookings] = await pool.execute(
+                'SELECT * FROM hil_bookings WHERE booking_id = ? AND booked_by = ?',
+                [bookingId, req.session.user.user_id]
+            );
+            
+            if (bookings.length === 0) {
+                return res.status(403).json({ error: 'Access denied or booking not found' });
+            }
+            
+            // Validate dates
+            const startDate = new Date(start_date);
+            const endDate = new Date(end_date);
+            
+            if (endDate <= startDate) {
+                return res.status(400).json({ error: 'End date must be after start date' });
+            }
+            
+            // Check for conflicts (excluding current booking)
+            const [conflicts] = await pool.execute(`
+                SELECT booking_id, project_name
+                FROM hil_bookings
+                WHERE lab_id = ? AND status = 'active' AND booking_id != ?
+                AND (
+                    (start_date <= ? AND end_date >= ?) OR
+                    (start_date <= ? AND end_date >= ?) OR
+                    (start_date >= ? AND end_date <= ?)
+                )
+            `, [bookings[0].lab_id, bookingId, start_date, start_date, end_date, end_date, start_date, end_date]);
+            
+            if (conflicts.length > 0) {
+                return res.status(400).json({ 
+                    error: `Lab already booked for "${conflicts[0].project_name}" during this period` 
+                });
+            }
+            
+            // Update booking
+            await pool.execute(`
+                UPDATE hil_bookings 
+                SET project_name = ?, project_description = ?, start_date = ?, end_date = ?, booking_purpose = ?, updated_at = NOW()
+                WHERE booking_id = ?
+            `, [project_name, project_description, start_date, end_date, booking_purpose, bookingId]);
+            
+            res.json({ success: true, message: 'Booking updated successfully' });
+        } catch (error) {
+            console.error('Error updating booking:', error);
+            res.status(500).json({ error: 'Error updating booking' });
+        }
+    });
+
+    // API: Cancel booking
+    router.delete('/api/booking/:bookingId', requireAuth, async (req, res) => {
+        try {
+            const bookingId = req.params.bookingId;
+            
+            // Check if user owns this booking
+            const [bookings] = await pool.execute(
+                'SELECT * FROM hil_bookings WHERE booking_id = ? AND booked_by = ?',
+                [bookingId, req.session.user.user_id]
+            );
+            
+            if (bookings.length === 0) {
+                return res.status(403).json({ error: 'Access denied or booking not found' });
+            }
+            
+            // Update booking status to cancelled
+            await pool.execute(
+                'UPDATE hil_bookings SET status = "cancelled", updated_at = NOW() WHERE booking_id = ?',
+                [bookingId]
+            );
+            
+            res.json({ success: true, message: 'Booking cancelled successfully' });
+        } catch (error) {
+            console.error('Error cancelling booking:', error);
+            res.status(500).json({ error: 'Error cancelling booking' });
+        }
+    });
+
+    // API: Get team members for a booking
+    router.get('/api/booking/:bookingId/team', requireAuth, async (req, res) => {
+        try {
+            const bookingId = req.params.bookingId;
+            
+            // Check if user has access to this booking
+            const [bookings] = await pool.execute(`
+                SELECT hb.booking_id FROM hil_bookings hb
+                LEFT JOIN hil_booking_attendees hba ON hb.booking_id = hba.booking_id
+                WHERE hb.booking_id = ? AND (hb.booked_by = ? OR hba.user_id = ?)
+            `, [bookingId, req.session.user.user_id, req.session.user.user_id]);
+            
+            if (bookings.length === 0) {
+                return res.status(403).json({ error: 'Access denied' });
+            }
+            
+            const [teamMembers] = await pool.execute(`
+                SELECT hba.user_id, u.full_name, d.department_name, hba.role_in_project
+                FROM hil_booking_attendees hba
+                JOIN users u ON hba.user_id = u.user_id
+                JOIN employees e ON u.user_id = e.user_id
+                JOIN departments d ON e.department_id = d.department_id
+                WHERE hba.booking_id = ?
+                ORDER BY u.full_name
+            `, [bookingId]);
+            
+            res.json(teamMembers);
+        } catch (error) {
+            console.error('Error fetching team members:', error);
+            res.status(500).json({ error: 'Error fetching team members' });
+        }
+    });
+
+    // API: Add team member to booking
+    router.post('/api/booking/:bookingId/team', requireAuth, async (req, res) => {
+        try {
+            const bookingId = req.params.bookingId;
+            const { user_id } = req.body;
+            
+            // Check if user owns this booking
+            const [bookings] = await pool.execute(
+                'SELECT * FROM hil_bookings WHERE booking_id = ? AND booked_by = ?',
+                [bookingId, req.session.user.user_id]
+            );
+            
+            if (bookings.length === 0) {
+                return res.status(403).json({ error: 'Access denied or booking not found' });
+            }
+            
+            // Add team member
+            await pool.execute(`
+                INSERT INTO hil_booking_attendees (booking_id, user_id, added_by)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE added_by = VALUES(added_by)
+            `, [bookingId, user_id, req.session.user.user_id]);
+            
+            res.json({ success: true, message: 'Team member added successfully' });
+        } catch (error) {
+            console.error('Error adding team member:', error);
+            res.status(500).json({ error: 'Error adding team member' });
+        }
+    });
+
+    // API: Remove team member from booking
+    router.delete('/api/booking/:bookingId/team/:userId', requireAuth, async (req, res) => {
+        try {
+            const bookingId = req.params.bookingId;
+            const userId = req.params.userId;
+            
+            // Check if user owns this booking
+            const [bookings] = await pool.execute(
+                'SELECT * FROM hil_bookings WHERE booking_id = ? AND booked_by = ?',
+                [bookingId, req.session.user.user_id]
+            );
+            
+            if (bookings.length === 0) {
+                return res.status(403).json({ error: 'Access denied or booking not found' });
+            }
+            
+            // Remove team member
+            await pool.execute(
+                'DELETE FROM hil_booking_attendees WHERE booking_id = ? AND user_id = ?',
+                [bookingId, userId]
+            );
+            
+            res.json({ success: true, message: 'Team member removed successfully' });
+        } catch (error) {
+            console.error('Error removing team member:', error);
+            res.status(500).json({ error: 'Error removing team member' });
+        }
+    });
+
     return router;
 };

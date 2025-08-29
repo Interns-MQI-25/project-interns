@@ -281,13 +281,13 @@
                         
                         bookingElement.className = `text-white text-xs p-1 mb-1 rounded cursor-pointer ${colorClass}`;
                         
-                        const projectText = booking.project_name.substring(0, 12) + (booking.project_name.length > 12 ? '...' : '');
-                        const description = booking.project_description ? booking.project_description.substring(0, 15) + '...' : '';
+                        const projectText = booking.project_name.substring(0, 15) + (booking.project_name.length > 15 ? '...' : '');
+                        const labText = booking.lab_name ? booking.lab_name.substring(0, 12) + (booking.lab_name.length > 12 ? '...' : '') : '';
                         const bookedBy = booking.booked_by_name ? booking.booked_by_name.split(' ')[0] : '';
                         
                         bookingElement.innerHTML = `
-                            <div class="font-medium">${projectText}</div>
-                            ${description ? `<div class="text-xs opacity-80">${description}</div>` : ''}
+                            <div class="font-medium text-xs">${projectText}</div>
+                            <div class="text-xs opacity-80">${labText}</div>
                             <div class="text-xs opacity-90">by ${bookedBy}</div>
                         `;
                         

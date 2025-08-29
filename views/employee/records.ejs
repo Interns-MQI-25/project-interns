@@ -47,11 +47,8 @@
                                 <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
                                     Requested Date
                                 </th>
-                                <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                <th class="pl-2 pr-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                                     Processed By
-                                </th>
-                                <th class="pl-2 pr-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                                    Action
                                 </th>
                             </tr>
                         </thead>
@@ -79,29 +76,17 @@
                                         <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             <%= new Date(request.requested_at).toLocaleDateString() %>
                                         </td>
-                                        <td class="px-2 py-4 text-sm text-gray-500 text-center">
+                                        <td class="pl-2 pr-4 py-4 text-sm text-gray-500 text-center">
                                             <div class="break-words"><%= request.processed_by_name || '-' %></div>
                                             <% if (request.remarks) { %>
                                                 <div class="text-xs <%= request.status === 'rejected' ? 'text-red-600' : 'text-blue-600' %> mt-1 italic">Remarks: <%= request.remarks %></div>
-                                            <% } %>
-                                        </td>
-                                        <td class="pl-2 pr-4 py-4 text-center">
-                                            <% if (request.status === 'pending') { %>
-                                                <form action="/employee/cancel-request" method="POST" onsubmit="return confirm('Are you sure you want to cancel this request?');" class="inline">
-                                                    <input type="hidden" name="request_id" value="<%= request.request_id %>" />
-                                                    <button type="submit" title="Cancel Request" class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors">
-                                                        <i class="fas fa-times mr-1"></i> Cancel
-                                                    </button>
-                                                </form>
-                                            <% } else { %>
-                                                <span class="text-gray-400 text-xs">-</span>
                                             <% } %>
                                         </td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                         No requests found
                                     </td>
                                 </tr>

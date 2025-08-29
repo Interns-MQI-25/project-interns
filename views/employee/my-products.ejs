@@ -112,8 +112,8 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <% if (product.is_returned) { %>
                                                 <div class="flex flex-col space-y-1">
-                                                    <span class="text-xs font-medium text-gray-600">
-                                                        Returned
+                                                    <span class="text-xs font-medium text-green-600">
+                                                        ✓ Returned
                                                     </span>
                                                     <% if (product.returned_at) { %>
                                                         <span class="text-xs text-gray-500">
@@ -122,16 +122,16 @@
                                                     <% } %>
                                                 </div>
                                             <% } else if (product.return_status === 'requested') { %>
-                                                <span class="text-xs font-medium text-gray-600">
-                                                    Return Requested
+                                                <span class="text-xs font-medium text-yellow-600">
+                                                    ⏳ Return Requested
                                                 </span>
                                             <% } else if (product.return_status === 'rejected') { %>
-                                                <span class="text-xs font-medium text-gray-600">
-                                                    Return Rejected
+                                                <span class="text-xs font-medium text-red-600">
+                                                    ✗ Return Rejected
                                                 </span>
                                             <% } else { %>
-                                                <span class="text-xs font-medium text-gray-600">
-                                                    In Use
+                                                <span class="text-xs font-medium text-blue-600">
+                                                    📦 In Use
                                                 </span>
                                             <% } %>
                                         </td>

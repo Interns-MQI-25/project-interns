@@ -66,12 +66,13 @@
                                             <% } %> -->
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap text-center">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                <%= request.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                                                    request.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                                                    'bg-yellow-100 text-yellow-800' %>">
-                                                <%= request.status.charAt(0).toUpperCase() + request.status.slice(1) %>
-                                            </span>
+                                            <% if (request.status === 'approved') { %>
+                                                <span class="text-xs font-medium text-green-600">✓ Approved</span>
+                                            <% } else if (request.status === 'rejected') { %>
+                                                <span class="text-xs font-medium text-red-600">✗ Rejected</span>
+                                            <% } else { %>
+                                                <span class="text-xs font-medium text-yellow-600">⏳ Pending</span>
+                                            <% } %>
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             <%= new Date(request.requested_at).toLocaleDateString() %>
@@ -147,21 +148,15 @@
                                             <div class="break-words"><%= assignment.return_purpose || '-' %></div>
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap text-center">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                <%= assignment.return_request_status === 'approved' ? 'bg-green-100 text-green-800' : 
-                                                    assignment.return_request_status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                                                    assignment.return_request_status === 'pending' ? 'bg-orange-100 text-orange-800' :
-                                                    'bg-yellow-100 text-yellow-800' %>">
-                                                <% if (assignment.return_request_status === 'pending') { %>
-                                                    Return Pending
-                                                <% } else if (assignment.return_request_status === 'approved') { %>
-                                                    Returned
-                                                <% } else if (assignment.return_request_status === 'rejected') { %>
-                                                    Return Rejected
-                                                <% } else { %>
-                                                    Assigned
-                                                <% } %>
-                                            </span>
+                                            <% if (assignment.return_request_status === 'pending') { %>
+                                                <span class="text-xs font-medium text-yellow-600">⏳ Return Pending</span>
+                                            <% } else if (assignment.return_request_status === 'approved') { %>
+                                                <span class="text-xs font-medium text-green-600">✓ Returned</span>
+                                            <% } else if (assignment.return_request_status === 'rejected') { %>
+                                                <span class="text-xs font-medium text-red-600">✗ Return Rejected</span>
+                                            <% } else { %>
+                                                <span class="text-xs font-medium text-blue-600">📦 Assigned</span>
+                                            <% } %>
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             <% if (assignment.return_requested_date) { %>
@@ -260,18 +255,13 @@
                                                 <div class="break-words"><%= extension.extension_reason || 'No reason provided' %></div>
                                             </td>
                                             <td class="px-2 py-4 whitespace-nowrap text-center">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                    <%= extension.extension_status === 'approved' ? 'bg-green-100 text-green-800' : 
-                                                        extension.extension_status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                                                        'bg-yellow-100 text-yellow-800' %>">
-                                                    <% if (extension.extension_status === 'approved') { %>
-                                                        ✓ Approved
-                                                    <% } else if (extension.extension_status === 'rejected') { %>
-                                                        ✗ Rejected
-                                                    <% } else { %>
-                                                        ⏳ Pending
-                                                    <% } %>
-                                                </span>
+                                                <% if (extension.extension_status === 'approved') { %>
+                                                    <span class="text-xs font-medium text-green-600">✓ Approved</span>
+                                                <% } else if (extension.extension_status === 'rejected') { %>
+                                                    <span class="text-xs font-medium text-red-600">✗ Rejected</span>
+                                                <% } else { %>
+                                                    <span class="text-xs font-medium text-yellow-600">⏳ Pending</span>
+                                                <% } %>
                                             </td>
                                             <td class="pl-2 pr-4 py-4 text-sm text-gray-500 text-center">
                                                 <% if (extension.extension_requested_at) { %>

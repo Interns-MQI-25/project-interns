@@ -48,17 +48,21 @@ CREATE TABLE IF NOT EXISTS hil_booking_attendees (
     UNIQUE KEY unique_booking_user (booking_id, user_id)
 );
 
--- Insert sample HIL Labs
-INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) VALUES
-('HIL Lab 1', 'Primary Hardware-in-Loop testing facility for automotive systems', 'Building A - Floor 2', 4, 'Real-time simulators, ECU testing equipment, CAN/LIN interfaces', 1),
-('HIL Lab 2', 'Secondary HIL facility for advanced driver assistance systems', 'Building B - Floor 1', 6, 'ADAS testing equipment, sensor simulation, vehicle dynamics models', 1),
-('HIL Lab 3', 'Specialized HIL lab for powertrain testing', 'Building A - Floor 3', 3, 'Engine simulation, transmission testing, hybrid system validation', 1);
+-- Insert sample HIL Labs (using existing admin user)
+INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
+SELECT 'HIL Lab 1', 'Primary Hardware-in-Loop testing facility for automotive systems', 'Building A - Floor 2', 4, 'Real-time simulators, ECU testing equipment, CAN/LIN interfaces', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
--- Create indexes for better performance
-CREATE INDEX idx_hil_bookings_dates ON hil_bookings(start_date, end_date);
-CREATE INDEX idx_hil_bookings_lab ON hil_bookings(lab_id);
-CREATE INDEX idx_hil_bookings_status ON hil_bookings(status);
-CREATE INDEX idx_hil_attendees_booking ON hil_booking_attendees(booking_id);
+INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
+SELECT 'HIL Lab 2', 'Secondary HIL facility for advanced driver assistance systems', 'Building B - Floor 1', 6, 'ADAS testing equipment, sensor simulation, vehicle dynamics models', user_id FROM users WHERE role = 'admin' LIMIT 1;
+
+INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
+SELECT 'HIL Lab 3', 'Specialized HIL lab for powertrain testing', 'Building A - Floor 3', 3, 'Engine simulation, transmission testing, hybrid system validation', user_id FROM users WHERE role = 'admin' LIMIT 1;
+
+-- Create indexes for better performance (if not exists)
+CREATE INDEX IF NOT EXISTS idx_hil_bookings_dates ON hil_bookings(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_hil_bookings_lab ON hil_bookings(lab_id);
+CREATE INDEX IF NOT EXISTS idx_hil_bookings_status ON hil_bookings(status);
+CREATE INDEX IF NOT EXISTS idx_hil_attendees_booking ON hil_booking_attendees(booking_id);
 
 -- Display completion message
 SELECT 'HIL Labs schema created successfully!' as message;

@@ -38,6 +38,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processed Date</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -83,11 +84,23 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <%= request.formatted_processed_at || 'Not processed' %>
                                         </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <% if (request.status === 'pending' && request.requestor_role === 'monitor') { %>
+                                                <form action="/monitor/cancel-request" method="POST" onsubmit="return confirm('Are you sure you want to cancel this request?');" class="inline">
+                                                    <input type="hidden" name="request_id" value="<%= request.request_id %>" />
+                                                    <button type="submit" title="Cancel Request" class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors">
+                                                        <i class="fas fa-times mr-1"></i> Cancel
+                                                    </button>
+                                                </form>
+                                            <% } else { %>
+                                                <span class="text-gray-400 text-xs">-</span>
+                                            <% } %>
+                                        </td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                    <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                         No request history found
                                     </td>
                                 </tr>

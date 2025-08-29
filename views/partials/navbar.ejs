@@ -86,6 +86,10 @@
                     <i class="fas fa-list mr-3"></i>
                     My HIL Bookings
                 </a>
+                <a href="/employee/monitors" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <i class="fas fa-user-shield mr-3"></i>
+                    View Monitors
+                </a>
                 
             <% } else if (user.role === 'monitor') { %>
                 <a href="/monitor/my-products" class="flex items-center px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
@@ -411,3 +415,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<!-- AI Assistant Chatbot -->
+<script src="/js/aiAssistant.js"></script>

@@ -574,6 +574,30 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // Monitor: Cancel Request Route
+    router.post('/cancel-request', requireAuth, requireRole(['monitor']), async (req, res) => {
+        const { request_id } = req.body;
+
+        try {
+            // Update request status to rejected with cancellation note
+            const [result] = await pool.execute(
+                'UPDATE product_requests SET status = ?, processed_at = NOW(), remarks = ? WHERE request_id = ? AND status = ?',
+                ['rejected', 'Cancelled by monitor', request_id, 'pending']
+            );
+
+            if (result.affectedRows === 0) {
+                req.flash('error', 'Request not found or cannot be cancelled.');
+            } else {
+                req.flash('success', 'Request cancelled successfully.');
+            }
+        } catch (error) {
+            console.error('Cancel request error:', error);
+            req.flash('error', 'Error cancelling request.');
+        }
+        
+        res.redirect('/monitor/records');
+    });
+
     // Monitor: Process Request Route
     router.post('/process-request', requireAuth, requireRole(['monitor']), async (req, res) => {
         const { request_id, action, remarks } = req.body;

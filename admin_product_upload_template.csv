@@ -1,4 +1,0 @@
-item_number,asset_type,product_category,product_name,model_number,serial_number,is_available,quantity,added_by,calibration_required,calibration_frequency,calibration_due_date,pr_no,po_number,inward_date,inwarded_by,version_number,software_license_type,license_start,renewal_frequency,next_renewal_date,new_license_key,new_version_number
-
-# Fill in your product data below this header row. All columns must be present for a successful upload.
-

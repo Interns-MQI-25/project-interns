@@ -22,49 +22,7 @@
             <p class="text-gray-600">Complete oversight of inventory and analytics</p>
         </div>
 
-        <!-- Stock Analytics -->
-        <% if (typeof stockStats !== 'undefined' && stockStats && stockStats.length > 0) { %>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <% stockStats.forEach(stat => { %>
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="p-5">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-cube text-2xl text-purple-600"></i>
-                            </div>
-                            <div class="ml-5 w-0 flex-1">
-                                <dl>
-                                    <dt class="text-sm font-medium text-gray-500 truncate">
-                                        <%= stat.asset_type %>
-                                    </dt>
-                                    <dd>
-                                        <div class="text-lg font-medium text-gray-900">
-                                            Available: <%= stat.available_quantity %> items
-                                            
-                                        </div>
-                                        <div class="text-xs text-gray-500">
-                                            Total items: <%= stat.total_items %> 
-                                            
-                                        </div>
-                                        <% if (stat.calibration_items > 0) { %>
-                                            <div class="text-xs text-orange-600">
-                                                Cal Req: <%= stat.calibration_items %>
-                                            </div>
-                                        <% } %>
-                                        <% if (stat.overdue_calibrations > 0) { %>
-                                            <div class="text-xs text-red-600">
-                                                Overdue: <%= stat.overdue_calibrations %>
-                                            </div>
-                                        <% } %>
-                                    </dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <% }); %>
-        </div>
-        <% } %>
+    <!-- Stock Analytics removed -->
 
         <!-- Stock Management Content -->
         <div class="mb-4">
@@ -118,6 +76,7 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
+
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Product Details
                         </th>
@@ -160,6 +119,7 @@
                                 data-product-name="<%= product.product_name.toLowerCase() %>"
                                 data-asset-type="<%= product.asset_type %>"
                                 data-calibration-status="<%= product.calibration_required ? product.calibration_status : 'Not Required' %>">
+
                                 <td class="px-6 py-4 align-top" style="white-space:normal; word-break:break-word; max-width: 250px;">
                                     <div class="text-sm font-medium text-gray-900 break-words whitespace-normal leading-tight">
                                         <%= product.product_name %>
@@ -173,6 +133,7 @@
                                         </div>
                                     <% } %>
                                 </td>
+
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                         <%= product.asset_type %>
@@ -237,7 +198,7 @@
                         <% }); %>
                     <% } else { %>
                         <tr>
-                            <td colspan="11" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                            <td colspan="10" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                 No products found
                             </td>
                         </tr>

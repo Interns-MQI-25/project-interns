@@ -204,7 +204,7 @@
                                                 data-calibration="<%= product.calibration_required ? (product.calibration_status || 'Current') : 'Not Required' %>"
                                                 data-added-by="<%= product.added_by_name || 'System' %>"
                                                 data-assigned-to="<%= product.assigned_to_details || '' %>"
-                                                data-total-stock="<%= (product.quantity || 0) + (product.currently_assigned || 0) %>"
+                                                data-total-stock="<%= parseInt(product.quantity || 0) + parseInt(product.currently_assigned || 0) %>"
                                                 data-assigned-count="<%= product.currently_assigned || 0 %>"
                                                 data-available-count="<%= product.quantity || 0 %>"
                                                 data-item-number="<%= product.item_number || 'N/A' %>"
@@ -318,9 +318,9 @@
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                     <%
                                         const modelProducts = productsByModel[model];
-                                        const totalStock = modelProducts.reduce((sum, p) => sum + (p.quantity || 0) + (p.currently_assigned || 0), 0);
-                                        const totalAssigned = modelProducts.reduce((sum, p) => sum + (p.currently_assigned || 0), 0);
-                                        const totalAvailable = modelProducts.reduce((sum, p) => sum + (p.quantity || 0), 0);
+                                        const totalStock = modelProducts.reduce((sum, p) => sum + parseInt(p.quantity || 0) + parseInt(p.currently_assigned || 0), 0);
+                                        const totalAssigned = modelProducts.reduce((sum, p) => sum + parseInt(p.currently_assigned || 0), 0);
+                                        const totalAvailable = modelProducts.reduce((sum, p) => sum + parseInt(p.quantity || 0), 0);
                                     %>
                                     <div class="text-center">
                                         <div class="font-semibold text-gray-900 total-stock"><%= totalStock %></div>
@@ -447,10 +447,9 @@
             let totalStock = 0, totalAssigned = 0, totalAvailable = 0;
             
             visibleRows.forEach(row => {
-                // Use data attributes instead of parsing HTML content
-                const stock = parseInt(row.dataset.totalStock) || 0;
                 const assigned = parseInt(row.dataset.assignedCount) || 0;
                 const available = parseInt(row.dataset.availableCount) || 0;
+                const stock = assigned + available;
                 
                 totalStock += stock;
                 totalAssigned += assigned;

@@ -259,6 +259,31 @@ module.exports = (pool, requireAuth, requireRole) => {
         res.redirect('/employee/stock');
     });
 
+    // Employee: Monitors Route
+    router.get('/monitors', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            const [monitors] = await pool.execute(`
+                SELECT u.full_name, u.email, d.department_name, e.is_active
+                FROM users u
+                JOIN employees e ON u.user_id = e.user_id
+                JOIN departments d ON e.department_id = d.department_id
+                WHERE u.role = 'monitor' AND u.is_active = 1
+                ORDER BY u.full_name
+            `);
+            
+            res.render('employee/monitors', { 
+                user: req.session.user,
+                monitors: monitors || []
+            });
+        } catch (error) {
+            console.error('Monitors error:', error);
+            res.render('employee/monitors', { 
+                user: req.session.user,
+                monitors: []
+            });
+        }
+    });
+
     // Employee: Stock Route
     router.get('/stock', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
@@ -307,6 +332,30 @@ module.exports = (pool, requireAuth, requireRole) => {
                 error: 'Failed to load stock information'
             });
         }
+    });
+
+    // Employee: Cancel Request Route
+    router.post('/cancel-request', requireAuth, requireRole(['employee']), async (req, res) => {
+        const { request_id } = req.body;
+
+        try {
+            // Update request status to rejected with cancellation note
+            const [result] = await pool.execute(
+                'UPDATE product_requests SET status = ?, processed_at = NOW(), remarks = ? WHERE request_id = ? AND status = ?',
+                ['rejected', 'Cancelled by employee', request_id, 'pending']
+            );
+
+            if (result.affectedRows === 0) {
+                req.flash('error', 'Request not found or cannot be cancelled.');
+            } else {
+                req.flash('success', 'Request cancelled successfully.');
+            }
+        } catch (error) {
+            console.error('Cancel request error:', error);
+            req.flash('error', 'Error cancelling request.');
+        }
+        
+        res.redirect('/employee/records');
     });
 
     // Employee: Request Product Route
@@ -632,6 +681,39 @@ module.exports = (pool, requireAuth, requireRole) => {
         }
     });
 
+    // API endpoint to get HIL bookings count for dashboard
+    router.get('/api/hil-bookings-count', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            // Check if HIL tables exist
+            const [tableCheck] = await pool.execute(`
+                SELECT COUNT(*) as count FROM information_schema.tables 
+                WHERE table_schema = DATABASE() AND table_name = 'hil_bookings'
+            `);
+            
+            if (tableCheck[0].count === 0) {
+                return res.json({ count: 0 });
+            }
+            
+            const currentUserId = req.session.user.user_id;
+            
+            // Count active HIL bookings where user is booker or attendee
+            const [hilBookings] = await pool.execute(`
+                SELECT COUNT(DISTINCT hb.booking_id) as count 
+                FROM hil_bookings hb
+                LEFT JOIN hil_booking_attendees hba ON hb.booking_id = hba.booking_id
+                WHERE (hb.booked_by = ? OR hba.user_id = ?) 
+                AND hb.status = 'active'
+                AND hb.start_date <= CURDATE() 
+                AND hb.end_date >= CURDATE()
+            `, [currentUserId, currentUserId]);
+            
+            res.json({ count: hilBookings[0].count });
+        } catch (error) {
+            console.error('Error fetching HIL bookings count:', error);
+            res.json({ count: 0 });
+        }
+    });
+
     // Route: Download file attachment (Employee)
     router.get('/download-attachment/:attachmentId', requireAuth, requireRole(['employee']), async (req, res) => {
         try {
@@ -687,6 +769,64 @@ module.exports = (pool, requireAuth, requireRole) => {
         } catch (error) {
             console.error('Error fetching attachments:', error);
             res.status(500).json({ error: 'Error fetching attachments' });
+        }
+    });
+
+    // Employee: HIL Calendar Route
+    router.get('/hil-calendar', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            res.render('employee/hil-calendar', {
+                user: req.session.user
+            });
+        } catch (error) {
+            console.error('HIL calendar error:', error);
+            res.render('error', { message: 'Error loading calendar' });
+        }
+    });
+
+    // Employee: My HIL Bookings Route
+    router.get('/my-hil-bookings', requireAuth, requireRole(['employee']), async (req, res) => {
+        try {
+            // Check if HIL tables exist
+            const [tableCheck] = await pool.execute(`
+                SELECT COUNT(*) as count FROM information_schema.tables 
+                WHERE table_schema = DATABASE() AND table_name = 'hil_bookings'
+            `);
+            
+            let myBookings = [];
+            if (tableCheck[0].count > 0) {
+                const [bookingResults] = await pool.execute(`
+                    SELECT DISTINCT
+                        hb.*,
+                        hl.lab_name,
+                        hl.location,
+                        u.full_name as booked_by_name,
+                        CASE 
+                            WHEN hb.booked_by = ? THEN 'Owner'
+                            ELSE 'Attendee'
+                        END as my_role,
+                        DATEDIFF(hb.end_date, CURDATE()) as days_remaining
+                    FROM hil_bookings hb
+                    JOIN hil_labs hl ON hb.lab_id = hl.lab_id
+                    JOIN users u ON hb.booked_by = u.user_id
+                    LEFT JOIN hil_booking_attendees hba ON hb.booking_id = hba.booking_id
+                    WHERE (hb.booked_by = ? OR hba.user_id = ?)
+                    AND hb.status = 'active'
+                    ORDER BY hb.created_at DESC
+                `, [req.session.user.user_id, req.session.user.user_id, req.session.user.user_id]);
+                myBookings = bookingResults || [];
+            }
+            
+            res.render('employee/my-hil-bookings', {
+                user: req.session.user,
+                myBookings: myBookings
+            });
+        } catch (error) {
+            console.error('My HIL bookings error:', error);
+            res.render('employee/my-hil-bookings', {
+                user: req.session.user,
+                myBookings: []
+            });
         }
     });
 

@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My HIL Bookings - Marquardt India Pvt. Ltd.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body class="bg-gray-50">
+    <%- include('../partials/navbar') %>
+    
+    <main class="ml-0 lg:ml-64 flex flex-col h-screen">
+        <div class="flex-shrink-0 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+            <%- include('../partials/messages') %>
+            
+            <div class="mb-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">My HIL Bookings</h1>
+                <p class="text-gray-600">View and manage your HIL lab bookings and project assignments</p>
+            </div>
+
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button onclick="showNewBookingModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                    <i class="fas fa-plus mr-2"></i>Book New Lab
+                </button>
+                <a href="/employee/hil-calendar" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                    <i class="fas fa-calendar mr-2"></i>View Calendar
+                </a>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+            <% if (myBookings && myBookings.length > 0) { %>
+                <div class="space-y-6">
+                    <% myBookings.forEach(booking => { %>
+                        <div class="bg-white shadow rounded-lg overflow-hidden">
+                            <div class="px-6 py-4 border-b border-gray-200">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900"><%= booking.project_name %></h3>
+                                        <p class="text-sm text-gray-600"><%= booking.lab_name %> - <%= booking.location %></p>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <% if (booking.my_role === 'Owner') { %>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                                                <i class="fas fa-user-tie mr-1"></i>Owner
+                                            </span>
+                                        <% } else { %>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
+                                                <i class="fas fa-user mr-1"></i>Attendee
+                                            </span>
+                                        <% } %>
+                                        
+                                        <% 
+                                        const today = new Date();
+                                        const startDate = new Date(booking.start_date);
+                                        const endDate = new Date(booking.end_date);
+                                        let status = 'upcoming';
+                                        let statusColor = 'blue';
+                                        if (today >= startDate && today <= endDate) {
+                                            status = 'active';
+                                            statusColor = 'green';
+                                        } else if (today > endDate) {
+                                            status = 'expired';
+                                            statusColor = 'red';
+                                        }
+                                        %>
+                                        <% if (status === 'active') { %>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-300">
+                                                <i class="fas fa-play mr-1 text-xs text-green-600"></i>Active
+                                            </span>
+                                        <% } else if (status === 'upcoming') { %>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
+                                                <i class="fas fa-calendar mr-1 text-xs text-gray-500"></i>Upcoming
+                                            </span>
+                                        <% } else { %>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-500 border border-gray-300">
+                                                <i class="fas fa-archive mr-1 text-xs text-gray-400"></i>Expired
+                                            </span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="px-6 py-4">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-500">Start Date</p>
+                                        <p class="text-sm text-gray-900"><%= new Date(booking.start_date).toLocaleDateString() %></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-500">End Date</p>
+                                        <p class="text-sm text-gray-900"><%= new Date(booking.end_date).toLocaleDateString() %></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-500">Duration</p>
+                                        <% if (booking.days_remaining !== null) { %>
+                                            <% if (booking.days_remaining > 0) { %>
+                                                <p class="text-sm text-blue-600"><%= booking.days_remaining %> days remaining</p>
+                                            <% } else if (booking.days_remaining === 0) { %>
+                                                <p class="text-sm text-orange-600">Ends today</p>
+                                            <% } else { %>
+                                                <p class="text-sm text-red-600">Ended <%= Math.abs(booking.days_remaining) %> days ago</p>
+                                            <% } %>
+                                        <% } else { %>
+                                            <p class="text-sm text-gray-500">
+                                                <%= Math.ceil((new Date(booking.end_date) - new Date(booking.start_date)) / (1000 * 60 * 60 * 24)) %> days total
+                                            </p>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                
+                                <% if (booking.project_description) { %>
+                                    <div class="mb-4">
+                                        <p class="text-sm font-medium text-gray-500 mb-1">Project Description</p>
+                                        <p class="text-sm text-gray-700"><%= booking.project_description %></p>
+                                    </div>
+                                <% } %>
+                                
+                                <% if (booking.booking_purpose) { %>
+                                    <div class="mb-4">
+                                        <p class="text-sm font-medium text-gray-500 mb-1">Purpose</p>
+                                        <p class="text-sm text-gray-700"><%= booking.booking_purpose %></p>
+                                    </div>
+                                <% } %>
+                                
+                                <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                                    <div class="text-sm text-gray-500">
+                                        Booked by: <span class="font-medium text-gray-900"><%= booking.booked_by_name %></span>
+                                        <% if (booking.created_at) { %>
+                                            <br>Requested: <span class="font-medium text-gray-900"><%= new Date(booking.created_at).toLocaleDateString() %></span>
+                                        <% } %>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <% if (booking.my_role === 'Owner' && (status === 'upcoming' || status === 'active')) { %>
+                                            <button onclick="editBooking('<%= booking.booking_id %>')" class="border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1 rounded text-xs font-medium transition-all duration-200">
+                                                <i class="fas fa-edit mr-1"></i>Edit
+                                            </button>
+                                            <button onclick="manageTeam('<%= booking.booking_id %>')" class="border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1 rounded text-xs font-medium transition-all duration-200">
+                                                <i class="fas fa-users mr-1"></i>Team
+                                            </button>
+                                        <% } %>
+                                        <% if (booking.my_role === 'Owner' && status !== 'expired') { %>
+                                            <button onclick="cancelBooking('<%= booking.booking_id %>')" class="border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 px-3 py-1 rounded text-xs font-medium transition-all duration-200">
+                                                <i class="fas fa-times mr-1"></i>Cancel
+                                            </button>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="text-center py-12">
+                    <div class="mx-auto h-24 w-24 text-gray-400">
+                        <i class="fas fa-calendar-alt text-6xl"></i>
+                    </div>
+                    <h3 class="mt-4 text-lg font-medium text-gray-900">No HIL bookings yet</h3>
+                    <p class="mt-2 text-sm text-gray-500">Get started by booking your first FST lab.</p>
+                    <div class="mt-6">
+                        <button onclick="showNewBookingModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fas fa-plus mr-2"></i>Book FST Lab
+                        </button>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <!-- New Booking Modal -->
+    <div id="newBookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Book FST Lab</h3>
+                <form id="bookingForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Lab *</label>
+                            <select id="modalLabSelector" required class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                                <option value="">Select a lab</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Project Name *</label>
+                            <input type="text" id="projectName" required class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Project Description</label>
+                        <textarea id="projectDescription" rows="3" class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Start Date *</label>
+                            <input type="date" id="startDate" required class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">End Date *</label>
+                            <input type="date" id="endDate" required class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Testing Purpose</label>
+                        <input type="text" id="testingPurpose" class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200" placeholder="e.g., HIL Testing, ECU Validation">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Team Members</label>
+                        <div id="attendeesContainer">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <select class="attendee-select flex-1 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                                    <option value="">Select team member</option>
+                                </select>
+                                <button type="button" onclick="addAttendeeField()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm transition-all duration-200 shadow-sm hover:shadow-md">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeNewBookingModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                            <i class="fas fa-calendar-check mr-2"></i>Book Lab
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Booking Modal -->
+    <div id="editBookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Edit Booking</h3>
+                <form id="editBookingForm" class="space-y-4">
+                    <input type="hidden" id="editBookingId">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Project Name *</label>
+                        <input type="text" id="editProjectName" required class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Project Description</label>
+                        <textarea id="editProjectDescription" rows="3" class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Start Date *</label>
+                            <input type="date" id="editStartDate" required class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">End Date *</label>
+                            <input type="date" id="editEndDate" required class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Testing Purpose</label>
+                        <input type="text" id="editTestingPurpose" class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="closeEditBookingModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                            <i class="fas fa-save mr-2"></i>Update Booking
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Management Modal -->
+    <div id="teamModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Manage Team Members</h3>
+                <input type="hidden" id="teamBookingId">
+                
+                <div class="mb-6">
+                    <h4 class="text-md font-medium text-gray-700 mb-3">Current Team Members</h4>
+                    <div id="currentTeamMembers" class="space-y-2">
+                        <!-- Current team members will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h4 class="text-md font-medium text-gray-700 mb-3">Add New Team Member</h4>
+                    <div class="flex items-center space-x-2">
+                        <select id="newTeamMember" class="flex-1 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                            <option value="">Select team member</option>
+                        </select>
+                        <button type="button" onclick="addTeamMember()" class="border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fas fa-plus mr-2"></i>Add
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="closeTeamModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let labs = [];
+        let availableEmployees = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLabs();
+            loadEmployees();
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').min = today;
+            document.getElementById('endDate').min = today;
+            
+            document.getElementById('startDate').addEventListener('change', function() {
+                document.getElementById('endDate').min = this.value;
+            });
+        });
+
+        async function loadLabs() {
+            try {
+                const response = await fetch('/hil/api/labs');
+                labs = await response.json();
+                
+                const modalLabSelector = document.getElementById('modalLabSelector');
+                modalLabSelector.innerHTML = '<option value="">Select a lab</option>';
+                
+                labs.forEach(lab => {
+                    const option = new Option(`${lab.lab_name} (${lab.location})`, lab.lab_id);
+                    modalLabSelector.add(option);
+                });
+            } catch (error) {
+                console.error('Error loading labs:', error);
+            }
+        }
+
+        async function loadEmployees() {
+            try {
+                const response = await fetch('/hil/api/employees');
+                availableEmployees = await response.json();
+            } catch (error) {
+                console.error('Error loading employees:', error);
+            }
+        }
+
+        function addAttendeeField() {
+            const container = document.getElementById('attendeesContainer');
+            const newField = document.createElement('div');
+            newField.className = 'flex items-center space-x-2 mb-2';
+            newField.innerHTML = `
+                <select class="attendee-select flex-1 border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                    <option value="">Select team member</option>
+                </select>
+                <button type="button" onclick="removeAttendeeField(this)" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition-all duration-200 shadow-sm hover:shadow-md">
+                    <i class="fas fa-minus"></i>
+                </button>
+            `;
+            container.appendChild(newField);
+            populateAttendeeSelect(newField.querySelector('.attendee-select'));
+        }
+
+        function removeAttendeeField(button) {
+            button.parentElement.remove();
+        }
+
+        function populateAttendeeSelect(selectElement) {
+            if (availableEmployees) {
+                availableEmployees.forEach(employee => {
+                    const option = new Option(
+                        `${employee.full_name} (${employee.department_name})`, 
+                        employee.user_id
+                    );
+                    selectElement.add(option);
+                });
+            }
+        }
+
+        function showNewBookingModal() {
+            const firstSelect = document.querySelector('.attendee-select');
+            if (firstSelect && availableEmployees) {
+                firstSelect.innerHTML = '<option value="">Select team member</option>';
+                populateAttendeeSelect(firstSelect);
+            }
+            
+            document.getElementById('newBookingModal').classList.remove('hidden');
+        }
+
+        function closeNewBookingModal() {
+            document.getElementById('newBookingModal').classList.add('hidden');
+            document.getElementById('bookingForm').reset();
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const attendeeSelects = document.querySelectorAll('.attendee-select');
+            const attendees = Array.from(attendeeSelects)
+                .map(select => select.value)
+                .filter(value => value !== '');
+            
+            const formData = {
+                lab_id: document.getElementById('modalLabSelector').value,
+                project_name: document.getElementById('projectName').value,
+                project_description: document.getElementById('projectDescription').value,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value,
+                booking_purpose: document.getElementById('testingPurpose').value,
+                attendees: attendees
+            };
+            
+            try {
+                const response = await fetch('/hil/book', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    closeNewBookingModal();
+                    alert('Lab booked successfully!');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error submitting booking request');
+            }
+        });
+
+        // Edit booking functionality
+        async function editBooking(bookingId) {
+            try {
+                const response = await fetch(`/hil/api/booking/${bookingId}`);
+                const booking = await response.json();
+                
+                document.getElementById('editBookingId').value = bookingId;
+                document.getElementById('editProjectName').value = booking.project_name;
+                document.getElementById('editProjectDescription').value = booking.project_description || '';
+                document.getElementById('editStartDate').value = booking.start_date.split('T')[0];
+                document.getElementById('editEndDate').value = booking.end_date.split('T')[0];
+                document.getElementById('editTestingPurpose').value = booking.booking_purpose || '';
+                
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('editStartDate').min = today;
+                document.getElementById('editEndDate').min = today;
+                
+                document.getElementById('editBookingModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading booking details:', error);
+                alert('Error loading booking details');
+            }
+        }
+
+        function closeEditBookingModal() {
+            document.getElementById('editBookingModal').classList.add('hidden');
+        }
+
+        document.getElementById('editBookingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const bookingId = document.getElementById('editBookingId').value;
+            const formData = {
+                project_name: document.getElementById('editProjectName').value,
+                project_description: document.getElementById('editProjectDescription').value,
+                start_date: document.getElementById('editStartDate').value,
+                end_date: document.getElementById('editEndDate').value,
+                booking_purpose: document.getElementById('editTestingPurpose').value
+            };
+            
+            try {
+                const response = await fetch(`/hil/api/booking/${bookingId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    closeEditBookingModal();
+                    alert('Booking updated successfully!');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error updating booking');
+            }
+        });
+
+        // Team management functionality
+        async function manageTeam(bookingId) {
+            document.getElementById('teamBookingId').value = bookingId;
+            await loadCurrentTeamMembers(bookingId);
+            await loadAvailableEmployeesForTeam();
+            document.getElementById('teamModal').classList.remove('hidden');
+        }
+
+        async function loadCurrentTeamMembers(bookingId) {
+            try {
+                const response = await fetch(`/hil/api/booking/${bookingId}/team`);
+                const teamMembers = await response.json();
+                
+                const container = document.getElementById('currentTeamMembers');
+                container.innerHTML = '';
+                
+                if (teamMembers.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-sm">No team members added yet.</p>';
+                } else {
+                    teamMembers.forEach(member => {
+                        const memberDiv = document.createElement('div');
+                        memberDiv.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-lg';
+                        memberDiv.innerHTML = `
+                            <div>
+                                <span class="font-medium">${member.full_name}</span>
+                                <span class="text-gray-500 text-sm ml-2">(${member.department_name})</span>
+                            </div>
+                            <button onclick="removeTeamMember(${bookingId}, ${member.user_id})" class="border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700 px-2 py-1 rounded text-xs transition-all duration-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        container.appendChild(memberDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading team members:', error);
+            }
+        }
+
+        async function loadAvailableEmployeesForTeam() {
+            const select = document.getElementById('newTeamMember');
+            select.innerHTML = '<option value="">Select team member</option>';
+            
+            if (availableEmployees) {
+                availableEmployees.forEach(employee => {
+                    const option = new Option(
+                        `${employee.full_name} (${employee.department_name})`, 
+                        employee.user_id
+                    );
+                    select.add(option);
+                });
+            }
+        }
+
+        async function addTeamMember() {
+            const bookingId = document.getElementById('teamBookingId').value;
+            const userId = document.getElementById('newTeamMember').value;
+            
+            if (!userId) {
+                alert('Please select a team member');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/hil/api/booking/${bookingId}/team`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('newTeamMember').value = '';
+                    await loadCurrentTeamMembers(bookingId);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error adding team member');
+            }
+        }
+
+        async function removeTeamMember(bookingId, userId) {
+            if (!confirm('Are you sure you want to remove this team member?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/hil/api/booking/${bookingId}/team/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    await loadCurrentTeamMembers(bookingId);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error removing team member');
+            }
+        }
+
+        function closeTeamModal() {
+            document.getElementById('teamModal').classList.add('hidden');
+        }
+
+        // Cancel booking functionality
+        async function cancelBooking(bookingId) {
+            if (!confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/hil/api/booking/${bookingId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Booking cancelled successfully!');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error cancelling booking');
+            }
+        }
+    </script>
+</body>
+</html>

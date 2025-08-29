@@ -65,6 +65,7 @@ const resetPasswordRoutes = require('./src/routes/resetPassword');
 const liveFeedRoutes = require('./src/routes/liveFeedRoutes');
 const activityRoutes = require('./src/routes/activityRoutes');
 const hilRoutes = require('./src/routes/hilRoutes');
+const aiAssistantRoutes = require('./src/routes/aiAssistantRoutes');
 
 /**
  * Activity Logger Import with Fallback
@@ -175,6 +176,7 @@ app.use('/', liveFeedRoutes);
 app.use('/', activityRoutes(pool, requireAuth, requireRole));
 app.use('/hil', hilRoutes(pool, requireAuth, requireRole));
 app.use('/admin', hilRoutes(pool, requireAuth, requireRole));
+app.use('/api/ai-assistant', aiAssistantRoutes(pool, requireAuth, requireRole));
 
 /**
  * Live Counts API Endpoint

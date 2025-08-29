@@ -16,7 +16,7 @@
 ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝╚═╝  ╚═╝    ╚═╝        ╚═╝      ╚═╝    ╚═╝╚══════╝╚═╝   ╚═════╝ 
 ```
 
-# 🏢 **Marquardt India Pvt. Ltd.** - Inventory Management System
+# 🏢 **𝕸𝖆𝖗𝖖𝖚𝖆𝖗𝖉𝖙 𝕴𝖓𝖉𝖎𝖆 𝖯𝗏𝗍. 𝖫𝗍𝖉.** - 𝕴𝖓𝖛𝖊𝖓𝖙𝖔𝖗𝖞 𝖬𝖆𝖓𝖆𝗀𝖊𝖒𝖊𝖓𝖙 𝖲𝗒𝗌𝗍𝖊𝖒
 
 ### ✨ *𝒜 𝒸ℴ𝓂𝓅𝓇ℯ𝒽ℯ𝓃𝓈𝒾𝓋ℯ 𝓌ℯ𝒷-𝒷𝒶𝓈ℯ𝒹 𝒶𝓈𝓈ℯ𝓉 𝓂𝒶𝓃𝒶ℊℯ𝓂ℯ𝓃𝓉 𝓈𝓎𝓈𝓉ℯ𝓂* ✨
 ### 🚀 *𝓌𝒾𝓉𝒽 𝓇ℴ𝓁ℯ-𝒷𝒶𝓈ℯ𝒹 𝒶𝒸𝒸ℯ𝓈𝓈 𝒸ℴ𝓃𝓉𝓇ℴ𝓁, ℯ𝓂𝒶𝒾𝓁 𝓃ℴ𝓉𝒾𝒻𝒾𝒸𝒶𝓉𝒾ℴ𝓃𝓈, 𝒶𝓃𝒹 𝒻𝒾𝓁ℯ 𝒶𝓉𝓉𝒶𝒸𝒽𝓂ℯ𝓃𝓉 𝒸𝒶𝓅𝒶𝒷𝒾𝓁𝒾𝓉𝒾ℯ𝓈* 🚀
@@ -42,26 +42,26 @@
 
 </div>
 
-## 📋 Overview
+## 📋 𝕺𝖛𝖊𝖗𝖛𝖎𝖊𝖜
 
 <div align="center">
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                    🎯 𝕮ℴ𝓂𝓅𝓇ℯ𝒽ℯ𝓃𝓈𝒾𝓋ℯ 𝒜𝓈𝓈ℯ𝓉 ℳ𝒶𝓃𝒶ℊℯ𝓂ℯ𝓃𝓉 𝒞𝒶𝓅𝒶𝒷𝒾𝓁𝒾𝓉𝒾ℯ𝓈 🎯                   │
+│                    🎯 𝕮ℴ𝓂𝓅𝓇ℯ𝒽ℯ𝓃𝓈𝒾𝓋ℯ 𝒜𝓈𝓈ℯ𝓉 ℳ𝒶𝓃𝒶ℊℯ𝓂ℯ𝓃𝓉 𝒞𝒶𝓅𝒶𝒷𝒾𝓁𝒾𝓉𝒾ℯ𝓈 🎯      │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │  🔐 Role-based Access Control (Employees, Monitors, Admins)                    │
 │  📋 Product Request Workflow with Approval System                              │
 │  📧 Email Notifications for Registration and Approvals                         │
 │  📎 File Attachment System for Product Documentation                           │
 │  📊 Real-time Inventory Tracking                                               │
-│  📱 Responsive Web Interface                                                    │
+│  📱 Responsive Web Interface                                                   │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 </div>
 
-## ✨ Key Features
+## ✨ 𝕶𝖊𝖞 𝕱𝖊𝖆𝖙𝖚𝖗𝖊𝖘
 
 ```
 ╭─────────────────────────────────────────────────────────────────────────────────╮
@@ -86,7 +86,7 @@
 ╰─────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-### 👥 User Roles & Capabilities
+### 👥 𝖀𝖘𝖊𝖗 ℜ𝖔𝖑𝖊𝖘 & 𝕮𝖆𝖕𝖆𝖇𝖎𝖑𝖎𝖙𝖎𝖊𝖘
 
 <div align="center">
 
@@ -156,11 +156,11 @@
   </div>
 </div>
 
-### 🔧 Advanced Features
+### 🔧 𝔸𝕕𝕧𝕒𝕟𝕔𝕖𝕕 𝔽𝕖𝒶𝓉𝓊𝓇𝑒𝓈
 
 ```
 ╭─────────────────────────────────────────────────────────────────────────────────╮
-│                       🚀 𝔄𝔡𝔳𝔞𝔫𝔠𝔢𝔡 𝔖𝔶𝔰𝔱𝔢𝔪 ℭ𝔞𝔭𝔞𝔟𝔦𝔩𝔦𝔱𝔦𝔢𝔰 🚀                       │
+│                       🚀 𝔄𝔡𝔳𝔞𝔫𝔠𝔢𝔡 𝔖𝔶𝔰𝔱𝔢𝔪 ℭ𝔞𝔭𝔞𝔟𝔦𝔩𝔦𝔱𝔦𝔢𝔰 🚀                           │
 ╰─────────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -171,71 +171,31 @@
 - **🏗️ ℂ𝔩𝔬𝔲𝔡 𝔇𝔢𝔭𝔩𝔬𝔶𝔪𝔢𝔫𝔱**: Google App Engine with Cloud SQL
 - **📊 𝔸𝕟𝕒𝕝𝔶𝔱𝔦𝔠𝔰**: Comprehensive reporting and activity tracking
 
-## 🛠️ Technology Stack
+## 🛠️ 𝕿𝖊𝖈𝖍𝖓𝖔𝖑𝖔𝖌𝖞 𝕾𝖙𝖆𝖈𝖐
 
 <div align="center">
 
 ```
-╔═══════════════════════════════════════════════════════════════════════════════════╗
-║                          ⚡ 𝕋𝔢𝔠𝔥 𝔖𝔱𝔞𝔠𝔨 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 ⚡                           ║
-╚═══════════════════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════════════════════╗
+║                          ⚡ 𝕋𝔢𝔠𝔥 𝔖𝔱𝔞𝔠𝔨 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 ⚡                                   ║
+╚══════════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-</div>
 
-<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:15px; margin:20px 0;">
-  <div style="background:#f8fafc; border-radius:6px; padding:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <p style="margin:0; color:#2c5282; font-weight:bold;">🌐 Frontend</p>
-    <p style="margin:5px 0 0; color:#4a5568;">HTML5, Tailwind CSS, JavaScript (ES6+), EJS Templates</p>
-  </div>
-  
-  <div style="background:#f8fafc; border-radius:6px; padding:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <p style="margin:0; color:#2c5282; font-weight:bold;">⚙️ Backend</p>
-    <p style="margin:5px 0 0; color:#4a5568;">Node.js 20+, Express.js 4.x</p>
-  </div>
-  
-  <div style="background:#f8fafc; border-radius:6px; padding:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <p style="margin:0; color:#2c5282; font-weight:bold;">🗄️ Database</p>
-    <p style="margin:5px 0 0; color:#4a5568;">MySQL 8.0 with connection pooling</p>
-  </div>
-  
-  <div style="background:#f8fafc; border-radius:6px; padding:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <p style="margin:0; color:#2c5282; font-weight:bold;">🐳 Container Platform</p>
-    <p style="margin:5px 0 0; color:#4a5568;">Docker with Docker Compose</p>
-  </div>
-  
-  <div style="background:#f8fafc; border-radius:6px; padding:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <p style="margin:0; color:#2c5282; font-weight:bold;">🔐 Authentication</p>
-    <p style="margin:5px 0 0; color:#4a5568;">Express sessions with bcryptjs</p>
-  </div>
-  
-  <div style="background:#f8fafc; border-radius:6px; padding:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <p style="margin:0; color:#2c5282; font-weight:bold;">📧 Email Service</p>
-    <p style="margin:5px 0 0; color:#4a5568;">Nodemailer with Gmail SMTP</p>
-  </div>
-  
-  <div style="background:#f8fafc; border-radius:6px; padding:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <p style="margin:0; color:#2c5282; font-weight:bold;">📎 File Handling</p>
-    <p style="margin:5px 0 0; color:#4a5568;">Multer for file uploads</p>
-  </div>
-  
-  <div style="background:#f8fafc; border-radius:6px; padding:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <p style="margin:0; color:#2c5282; font-weight:bold;">☁️ Cloud Platform</p>
-    <p style="margin:5px 0 0; color:#4a5568;">Google App Engine + Cloud SQL</p>
-  </div>
-  
-  <div style="background:#f8fafc; border-radius:6px; padding:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <p style="margin:0; color:#2c5282; font-weight:bold;">🎨 Icons</p>
-    <p style="margin:5px 0 0; color:#4a5568;">Font Awesome</p>
-  </div>
-  
-  <div style="background:#f8fafc; border-radius:6px; padding:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
-    <p style="margin:0; color:#2c5282; font-weight:bold;">🛡️ Security</p>
-    <p style="margin:5px 0 0; color:#4a5568;">Parameterized queries, XSS protection</p>
-  </div>
-</div>
+  [![Node.js](https://img.shields.io/badge/Node.js-20+-2c5282?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+  [![MySQL](https://img.shields.io/badge/MySQL-8.0+-2c5282?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+  [![Express.js](https://img.shields.io/badge/Express.js-4.x-2c5282?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+  [![Docker](https://img.shields.io/badge/Docker-Available-2c5282?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/priyanshuksharma/project-interns)
+  [![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Platform-2c5282?style=for-the-badge&logo=google-cloud&logoColor=white)](https://cloud.google.com/)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.x-2c5282?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+  [![bcrypt](https://img.shields.io/badge/bcrypt-Security-2c5282?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/bcryptjs)
+  [![Nodemailer](https://img.shields.io/badge/Nodemailer-Email-2c5282?style=for-the-badge&logo=gmail&logoColor=white)](https://nodemailer.com/)
+  [![Multer](https://img.shields.io/badge/Multer-Files-2c5282?style=for-the-badge&logo=files&logoColor=white)](https://www.npmjs.com/package/multer)
+  [![Font Awesome](https://img.shields.io/badge/Font%20Awesome-Icons-2c5282?style=for-the-badge&logo=font-awesome&logoColor=white)](https://fontawesome.com/)
 
-## 🚀 Quick Start
+
+
+## 🚀 𝖰𝗎𝗂𝖼𝗄 𝖲𝗍𝖺𝗋𝗍
 
 <div align="center">
 
@@ -382,7 +342,7 @@ chmod +x scripts/setup.sh
    
    🌐 **Open your browser**: [http://localhost:3000](http://localhost:3000)
 
-## 🔑 Default Login Credentials
+## 🔑 𝖣𝖾𝖿𝖺𝗎𝗅𝗍 𝖫𝗈𝗀𝗂𝗇 𝖢𝗋𝖾𝖽𝖾𝗇𝗍𝗂𝖺𝗅𝗌
 
 <div align="center">
 
@@ -407,7 +367,7 @@ chmod +x scripts/setup.sh
 
 > ⚠️ **Important**: Change default passwords immediately after first login!
 
-## 📁 Project Structure
+## 📁 𝖯𝗋𝗈𝗃𝖾𝖼𝗍 𝖲𝗍𝗋𝗎𝖼𝗍𝗎𝗋𝖾
 
 <div align="center">
 
@@ -454,7 +414,7 @@ project-interns/
 └── 📄 .env                        # Environment variables
 ```
 
-## 🔄 User Workflows
+## 🔄 𝖀𝗌𝖾𝗋 𝖂𝗈𝗋𝗄𝖿𝗅𝗈𝗐𝗌
 
 <div align="center">
 
@@ -481,7 +441,7 @@ Employee Request → Monitor Review → Approval/Rejection → Product Assignmen
 Monitor Upload → File Validation → Storage → Database Record → Employee Access
 ```
 
-## 📊 Database Schema
+## 📊 𝖣𝖺𝗍𝖺𝖻𝖺𝗌𝖾 𝖲𝖼𝗁𝖾𝗆𝖺
 
 <div align="center">
 
@@ -505,7 +465,7 @@ Monitor Upload → File Validation → Storage → Database Record → Employee 
 - **`stock_history`** - Inventory movement tracking
 - **`monitor_assignments`** - Monitor role assignments
 
-## 🌐 API Endpoints
+## 🌐 𝖠𝖯𝖨 𝖤𝗇𝖽𝗉𝗈𝗂𝗇𝗍𝗌
 
 <div align="center">
 
@@ -547,7 +507,7 @@ Monitor Upload → File Validation → Storage → Database Record → Employee 
 - `POST /admin/process-registration` - Approve/reject/reactivate/delete
 - `DELETE /admin/api/attachment/:id` - Full file management
 
-## 📧 Email Service Configuration
+## 📧 𝖤𝗆𝖺𝗂𝗅 𝖲𝖾𝗋𝗏𝗂𝖼𝖾 𝖢𝗈𝗇𝖿𝗂𝗀𝗎𝗋𝖺𝗍𝗂𝗈𝗇
 
 <div align="center">
 
@@ -576,7 +536,7 @@ Monitor Upload → File Validation → Storage → Database Record → Employee 
 - ✅ Approval/rejection notifications
 - ✅ HTML email templates with branding
 
-## 📎 File Attachment System
+## 📎 𝖥𝗂𝗅𝖾 𝖠𝗍𝗍𝖺𝖼𝗁𝗆𝖾𝗇𝗍 𝖲𝗒𝗌𝗍𝖾𝗆
 
 <div align="center">
 
@@ -598,7 +558,7 @@ Monitor Upload → File Validation → Storage → Database Record → Employee 
 - **Admins**: Full file management (upload, view, delete)
 - **Employees**: View and download only
 
-## 🚨 Troubleshooting
+## 🚨 𝖳𝗋𝗈𝗎𝖻𝗅𝖾𝗌𝗁𝗈𝗈𝗍𝗂𝗇𝗀
 
 <div align="center">
 
@@ -644,7 +604,7 @@ PORT=3001 npm start
 - Verify file type is supported
 - Ensure uploads directory exists and is writable
 
-## 🚀 Deployment
+## 🚀 𝖣𝖾𝗉𝗅𝗈𝗒𝗆𝖾𝗇𝗍
 
 <div align="center">
 
@@ -702,7 +662,7 @@ gcloud app deploy app.yaml
 gcloud app logs tail -s default
 ```
 
-## 🤖 Advanced AI Assistant Chatbot
+## 🤖 𝖠𝖽𝗏𝖺𝗇𝖼𝖾𝖽 𝖠𝖨 𝖠𝗌𝗌𝗂𝗌𝗍𝖺𝗇𝗍 𝖢𝗁𝖺𝗍𝖻𝗈𝗍
 
 <div align="center">
 
@@ -826,7 +786,7 @@ gcloud app logs tail -s default
 - **Status Tracking**: Current assignments and availability
 - **Predictive Analysis**: Calculates when products will be free
 
-## 🔒 Security Features
+## 🔒 𝖲𝖾𝖼𝗎𝗋𝗂𝗍𝗒 𝖥𝖾𝖺𝗍𝗎𝗋𝖾𝗌
 
 <div align="center">
 
@@ -848,7 +808,7 @@ gcloud app logs tail -s default
 - ✅ **AI Data Security**: Role-based database access in chatbot
 - ✅ **Query Sanitization**: Safe database queries in AI assistant
 
-## 📈 Performance Features
+## 📈 𝖯𝖾𝗋𝖿𝗈𝗋𝗆𝖺𝗇𝖼𝖾 𝖥𝖾𝖺𝗍𝗎𝗋𝖾𝗌
 
 <div align="center">
 
@@ -871,7 +831,7 @@ gcloud app logs tail -s default
 - ✅ **Smart Caching**: Conversation memory and context retention
 - ✅ **Fallback Systems**: Graceful degradation when services unavailable
 
-## 🤝 Contributing
+## 🤝 𝖢𝗈𝗇𝗍𝗋𝗂𝖻𝗎𝗍𝗂𝗇𝗀
 
 <div align="center">
 
@@ -889,7 +849,7 @@ gcloud app logs tail -s default
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📞 Support
+## 📞 𝖲𝗎𝗉𝗉𝗈𝗋𝗍
 
 <div align="center">
 
@@ -906,7 +866,7 @@ gcloud app logs tail -s default
 - **Live Link**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
 - **Documentation**: This README and deployment guide
 
-## 📝 License
+## 📝 𝖫𝗂𝖼𝖾𝗇𝗌𝖾
 
 <div align="center">
 
@@ -920,7 +880,7 @@ gcloud app logs tail -s default
 
 This project is part of the **MQI Internship Program 2025**.
 
-## 📋 Changelog
+## 📋 𝖢𝗁𝖺𝗇𝗀𝖾𝗅𝗈𝗀
 
 <div align="center">
 

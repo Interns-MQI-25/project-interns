@@ -154,7 +154,7 @@ ENV DB_PASSWORD=sigma
 ENV DB_NAME=product_management_system
 ENV DB_PORT=3306
 ENV SESSION_SECRET=localtunnel-secret-2025
-ENV LT_SUBDOMAIN=marquardt-inventory
+ENV LT_SUBDOMAIN=mqi-rdt
 
 # Create volume for MySQL data persistence
 VOLUME ["/var/lib/mysql"]

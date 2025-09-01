@@ -98,15 +98,7 @@ stderr_logfile=/var/log/supervisor/mysql_error.log
 priority=1
 
 [program:app]
-command=sh -c '
-    echo "Waiting for MySQL to be ready..."
-    until mysqladmin ping -h "$DB_HOST" -P "$DB_PORT" --silent; do
-        echo "MySQL is unavailable - sleeping"
-        sleep 2
-    done
-    echo "MySQL is up - running app startup scripts"
-    node create-admin.js && node server.js
-'
+command=sh -c 'echo "Waiting for MySQL to be ready..."; until mysqladmin ping -h "$$DB_HOST" -P "$$DB_PORT" --silent; do echo "MySQL is unavailable - sleeping"; sleep 2; done; echo "MySQL is up - running app startup scripts"; node create-admin.js && node server.js'
 directory=/usr/src/app
 user=root
 autostart=true

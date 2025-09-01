@@ -7,11 +7,18 @@ class ChatBot {
     constructor() {
         this.isOpen = false;
         this.messages = [];
+        this.isResizing = false;
+        this.resizeMode = false;
+        this.minWidth = 280;
+        this.minHeight = 300;
+        this.maxWidth = 600;
+        this.maxHeight = 800;
         this.init();
     }
 
     init() {
         this.createChatWidget();
+        this.addResizeStyles();
         this.bindEvents();
         this.loadWelcomeMessage();
     }
@@ -29,20 +36,38 @@ class ChatBot {
             </div>
 
             <!-- Chat Window -->
-            <div id="chatWindow" class="fixed bottom-24 right-6 z-50 w-80 h-96 bg-white rounded-lg shadow-2xl border border-gray-200 transform translate-y-full opacity-0 transition-all duration-300 hidden">
+            <div id="chatWindow" class="fixed z-50 w-80 h-96 bg-white rounded-lg shadow-2xl border border-gray-200 transform translate-y-full opacity-0 transition-all duration-300 hidden resize-container">
+                <!-- Resize Handles -->
+                <div class="resize-handle resize-handle-n" data-direction="n"></div>
+                <div class="resize-handle resize-handle-s" data-direction="s"></div>
+                <div class="resize-handle resize-handle-w" data-direction="w"></div>
+                <div class="resize-handle resize-handle-e" data-direction="e"></div>
+                <div class="resize-handle resize-handle-nw" data-direction="nw"></div>
+                <div class="resize-handle resize-handle-ne" data-direction="ne"></div>
+                <div class="resize-handle resize-handle-sw" data-direction="sw"></div>
+                <div class="resize-handle resize-handle-se" data-direction="se"></div>
+                
                 <!-- Chat Header -->
                 <div class="bg-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                         <i class="fas fa-robot"></i>
                         <span class="font-semibold">AI Assistant</span>
                     </div>
-                    <button id="chatClose" class="text-white hover:text-gray-200">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <button id="chatReset" class="text-white hover:text-gray-200" title="Reset size and position">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button id="chatResize" class="text-white hover:text-gray-200" title="Toggle resize mode">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                        </button>
+                        <button id="chatClose" class="text-white hover:text-gray-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Chat Messages -->
-                <div id="chatMessages" class="flex-1 p-4 overflow-y-auto h-64 bg-gray-50">
+                <div id="chatMessages" class="flex-1 p-4 overflow-y-auto bg-gray-50" style="height: calc(100% - 140px);">
                     <div class="text-center text-gray-500 text-sm">
                         <i class="fas fa-robot text-2xl mb-2"></i>
                         <p>Loading AI Assistant...</p>
@@ -71,14 +96,143 @@ class ChatBot {
                         <button class="quick-question text-xs bg-purple-100 hover:bg-purple-200 text-purple-800 px-2 py-1 rounded" data-question="Records summary">📋 Records</button>
                         <button class="quick-question text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded" data-question="System overview">🏢 System</button>
                     </div>
-                    <div class="mt-2 text-xs text-gray-500">
-                        🧠 Advanced AI with real-time data access
+                    <div class="mt-2 text-xs text-gray-500 flex justify-between items-center">
+                        <span>🧠 Advanced AI with real-time data access</span>
+                        <span class="text-blue-600">Drag left edge to resize</span>
                     </div>
                 </div>
             </div>
         `;
 
         document.body.appendChild(chatWidget);
+        
+        // Position directly above robot icon
+        setTimeout(() => {
+            const chatWindow = document.getElementById('chatWindow');
+            if (chatWindow) {
+                chatWindow.style.setProperty('right', '1.5rem', 'important');
+                chatWindow.style.setProperty('left', 'auto', 'important');
+                chatWindow.style.setProperty('bottom', '7rem', 'important');
+                chatWindow.style.setProperty('position', 'fixed', 'important');
+                chatWindow.style.setProperty('z-index', '9999', 'important');
+                chatWindow.style.setProperty('top', 'auto', 'important');
+                chatWindow.style.setProperty('transform', 'none', 'important');
+            }
+        }, 100);
+    }
+
+    addResizeStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .resize-container {
+                position: relative;
+            }
+            
+            .resize-handle {
+                position: absolute;
+                background: transparent;
+                z-index: 10;
+            }
+            
+            .resize-handle-n {
+                top: -3px;
+                left: 10px;
+                right: 10px;
+                height: 6px;
+                cursor: n-resize;
+            }
+            
+            .resize-handle-s {
+                bottom: -3px;
+                left: 10px;
+                right: 10px;
+                height: 6px;
+                cursor: s-resize;
+            }
+            
+
+            
+            .resize-handle-w {
+                top: 10px;
+                left: -3px;
+                bottom: 10px;
+                width: 6px;
+                cursor: w-resize;
+            }
+            
+            .resize-handle-e {
+                top: 10px;
+                right: -3px;
+                bottom: 10px;
+                width: 6px;
+                cursor: e-resize;
+            }
+            
+            .resize-handle-nw {
+                top: -3px;
+                left: -3px;
+                width: 12px;
+                height: 12px;
+                cursor: nw-resize;
+            }
+            
+            .resize-handle-ne {
+                top: -3px;
+                right: -3px;
+                width: 12px;
+                height: 12px;
+                cursor: ne-resize;
+            }
+            
+            .resize-handle-sw {
+                bottom: -3px;
+                left: -3px;
+                width: 12px;
+                height: 12px;
+                cursor: sw-resize;
+            }
+            
+            .resize-handle-se {
+                bottom: -3px;
+                right: -3px;
+                width: 12px;
+                height: 12px;
+                cursor: se-resize;
+            }
+            
+            .resize-handle:hover {
+                background: rgba(59, 130, 246, 0.3);
+                border: 1px solid rgba(59, 130, 246, 0.5);
+            }
+            
+            .resize-mode .resize-handle {
+                background: rgba(59, 130, 246, 0.3);
+                border: 1px solid rgba(59, 130, 246, 0.5);
+            }
+            
+            .resize-mode .resize-handle:hover {
+                background: rgba(59, 130, 246, 0.5);
+            }
+            
+            .chat-resizing {
+                user-select: none;
+                transition: none !important;
+            }
+            
+            /* Force positioning directly above robot icon */
+            #chatWindow {
+                right: 1.5rem !important;
+                left: auto !important;
+                bottom: 7rem !important;
+                top: auto !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                transform: none !important;
+                position: fixed !important;
+                z-index: 9999 !important;
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     bindEvents() {
@@ -91,6 +245,19 @@ class ChatBot {
         document.getElementById('chatClose').addEventListener('click', () => {
             this.closeChat();
         });
+
+        // Toggle resize mode
+        document.getElementById('chatResize').addEventListener('click', () => {
+            this.toggleResizeMode();
+        });
+
+        // Reset size and position
+        document.getElementById('chatReset').addEventListener('click', () => {
+            this.resetSize();
+        });
+
+        // Bind resize handles
+        this.bindResizeHandles();
 
         // Send message on Enter key
         document.getElementById('chatInput').addEventListener('keypress', (e) => {
@@ -114,6 +281,146 @@ class ChatBot {
         });
     }
 
+    bindResizeHandles() {
+        const chatWindow = document.getElementById('chatWindow');
+        const handles = chatWindow.querySelectorAll('.resize-handle');
+        
+        handles.forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this.startResize(e, handle.dataset.direction);
+            });
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (this.isResizing) {
+                this.doResize(e);
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (this.isResizing) {
+                this.stopResize();
+            }
+        });
+    }
+
+    toggleResizeMode() {
+        const chatWindow = document.getElementById('chatWindow');
+        const resizeBtn = document.getElementById('chatResize');
+        
+        this.resizeMode = !this.resizeMode;
+        
+        if (this.resizeMode) {
+            chatWindow.classList.add('resize-mode');
+            resizeBtn.innerHTML = '<i class="fas fa-compress-arrows-alt"></i>';
+            resizeBtn.title = 'Exit resize mode (Esc)';
+            this.addMessage('bot', '🔧 **Resize Mode Activated**\n\n📝 **How to resize:**\n• Drag **left edge** to change width\n• Drag **top/bottom edges** to change height\n• Drag **corners** for both dimensions\n• Chat stays anchored to right side\n\n⌨️ **Shortcuts:**\n• Press **R** to toggle resize mode\n• Press **Ctrl+R** to reset size\n• Press **Esc** to exit resize mode');
+        } else {
+            chatWindow.classList.remove('resize-mode');
+            resizeBtn.innerHTML = '<i class="fas fa-expand-arrows-alt"></i>';
+            resizeBtn.title = 'Toggle resize mode (R)';
+        }
+    }
+
+    startResize(e, direction) {
+        this.isResizing = true;
+        this.resizeDirection = direction;
+        this.startX = e.clientX;
+        this.startY = e.clientY;
+        
+        const chatWindow = document.getElementById('chatWindow');
+        const rect = chatWindow.getBoundingClientRect();
+        
+        this.startWidth = rect.width;
+        this.startHeight = rect.height;
+        this.startLeft = rect.left;
+        this.startTop = rect.top;
+        
+        chatWindow.classList.add('chat-resizing');
+        document.body.style.cursor = this.getCursorForDirection(direction);
+    }
+
+    doResize(e) {
+        if (!this.isResizing) return;
+        
+        const chatWindow = document.getElementById('chatWindow');
+        const deltaX = e.clientX - this.startX;
+        const deltaY = e.clientY - this.startY;
+        
+        let newWidth = this.startWidth;
+        let newHeight = this.startHeight;
+        let newLeft = this.startLeft;
+        let newTop = this.startTop;
+        
+        const direction = this.resizeDirection;
+        
+        // Handle width changes
+        if (direction.includes('w')) {
+            newWidth = Math.max(this.minWidth, Math.min(this.maxWidth, this.startWidth - deltaX));
+        } else if (direction.includes('e')) {
+            newWidth = Math.max(this.minWidth, Math.min(this.maxWidth, this.startWidth + deltaX));
+        }
+        
+        // Handle height changes
+        if (direction.includes('s')) {
+            newHeight = Math.max(this.minHeight, Math.min(this.maxHeight, this.startHeight + deltaY));
+        } else if (direction.includes('n')) {
+            newHeight = Math.max(this.minHeight, Math.min(this.maxHeight, this.startHeight - deltaY));
+        }
+        
+        // Apply changes (keep directly above robot icon)
+        chatWindow.style.width = newWidth + 'px';
+        chatWindow.style.height = newHeight + 'px';
+        // Keep positioned directly above robot icon
+        chatWindow.style.setProperty('right', '1.5rem', 'important');
+        chatWindow.style.setProperty('left', 'auto', 'important');
+        chatWindow.style.setProperty('bottom', '7rem', 'important');
+        chatWindow.style.setProperty('top', 'auto', 'important');
+    }
+
+    stopResize() {
+        this.isResizing = false;
+        this.resizeDirection = null;
+        
+        const chatWindow = document.getElementById('chatWindow');
+        chatWindow.classList.remove('chat-resizing');
+        document.body.style.cursor = 'default';
+    }
+
+    getCursorForDirection(direction) {
+        const cursors = {
+            'n': 'n-resize',
+            's': 's-resize',
+            'e': 'e-resize',
+            'w': 'w-resize',
+            'ne': 'ne-resize',
+            'nw': 'nw-resize',
+            'se': 'se-resize',
+            'sw': 'sw-resize'
+        };
+        return cursors[direction] || 'default';
+    }
+
+    resetSize() {
+        const chatWindow = document.getElementById('chatWindow');
+        
+        // Reset to default size and position (above AI icon)
+        chatWindow.style.width = '20rem'; // w-80
+        chatWindow.style.height = '24rem'; // h-96
+        chatWindow.style.setProperty('right', '1.5rem', 'important');
+        chatWindow.style.setProperty('bottom', '7rem', 'important');
+        chatWindow.style.setProperty('left', 'auto', 'important');
+        chatWindow.style.setProperty('top', 'auto', 'important');
+        
+        // Exit resize mode if active
+        if (this.resizeMode) {
+            this.toggleResizeMode();
+        }
+        
+        this.addMessage('bot', '🔄 **Chat window reset to default size and position**');
+    }
+
     async loadWelcomeMessage() {
         try {
             const response = await fetch('/api/ai-assistant/info');
@@ -126,6 +433,7 @@ class ChatBot {
                 capabilitiesMsg += data.capabilities.map(cap => `• ${cap}`).join('\n');
                 capabilitiesMsg += `\n\n🎆 **Powered by:**\n`;
                 capabilitiesMsg += data.advancedFeatures.map(feature => `• ${feature}`).join('\n');
+                capabilitiesMsg += `\n\n🔧 **Resize Features:**\n• Click resize button or press **R** to resize\n• Drag edges and corners to adjust size\n• Always stays anchored above robot icon\n• Press **Ctrl+R** to reset to default size`;
                 
                 this.addMessage('bot', capabilitiesMsg);
                 
@@ -182,6 +490,12 @@ class ChatBot {
     openChat() {
         const chatWindow = document.getElementById('chatWindow');
         chatWindow.classList.remove('hidden');
+        
+        // Position directly above robot icon
+        chatWindow.style.setProperty('right', '1.5rem', 'important');
+        chatWindow.style.setProperty('bottom', '7rem', 'important');
+        chatWindow.style.setProperty('left', 'auto', 'important');
+        chatWindow.style.setProperty('top', 'auto', 'important');
         
         setTimeout(() => {
             chatWindow.classList.remove('translate-y-full', 'opacity-0');
@@ -381,16 +695,35 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Escape to close chat
+        // Escape to close chat or exit resize mode
         if (e.key === 'Escape' && chatbot.isOpen) {
-            chatbot.closeChat();
+            if (chatbot.resizeMode) {
+                chatbot.toggleResizeMode();
+            } else {
+                chatbot.closeChat();
+            }
+        }
+        
+        // R key to toggle resize mode (when chat is open)
+        if (e.key === 'r' && chatbot.isOpen && !e.ctrlKey && !e.metaKey) {
+            const chatInput = document.getElementById('chatInput');
+            if (document.activeElement !== chatInput) {
+                e.preventDefault();
+                chatbot.toggleResizeMode();
+            }
+        }
+        
+        // Ctrl/Cmd + R to reset size
+        if ((e.ctrlKey || e.metaKey) && e.key === 'r' && chatbot.isOpen) {
+            e.preventDefault();
+            chatbot.resetSize();
         }
     });
     
     // Add visual indicator for advanced features
     const chatToggle = document.getElementById('chatToggle');
     if (chatToggle) {
-        chatToggle.title = 'Advanced AI Assistant (Ctrl+K)';
+        chatToggle.title = 'Advanced AI Assistant (Ctrl+K) - Resizable Chat Window';
         
         // Add pulsing animation
         setInterval(() => {

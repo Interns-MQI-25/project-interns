@@ -26,6 +26,7 @@ pipeline {
                 sh '''
                 docker run -d --name $CONTAINER_NAME \
                   -e LT_SUBDOMAIN=$LT_SUBDOMAIN \
+                  --restart unless-stopped \
                   -p 3000:3000 $IMAGE_NAME
                 '''
             }

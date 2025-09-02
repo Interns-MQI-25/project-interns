@@ -199,6 +199,8 @@ INSERT INTO departments (department_name, description) VALUES
 ('RDS-PU', 'Software Engineering'),
 ('RDV-PU', 'Value Analysis & Value Engineering');
 
+
+
 -- Set admin user ID variable
 SET @admin_user_id = (SELECT user_id FROM users WHERE username = 'admin' LIMIT 1);
 

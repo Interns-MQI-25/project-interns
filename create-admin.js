@@ -12,9 +12,7 @@ async function createAdmins() {
             password: process.env.DB_PASSWORD || 'sigma',
             port: process.env.DB_PORT || 3306,
             database: process.env.DB_NAME || 'product_management_system',
-            connectTimeout: 10000,  // 10 seconds
-            acquireTimeout: 10000,  // 10 seconds
-            timeout: 10000  // 10 seconds
+            connectTimeout: 60000  // 60 seconds
         });
         
         console.log('✅ Connected to database');

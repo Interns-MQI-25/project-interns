@@ -184,6 +184,14 @@
                                                 <span class="text-xs font-medium text-red-600">✗ Rejected</span>
                                             <% } else if (assignment.remarks === 'RETURN_REQUESTED') { %>
                                                 <span class="text-xs font-medium text-yellow-600">⏳ Pending</span>
+                                                <% if (assignment.monitor_id === user.user_id) { %>
+                                                <form action="/monitor/cancel-request" method="POST" onsubmit="return confirm('Are you sure you want to cancel this return request?');" class="inline-block mt-2">
+                                                    <input type="hidden" name="assignment_id" value="<%= assignment.assignment_id %>" />
+                                                    <button type="submit" title="Cancel Return Request" class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors">
+                                                        <i class="fas fa-times mr-1"></i> Cancel
+                                                    </button>
+                                                </form>
+                                                <% } %>
                                             <% } else { %>
                                                 <span class="text-xs font-medium text-blue-600">📦 In Use</span>
                                             <% } %>

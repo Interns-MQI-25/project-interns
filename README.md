@@ -1,102 +1,267 @@
-# 🏢 Marquardt India Pvt. Ltd. - Inventory Management System
 
-> **A comprehensive web-based asset management system with role-based access control, email notifications, and file attachment capabilities.**
+# Inventory Management System (IMS)
 
-[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0+-blue.svg)](https://www.mysql.com/)
-[![Express.js](https://img.shields.io/badge/Express.js-4.x-lightgrey.svg)](https://expressjs.com/)
-[![Docker](https://img.shields.io/badge/Docker-Available-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/priyanshuksharma/project-interns)
-[![Deployed on GCP](https://img.shields.io/badge/Deployed-Google%20Cloud-4285F4.svg)](https://mqi-ims.uc.r.appspot.com)
+## Overview
+This project is a robust Inventory Management System (IMS) designed for Marquardt India Pvt. Ltd. It streamlines inventory tracking, product management, and administrative workflows for employees, monitors, and administrators. The system is built with Node.js, Express.js, MySQL, and EJS, and is ready for deployment on Docker and Google Cloud Platform (GCP).
 
-## 🚀 Live Application
+## Features
+- **Role-Based Access:** Admin, Employee, and Monitor roles with tailored dashboards and permissions.
+- **Product Management:** Add, update, delete, and bulk upload products. Multi-select and per-row deletion for admins.
+- **Booking & Clearance:** Employees can book products; monitors and admins manage approvals and clearances.
+- **Live Feed:** Real-time updates for inventory and booking status.
+- **Authentication & Security:** Secure login, password reset, and session management. Admin-only actions are protected.
+- **Audit Logging:** Activity logs for key actions and changes.
+- **Email Notifications:** Automated emails for booking, approvals, and password resets.
+- **Responsive UI:** Built with EJS and Tailwind CSS for a modern, mobile-friendly experience.
+- **Deployment Ready:** Dockerized for local and cloud deployment; GCP App Engine support.
 
-**Production URL**: 
-- Version 1.0.2: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
-- Version 1.0.0: [https://mqi-interns-467405.uc.r.appspot.com](https://mqi-interns-467405.uc.r.appspot.com)
+## Technology Stack
+- **Backend:** Node.js (v20+), Express.js (v4.x)
+- **Database:** MySQL (v8.0+)
+- **Frontend:** EJS templates, Tailwind CSS
+- **Authentication:** express-session, bcryptjs
+- **Email:** nodemailer
+- **File Uploads:** multer
+- **Deployment:** Docker, Google Cloud Platform (App Engine)
 
-## 📋 Overview
+## Project Structure
+```
+project-interns/
+├── config/           # Configuration files (database, app settings)
+├── public/           # Static assets (CSS, JS, images)
+├── src/
+│   ├── middleware/   # Authentication and authorization middleware
+│   ├── routes/       # Express route handlers (admin, employee, monitor, etc.)
+│   └── utils/        # Utility modules (logging, email, file upload)
+├── views/            # EJS templates for all user interfaces
+├── sql/              # SQL scripts for database setup and migration
+├── test/             # Automated tests
+├── Dockerfile        # Docker build file
+├── docker-compose.yml# Multi-container orchestration
+├── app.yaml          # GCP App Engine configuration
+└── README.md         # Project documentation
+```
 
-This system provides comprehensive asset management capabilities for Marquardt India, featuring:
-- **Role-based access control** (Employees, Monitors, Admins)
-- **Product request workflow** with approval system
-- **Email notifications** for registration and approvals
-- **File attachment system** for product documentation
-- **Real-time inventory tracking**
-- **Responsive web interface**
+## Setup & Installation
+### Prerequisites
+- Node.js v20 or higher
+- MySQL v8.0 or higher
+- Docker (optional, for containerized deployment)
+- Google Cloud SDK (for GCP deployment)
 
-## ✨ Key Features
+### Local Development
+1. **Clone the repository:**
+  ```sh
+  git clone https://github.com/Interns-MQI-25/project-interns.git
+  cd project-interns
+  ```
+2. **Install dependencies:**
+  ```sh
+  npm install
+  ```
+3. **Configure environment:**
+  - Edit `config/database.js` with your MySQL credentials.
+  - Update any other settings in `config/app.yaml` as needed.
+4. **Set up the database:**
+  - Import the schema from `sql/database.sql` into your MySQL instance.
+  - (Optional) Run additional migration scripts from the `sql/` folder.
+5. **Start the application:**
+  ```sh
+  npm run dev
+  ```
+  The app will be available at `http://localhost:3000` by default.
 
-### 👥 User Roles & Capabilities
+### Docker Deployment
+1. **Build and run with Docker Compose:**
+  ```sh
+  docker-compose up --build
+  ```
+2. **Standalone Docker build:**
+  ```sh
+  docker build -t ims-app .
+  docker run -p 3000:3000 ims-app
+  ```
 
-#### 📊 **Employees**
-- ✅ Submit product requests for projects
-- ✅ View request history and status
-- ✅ Browse available stock with file attachments
-- ✅ View assigned product records
-- ✅ Account management and password changes
-- ✅ Download product documentation
+### Google Cloud Platform (GCP) Deployment
+1. **Configure GCP credentials and project.**
+2. **Deploy to App Engine:**
+  ```sh
+  gcloud app deploy app.yaml --quiet
+  ```
 
-#### 🔍 **Monitors** (Maximum 4 active)
-- ✅ Approve/reject product requests
-- ✅ Add new products with file uploads
-- ✅ Assign products to employees
-- ✅ Process product returns
-- ✅ Generate assignment reports
-- ✅ Manage file attachments
-- ✅ View comprehensive stock analytics
+## Usage
+- **Admin:** Manage products, users, and view logs via the admin dashboard.
+- **Employee:** Book products, view inventory, and manage personal bookings.
+- **Monitor:** Approve bookings, manage clearances, and oversee inventory status.
 
-#### 👑 **Administrators**
-- ✅ Manage all employee accounts
-- ✅ Process registration requests with email notifications
-- ✅ Assign/unassign monitor roles
-- ✅ View system-wide history and reports
-- ✅ Complete file management capabilities
-- ✅ Multi-admin email notifications
-- ✅ Advanced user management (reactivate/delete)
+## Contribution Guidelines
+1. Fork the repository and create a feature branch.
+2. Make your changes with clear, descriptive commit messages.
+3. Ensure all tests pass (`npm test`).
+4. Submit a pull request with a detailed description of your changes.
 
-### 🔧 Advanced Features
+## License
+This project is licensed under the MIT License.
 
-- **📧 Email Notifications**: Email SMTP integration for registration workflow
-- **📎 File Attachments**: Upload/download product documentation (images, PDFs, docs)
-- **🔐 Security**: bcryptjs password hashing, session management, SQL injection protection
-- **📱 Responsive Design**: Mobile-friendly interface with Tailwind CSS
-- **🏗️ Cloud Deployment**: Google App Engine with Cloud SQL
-- **📊 Analytics**: Comprehensive reporting and activity tracking
+## Contact
+For questions, issues, or feature requests, please open an issue on GitHub or contact the project maintainers.
 
-## 🛠️ Technology Stack
+<h2 style="color:#2c5282; border-bottom:2px solid #2c5282; padding-bottom:8px; display:inline-block; margin-top:30px;">
+  <span style="font-size:1.1em;">🧑‍💼</span> Features by Role
+</h2>
 
-- **Frontend**: HTML5, Tailwind CSS, JavaScript (ES6+), EJS Templates
-- **Backend**: Node.js 20+, Express.js 4.x
-- **Database**: MySQL 8.0 with connection pooling
-- **Container Platform**: Docker with Docker Compose
-- **Authentication**: Express sessions with bcryptjs
-- **Email Service**: Nodemailer with Gmail SMTP
-- **File Handling**: Multer for file uploads
-- **Cloud Platform**: Google App Engine + Cloud SQL
-- **Icons**: Font Awesome
-- **Security**: Parameterized queries, XSS protection
+```
+╭─────────────────────────────────────────────────────────────────────────────────╮
+│                           🌟 𝔽𝕖𝔞𝔱𝔲𝔯𝔢 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 🌟                                  │
+╰─────────────────────────────────────────────────────────────────────────────────╯
+```
 
-## 🚀 Quick Start
+### 👥 𝖀𝖘𝖊𝖗 ℜ𝖔𝖑𝖊𝖘 & 𝕮𝖆𝖕𝖆𝖇𝖎𝖑𝖎𝖙𝖎𝖊𝖘
 
-### 🐳 Option 1: Docker (Recommended - One-Click Setup)
+<div align="center">
 
-**Available on Docker Hub**: [`priyanshuksharma/project-interns`](https://hub.docker.com/r/priyanshuksharma/project-interns)
+```
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                        🎭 ℝ𝕠𝕝𝕖-𝔹𝕒𝔰𝔢𝔡 𝔄𝔠𝔠𝔢𝔰𝔰 ℂ𝔬𝔫𝔱𝔯𝔬𝔩 🎭                                ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+```
 
-#### Quick Run with Docker
-```bash
-# Pull and run the latest image
+</div>
+
+<div style="display:flex; flex-wrap:wrap; gap:20px; margin:20px 0;">
+  <div style="flex:1; min-width:300px; background:#f8fafc; border-radius:8px; overflow:hidden; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+    <div style="background:linear-gradient(135deg, #2c5282 0%, #4a5568 100%); color:white; padding:12px 15px;">
+      <h3 style="margin:0; display:flex; align-items:center; gap:8px;">
+        <span>📊</span> Employee Features
+      </h3>
+    </div>
+    <div style="padding:15px;">
+      <ul style="margin:0; padding-left:20px; color:#4a5568;">
+        <li style="margin-bottom:8px;">Submit product requests for projects</li>
+        <li style="margin-bottom:8px;">View request history and status</li>
+        <li style="margin-bottom:8px;">Browse available stock with file attachments</li>
+        <li style="margin-bottom:8px;">View assigned product records</li>
+        <li style="margin-bottom:8px;">Account management and password changes</li>
+        <li style="margin-bottom:0;">Download product documentation</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div style="flex:1; min-width:300px; background:#f8fafc; border-radius:8px; overflow:hidden; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+    <div style="background:linear-gradient(135deg, #2c5282 0%, #4a5568 100%); color:white; padding:12px 15px;">
+      <h3 style="margin:0; display:flex; align-items:center; gap:8px;">
+        <span>🔍</span> Monitor Features (Maximum 4 active)
+      </h3>
+    </div>
+    <div style="padding:15px;">
+      <ul style="margin:0; padding-left:20px; color:#4a5568;">
+        <li style="margin-bottom:8px;">Approve/reject product requests</li>
+        <li style="margin-bottom:8px;">Add new products with file uploads</li>
+        <li style="margin-bottom:8px;">Assign products to employees</li>
+        <li style="margin-bottom:8px;">Process product returns</li>
+        <li style="margin-bottom:8px;">Generate assignment reports</li>
+        <li style="margin-bottom:8px;">Manage file attachments</li>
+        <li style="margin-bottom:0;">View comprehensive stock analytics</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div style="flex:1; min-width:300px; background:#f8fafc; border-radius:8px; overflow:hidden; box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+    <div style="background:linear-gradient(135deg, #2c5282 0%, #4a5568 100%); color:white; padding:12px 15px;">
+      <h3 style="margin:0; display:flex; align-items:center; gap:8px;">
+        <span>👑</span> Administrator Features
+      </h3>
+    </div>
+    <div style="padding:15px;">
+      <ul style="margin:0; padding-left:20px; color:#4a5568;">
+        <li style="margin-bottom:8px;">Manage all employee accounts</li>
+        <li style="margin-bottom:8px;">Process registration requests with email notifications</li>
+        <li style="margin-bottom:8px;">Assign/unassign monitor roles</li>
+        <li style="margin-bottom:8px;">View system-wide history and reports</li>
+        <li style="margin-bottom:8px;">Complete file management capabilities</li>
+        <li style="margin-bottom:8px;">Multi-admin email notifications</li>
+        <li style="margin-bottom:0;">Advanced user management (reactivate/delete)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+### 🔧 𝔸𝕕𝕧𝕒𝕟𝕔𝕖𝕕 𝔽𝕖𝒶𝓉𝓊𝓇𝑒𝓈
+
+```
+╭─────────────────────────────────────────────────────────────────────────────────╮
+│                       🚀 𝔄𝔡𝔳𝔞𝔫𝔠𝔢𝔡 𝔖𝔶𝔰𝔱𝔢𝔪 ℭ𝔞𝔭𝔞𝔟𝔦𝔩𝔦𝔱𝔦𝔢𝔰 🚀                              │
+╰─────────────────────────────────────────────────────────────────────────────────╯
+```
+
+- **📧 𝔼𝕞𝕒𝕚𝕝 ℕ𝕠𝕥𝕚𝕗𝕚𝕔𝕒𝕥𝕚𝕠𝕟𝔰**: Email SMTP integration for registration workflow
+- **📎 𝔽𝕚𝕝𝔢 𝔸𝕥𝕥𝒶𝒸𝒽𝓂𝑒𝓃𝓉𝓈**: Upload/download product documentation (images, PDFs, docs)
+- **🔐 𝕊𝔢𝔠𝔲𝔯𝔦𝔱𝔶**: bcryptjs password hashing, session management, SQL injection protection
+- **📱 ℝ𝔢𝔰𝔭𝔬𝔫𝔰𝔦𝔳𝔢 𝔇𝔢𝔰𝔦𝔤𝔫**: Mobile-friendly interface with Tailwind CSS
+- **🏗️ ℂ𝔩𝔬𝔲𝔡 𝔇𝔢𝔭𝔩𝔬𝔶𝔪𝔢𝔫𝔱**: Google App Engine with Cloud SQL
+- **📊 𝔸𝕟𝕒𝕝𝔶𝔱𝔦𝔠𝔰**: Comprehensive reporting and activity tracking
+
+## 🛠️ 𝕿𝖊𝖈𝖍𝖓𝖔𝖑𝖔𝖌𝖞 𝕾𝖙𝖆𝖈𝖐
+
+<div align="center">
+
+```
+╔══════════════════════════════════════════════════════════════════════════════════════╗
+║                          ⚡ 𝕋𝔢𝔠𝔥 𝔖𝔱𝔞𝔠𝔨 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 ⚡                                        ║
+╚══════════════════════════════════════════════════════════════════════════════════════╝
+```
+
+
+  [![Node.js](https://img.shields.io/badge/Node.js-20+-2c5282?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+  [![MySQL](https://img.shields.io/badge/MySQL-8.0+-2c5282?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+  [![Express.js](https://img.shields.io/badge/Express.js-4.x-2c5282?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+  [![Docker](https://img.shields.io/badge/Docker-Available-2c5282?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/priyanshuksharma/project-interns)
+  [![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Platform-2c5282?style=for-the-badge&logo=google-cloud&logoColor=white)](https://cloud.google.com/)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.x-2c5282?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+  [![bcrypt](https://img.shields.io/badge/bcrypt-Security-2c5282?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/bcryptjs)
+  [![Nodemailer](https://img.shields.io/badge/Nodemailer-Email-2c5282?style=for-the-badge&logo=gmail&logoColor=white)](https://nodemailer.com/)
+  [![Multer](https://img.shields.io/badge/Multer-Files-2c5282?style=for-the-badge&logo=files&logoColor=white)](https://www.npmjs.com/package/multer)
+  [![Font Awesome](https://img.shields.io/badge/Font%20Awesome-Icons-2c5282?style=for-the-badge&logo=font-awesome&logoColor=white)](https://fontawesome.com/)
+
+
+
+## 🚀 𝖰𝗎𝗂𝖼𝗄 𝖲𝗍𝖺𝗋𝗍
+
+<div align="center">
+
+```
+╭─────────────────────────────────────────────────────────────────────────────────╮
+│                        🎯 𝔾𝔢𝔱 𝔖𝔱𝔞𝔯𝔱𝔢𝔡 𝔦𝔫 𝔐𝔦𝔫𝔲𝔱𝔢𝔰! 🎯                                │
+╰─────────────────────────────────────────────────────────────────────────────────╯
+```
+
 docker pull priyanshuksharma/project-interns:latest
 docker run -p 3000:3000 priyanshuksharma/project-interns:latest
 
 # Access at: http://localhost:3000
-```
-
-#### Full Docker Compose Setup (Database Included)
-```bash
-# Clone the repository
 git clone https://github.com/Interns-MQI-25/project-interns.git
 cd project-interns
 
+## 🐳 Option 1: Docker (Recommended - One-Click Setup)
+
+**Available on Docker Hub:** [priyanshuksharma/project-interns](https://hub.docker.com/r/priyanshuksharma/project-interns)
+
+### ⚡ Quick Run with Docker
+```sh
+docker pull priyanshuksharma/project-interns:latest
+docker run -p 3000:3000 priyanshuksharma/project-interns:latest
+# Access at: http://localhost:3000
+```
+
+### 📦 Full Docker Compose Setup (Database Included)
+```sh
+git clone https://github.com/Interns-MQI-25/project-interns.git
+cd project-interns
+docker-compose up --build
+# Access at: http://localhost:3000
+```
+
+```bash
 # Start everything with Docker Compose
 docker-compose --profile dev up -d
 
@@ -195,7 +360,17 @@ chmod +x scripts/setup.sh
    
    🌐 **Open your browser**: [http://localhost:3000](http://localhost:3000)
 
-## 🔑 Default Login Credentials
+## 🔑 𝖣𝖾𝖿𝖺𝗎𝗅𝗍 𝖫𝗈𝗀𝗂𝗇 𝖢𝗋𝖾𝖽𝖾𝗇𝗍𝗂𝖺𝗅𝗌
+
+<div align="center">
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                        🔐 𝔄𝔠𝔠𝔢𝔰𝔰 ℭ𝔯𝔢𝔡𝔢𝔫𝔱𝔦𝔞𝔩𝔰 🔐                                      │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+</div>
 
 ### Admin Account
 - **Username**: `admin`
@@ -210,7 +385,17 @@ chmod +x scripts/setup.sh
 
 > ⚠️ **Important**: Change default passwords immediately after first login!
 
-## 📁 Project Structure
+## 📁 𝖯𝗋𝗈𝗃𝖾𝖼𝗍 𝖲𝗍𝗋𝗎𝖼𝗍𝗎𝗋𝖾
+
+<div align="center">
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                        📂 ℭ𝔬𝔡𝔢𝔟𝔞𝔰𝔢 𝔄𝔯𝔠𝔥𝔦𝔱𝔢𝔠𝔱𝔲𝔯𝔢 📂                                     ║
+╚═══════════════════════════════════════════════════════════════════════════════════╝
+```
+
+</div>
 
 ```
 project-interns/
@@ -247,7 +432,17 @@ project-interns/
 └── 📄 .env                        # Environment variables
 ```
 
-## 🔄 User Workflows
+## 🔄 𝖀𝗌𝖾𝗋 𝖂𝗈𝗋𝗄𝖿𝗅𝗈𝗐𝗌
+
+<div align="center">
+
+```
+╭─────────────────────────────────────────────────────────────────────────────────╮
+│                       🔄 𝔄𝔲𝔱𝔬𝔪𝔞𝔱𝔢𝔡 𝔚𝔬𝔯𝔨𝔣𝔩𝔬𝔴𝔰 🔄                                    │
+╰─────────────────────────────────────────────────────────────────────────────────╯
+```
+
+</div>
 
 ### Employee Registration Flow
 ```
@@ -264,7 +459,17 @@ Employee Request → Monitor Review → Approval/Rejection → Product Assignmen
 Monitor Upload → File Validation → Storage → Database Record → Employee Access
 ```
 
-## 📊 Database Schema
+## 📊 𝖣𝖺𝗍𝖺𝖻𝖺𝗌𝖾 𝖲𝖼𝗁𝖾𝗆𝖺
+
+<div align="center">
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                        🗄️ 𝔇𝔞𝔱𝔞𝔟𝔞𝔰𝔢 𝔄𝔯𝔠𝔥𝔦𝔱𝔢𝔠𝔱𝔲𝔯𝔢 🗄️                                     ║
+╚═══════════════════════════════════════════════════════════════════════════════════╝
+```
+
+</div>
 
 ### Core Tables
 - **`users`** - User accounts and authentication
@@ -278,7 +483,17 @@ Monitor Upload → File Validation → Storage → Database Record → Employee 
 - **`stock_history`** - Inventory movement tracking
 - **`monitor_assignments`** - Monitor role assignments
 
-## 🌐 API Endpoints
+## 🌐 𝖠𝖯𝖨 𝖤𝗇𝖽𝗉𝗈𝗂𝗇𝗍𝗌
+
+<div align="center">
+
+```
+╭─────────────────────────────────────────────────────────────────────────────────╮
+│                        🔗 ℜ𝔢𝔰𝔱𝔣𝔲𝔩 𝔄ℌ𝔦 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 🔗                                 │
+╰─────────────────────────────────────────────────────────────────────────────────╯
+```
+
+</div>
 
 ### Authentication
 - `GET /login` - Login page
@@ -310,7 +525,17 @@ Monitor Upload → File Validation → Storage → Database Record → Employee 
 - `POST /admin/process-registration` - Approve/reject/reactivate/delete
 - `DELETE /admin/api/attachment/:id` - Full file management
 
-## 📧 Email Service Configuration
+## 📧 𝖤𝗆𝖺𝗂𝗅 𝖲𝖾𝗋𝗏𝗂𝖼𝖾 𝖢𝗈𝗇𝖿𝗂𝗀𝗎𝗋𝖺𝗍𝗂𝗈𝗇
+
+<div align="center">
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                       📬 ℌ𝔞𝔦𝔩 ℌ𝔬𝔱𝔦𝔣𝔦𝔠𝔞𝔱𝔦𝔬𝔫 𝔖𝔢𝔯𝔳𝔦𝔠𝔢 📬                                   ║
+╚═══════════════════════════════════════════════════════════════════════════════════╝
+```
+
+</div>
 
 ### Gmail SMTP Setup
 1. **Enable 2-Factor Authentication** on Gmail
@@ -329,7 +554,17 @@ Monitor Upload → File Validation → Storage → Database Record → Employee 
 - ✅ Approval/rejection notifications
 - ✅ HTML email templates with branding
 
-## 📎 File Attachment System
+## 📎 𝖥𝗂𝗅𝖾 𝖠𝗍𝗍𝖺𝖼𝗁𝗆𝖾𝗇𝗍 𝖲𝗒𝗌𝗍𝖾𝗆
+
+<div align="center">
+
+```
+╭─────────────────────────────────────────────────────────────────────────────────╮
+│                       📁 𝔉𝔦𝔩𝔢 ℌ𝔞𝔫𝔡𝔩𝔦𝔫𝔤 ℭ𝔞𝔭𝔞𝔟𝔦𝔩𝔦𝔱𝔦𝔢𝔰 📁                                 │          
+╰─────────────────────────────────────────────────────────────────────────────────╯
+```
+
+</div>
 
 ### Supported File Types
 - **Images**: JPG, JPEG, PNG, GIF, WebP
@@ -341,7 +576,17 @@ Monitor Upload → File Validation → Storage → Database Record → Employee 
 - **Admins**: Full file management (upload, view, delete)
 - **Employees**: View and download only
 
-## 🚨 Troubleshooting
+## 🚨 𝖳𝗋𝗈𝗎𝖻𝗅𝖾𝗌𝗁𝗈𝗈𝗍𝗂𝗇𝗀
+
+<div align="center">
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                        🔧 ℭ𝔬𝔪𝔪𝔬𝔫 ℑ𝔰𝔰𝔲𝔢 ℜ𝔢𝔰𝔬𝔩𝔲𝔱𝔦𝔬𝔫 🔧                                 ║
+╚═══════════════════════════════════════════════════════════════════════════════════╝
+```
+
+</div>
 
 ### Common Issues
 
@@ -377,7 +622,17 @@ PORT=3001 npm start
 - Verify file type is supported
 - Ensure uploads directory exists and is writable
 
-## 🚀 Deployment
+## 🚀 𝖣𝖾𝗉𝗅𝗈𝗒𝗆𝖾𝗇𝗍
+
+<div align="center">
+
+```
+╭─────────────────────────────────────────────────────────────────────────────────╮
+│                       ☁️ ℭ𝔩𝔬𝔲𝔡 𝔇𝔢𝔭𝔩𝔬𝔶𝔪𝔢𝔫𝔱 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 ☁️                              │
+╰─────────────────────────────────────────────────────────────────────────────────╯
+```
+
+</div>
 
 For production deployment on Google Cloud Platform, see:
 📖 **[GCP_DEPLOYMENT_GUIDE.md](./GCP_DEPLOYMENT_GUIDE.md)**
@@ -425,7 +680,17 @@ gcloud app deploy app.yaml
 gcloud app logs tail -s default
 ```
 
-## 🤖 Advanced AI Assistant Chatbot
+## 🤖 𝖠𝖽𝗏𝖺𝗇𝖼𝖾𝖽 𝖠𝖨 𝖠𝗌𝗌𝗂𝗌𝗍𝖺𝗇𝗍 𝖢𝗁𝖺𝗍𝖻𝗈𝗍
+
+<div align="center">
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                        🧠 ℑ𝔫𝔱𝔢𝔩𝔩𝔦𝔤𝔢𝔫𝔱 ℌ𝔦 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 🧠                                  ║
+╚═══════════════════════════════════════════════════════════════════════════════════╝
+```
+
+</div>
 
 ### **🧠 Intelligent Help System with Real-Time Data Access**
 - **🎯 Role-Based Assistance**: Contextual help for Employees, Monitors, and Admins
@@ -539,7 +804,17 @@ gcloud app logs tail -s default
 - **Status Tracking**: Current assignments and availability
 - **Predictive Analysis**: Calculates when products will be free
 
-## 🔒 Security Features
+## 🔒 𝖲𝖾𝖼𝗎𝗋𝗂𝗍𝗒 𝖥𝖾𝖺𝗍𝗎𝗋𝖾𝗌
+
+<div align="center">
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                        🛡️ ℌ𝔦-ℌ𝔞𝔯𝔞 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 🛡️                                     ║
+╚═══════════════════════════════════════════════════════════════════════════════════╝
+```
+
+</div>
 
 - ✅ **Password Hashing**: bcryptjs with salt rounds
 - ✅ **Session Management**: Secure Express sessions
@@ -551,7 +826,17 @@ gcloud app logs tail -s default
 - ✅ **AI Data Security**: Role-based database access in chatbot
 - ✅ **Query Sanitization**: Safe database queries in AI assistant
 
-## 📈 Performance Features
+## 📈 𝖯𝖾𝗋𝖿𝗈𝗋𝗆𝖺𝗇𝖼𝖾 𝖥𝖾𝖺𝗍𝗎𝗋𝖾𝗌
+
+<div align="center">
+
+```
+╭─────────────────────────────────────────────────────────────────────────────────╮
+│                       ⚡ ℌ𝔦-ℌ𝔞𝔯𝔞 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 ⚡                                       │
+╰─────────────────────────────────────────────────────────────────────────────────╯
+```
+
+</div>
 
 - ✅ **Database Connection Pooling**: Efficient MySQL connections
 - ✅ **Auto-scaling**: Google App Engine scaling
@@ -564,7 +849,17 @@ gcloud app logs tail -s default
 - ✅ **Smart Caching**: Conversation memory and context retention
 - ✅ **Fallback Systems**: Graceful degradation when services unavailable
 
-## 🤝 Contributing
+## 🤝 𝖢𝗈𝗇𝗍𝗋𝗂𝖻𝗎𝗍𝗂𝗇𝗀
+
+<div align="center">
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                        🌟 ℌ𝔦-ℌ𝔞𝔯𝔞 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 🌟                                     ║
+╚═══════════════════════════════════════════════════════════════════════════════════╝
+```
+
+</div>
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -572,18 +867,48 @@ gcloud app logs tail -s default
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📞 Support
+## 📞 𝖲𝗎𝗉𝗉𝗈𝗋𝗍
+
+<div align="center">
+
+```
+╭─────────────────────────────────────────────────────────────────────────────────╮
+│                        💬 ℌ𝔦-ℌ𝔞𝔯𝔞 & ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 💬                                 │
+╰─────────────────────────────────────────────────────────────────────────────────╯
+```
+
+</div>
 
 - **Repository**: [GitHub Issues](https://github.com/Interns-MQI-25/project-interns/issues)
 - **Production App**: [https://mqi-interns-467405.uc.r.appspot.com/](https://mqi-interns-467405.uc.r.appspot.com/)
 - **Live Link**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
 - **Documentation**: This README and deployment guide
 
-## 📝 License
+## 📝 𝖫𝗂𝖼𝖾𝗇𝗌𝖾
+
+<div align="center">
+
+```
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                        📜 ℌ𝔦-ℌ𝔞𝔯𝔞 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 📜                                     ║
+╚═══════════════════════════════════════════════════════════════════════════════════╝
+```
+
+</div>
 
 This project is part of the **MQI Internship Program 2025**.
 
-## 📋 Changelog
+## 📋 𝖢𝗁𝖺𝗇𝗀𝖾𝗅𝗈𝗀
+
+<div align="center">
+
+```
+╭─────────────────────────────────────────────────────────────────────────────────╮
+│                        📝 ℌ𝔦-ℌ𝔞𝔯𝔞 ℌ𝔦𝔤𝔥𝔩𝔦𝔤𝔥𝔱𝔰 📝                                   │
+╰─────────────────────────────────────────────────────────────────────────────────╯
+```
+
+</div>
 
 ### Version 2.0.0 (Current)
 - ✅ Email notification system with Gmail SMTP
@@ -599,11 +924,19 @@ This project is part of the **MQI Internship Program 2025**.
 - ✅ Responsive web interface
 - ✅ Database schema and migrations
 
----
+<div align="center">
 
-**🎉 Ready to get started?**
+```
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                           🎉 ℜ𝔢𝔞𝔡𝔶 𝔱𝔬 𝔤𝔢𝔱 𝔰𝔱𝔞𝔯𝔱𝔢𝔡? 🎉                                 ║
+╠═══════════════════════════════════════════════════════════════════════════════════╣
+║  🏠 Local Development: http://localhost:3000                                      ║
+║  🌐 Production App: https://mqi-interns-467405.uc.r.appspot.com/                  ║
+║  ✨ Live Link: https://mqi-ims.uc.r.appspot.com                                   ║
+║  🔑 Admin Login: admin / admin123                                                 ║
+╚═══════════════════════════════════════════════════════════════════════════════════╝
+```
 
-- **Local Development**: [http://localhost:3000](http://localhost:3000)
-- **Production App**: [https://mqi-interns-467405.uc.r.appspot.com/](https://mqi-interns-467405.uc.r.appspot.com/)
-- **Live Link**: [https://mqi-ims.uc.r.appspot.com](https://mqi-ims.uc.r.appspot.com)
-- **Admin Login**: `admin` / `admin123`
+### 🌟 *𝒯𝒽𝒶𝓃𝓀 𝓎𝑜𝓊 𝒻𝑜𝓇 𝒸𝒽𝑜𝑜𝓈𝒾𝓃𝑔 ℳ𝒶𝓇𝓆𝓊𝒶𝓇𝒹𝓉 ℐ𝓃𝓋ℯ𝓃𝓉𝑜𝓇𝓎 ℳ𝒶𝓃𝒶ℊℯ𝓂ℯ𝓃𝓉 𝒮𝓎𝓈𝓉ℯ𝓂!* 🌟
+
+</div>

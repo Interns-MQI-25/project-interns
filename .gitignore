@@ -45,3 +45,6 @@ uploads/*
 # Build artifacts
 dist/
 build/
+
+git-push-menu.bat
+git-push-menu.sh

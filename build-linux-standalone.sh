@@ -205,13 +205,43 @@ pool.getConnection()
     });
 EOF
 
-# Build Linux executable
+# Create package.json for pkg configuration
+echo "Creating pkg configuration..."
+cat > package-standalone.json << 'PKGEOF'
+{
+  "name": "marquardt-inventory-linux",
+  "version": "1.0.0",
+  "main": "server-linux.js",
+  "pkg": {
+    "assets": [
+      "views/**/*",
+      "public/**/*",
+      "src/**/*",
+      "images/**/*",
+      "node_modules/ejs/**/*",
+      "node_modules/express/**/*",
+      "node_modules/mysql2/**/*",
+      "node_modules/bcryptjs/**/*",
+      "node_modules/express-session/**/*",
+      "node_modules/express-flash/**/*"
+    ],
+    "scripts": [
+      "src/**/*.js"
+    ],
+    "targets": [
+      "node18-linux-x64"
+    ]
+  }
+}
+PKGEOF
+
+# Build Linux executable with all dependencies
 echo "Building Linux executable..."
 if command -v pkg &> /dev/null; then
-    pkg server-linux.js --targets node18-linux-x64 --output marquardt-inventory-linux
+    pkg package-standalone.json --output marquardt-inventory-linux
 else
     echo "❌ pkg command not found, trying with npx..."
-    npx pkg server-linux.js --targets node18-linux-x64 --output marquardt-inventory-linux
+    npx pkg package-standalone.json --output marquardt-inventory-linux
 fi
 
 # Check if executable was created
@@ -229,8 +259,9 @@ else
     chmod +x marquardt-inventory-linux
 fi
 
-# Clean up temporary file if it exists
+# Clean up temporary files if they exist
 [ -f "server-linux.js" ] && rm server-linux.js
+[ -f "package-standalone.json" ] && rm package-standalone.json
 
 echo "✅ Build complete!"
 echo ""

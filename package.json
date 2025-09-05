@@ -13,6 +13,8 @@
     "gcp-deploy": "gcloud app deploy",
     "build-exe": "pkg server.js --targets node18-win-x64 --output inventory-management.exe",
     "build-portable": "node setup-sqlite.js && pkg server.js --targets node18-win-x64 --output inventory-management-portable.exe",
+    "build-linux": "pkg server.js --targets node18-linux-x64 --output inventory-management-linux",
+    "build-all": "pkg server.js --targets node18-win-x64,node18-linux-x64,node18-macos-x64 --output inventory-management",
     "install-service": "node install-service.js",
     "uninstall-service": "node uninstall-service.js",
     "test": "echo \"Error: no test specified\" && exit 1"

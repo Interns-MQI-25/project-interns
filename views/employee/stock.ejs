@@ -68,7 +68,7 @@
                         
                         <!-- Search Button -->
                         <div class="flex items-end">
-                            <button id="search-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" style="background-color: #009A9A;">
+                            <button id="search-btn" class="inline-flex items-center px-4 py-2 border border-[#009A9A] text-sm font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" style="background-color: #009A9A;">
                                 <i class="fas fa-search mr-2"></i>
                                 Search
                             </button>
@@ -76,7 +76,7 @@
                         
                         <!-- Clear Filters Button -->
                         <div class="flex items-end">
-                            <button id="clear-filters-btn" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            <button id="clear-filters-btn" class="inline-flex items-center px-3 py-2 border border-[#009A9A] text-sm font-medium rounded-md text-[#009A9A] bg-white hover:bg-[#009A9A] hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]">
                                 <i class="fas fa-times mr-1"></i>
                                 Clear
                             </button>
@@ -144,24 +144,24 @@
             <!-- Fixed Pagination Controls -->
             <div class="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
                     <div class="flex justify-between flex-1 sm:hidden">
-                        <button id="prev-mobile" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            <button id="prev-mobile" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#009A9A] border border-[#009A9A] rounded-md hover:bg-opacity-90">
                             Previous
                         </button>
-                        <button id="next-mobile" class="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            <button id="next-mobile" class="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#009A9A] border border-[#009A9A] rounded-md hover:bg-opacity-90">
                             Next
                         </button>
                     </div>
                     <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-center">
                         <div>
                             <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                                <button id="prev-desktop" class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50">
+                                <button id="prev-desktop" class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-white bg-[#009A9A] border border-[#009A9A] rounded-l-md hover:bg-opacity-90">
                                     <span class="sr-only">Previous</span>
                                     <i class="fas fa-chevron-left"></i>
                                 </button>
                                 <div id="page-numbers" class="flex">
                                     <!-- Page numbers will be populated by JavaScript -->
                                 </div>
-                                <button id="next-desktop" class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50">
+                                <button id="next-desktop" class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-white bg-[#009A9A] border border-[#009A9A] rounded-r-md hover:bg-opacity-90">
                                     <span class="sr-only">Next</span>
                                     <i class="fas fa-chevron-right"></i>
                                 </button>
@@ -293,8 +293,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         ${isAvailable.available ? 
-                            `<button class="request-btn inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" 
-                                style="background-color: #009A9A;" 
+                            `<button class="request-btn inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-[#009A9A] hover:bg-[#007A7A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#009A9A]" 
                                 data-product-id="${product.product_id}" 
                                 data-product-name="${escapeHtml(product.product_name)}">
                                 <i class="fas fa-plus mr-1"></i>Request
@@ -302,7 +301,7 @@
                             `<span class="text-xs text-gray-500">Not Available</span>`}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-teal-100 text-[#009A9A]">
                             ${product.asset_type || 'N/A'}
                         </span>
                     </td>
@@ -316,7 +315,7 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div id="employee-files-${product.product_id}" class="text-sm">
                             <button onclick="loadEmployeeProductAttachments(${product.product_id})" 
-                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50">
+                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-[#009A9A] hover:text-[#007A7A] hover:bg-teal-50">
                                 <i class="fas fa-paperclip mr-1"></i>
                                 View Files
                             </button>
@@ -609,7 +608,7 @@
                                 <span class="text-gray-500 ml-1">(${attachment.formatted_size})</span>
                             </div>
                             <a href="${attachment.download_url}" 
-                               class="text-blue-600 hover:text-blue-800 ml-1"
+                               class="text-[#009A9A] hover:text-[#007A7A] ml-1"
                                title="Download ${attachment.original_filename}">
                                 <i class="fas fa-download"></i>
                             </a>

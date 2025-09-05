@@ -83,7 +83,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 FROM users u
                 JOIN employees e ON u.user_id = e.user_id
                 JOIN departments d ON e.department_id = d.department_id
-                WHERE u.is_active = TRUE AND u.role = 'employee'
+                WHERE u.is_active = TRUE AND u.role IN ('employee', 'monitor')
                 ORDER BY u.full_name
             `);
             res.json(employees);
@@ -122,6 +122,8 @@ module.exports = (pool, requireAuth, requireRole) => {
             const startDate = new Date(start_date);
             const endDate = new Date(end_date);
             const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to start of today
+            startDate.setHours(0, 0, 0, 0); // Set to start of selected date
 
             if (startDate < today) {
                 const message = 'Start date cannot be in the past';
@@ -224,6 +226,8 @@ module.exports = (pool, requireAuth, requireRole) => {
             const startDate = new Date(start_date);
             const endDate = new Date(end_date);
             const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to start of today
+            startDate.setHours(0, 0, 0, 0); // Set to start of selected date
 
             if (startDate < today) {
                 req.flash('error', 'Start date cannot be in the past');

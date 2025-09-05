@@ -2,6 +2,7 @@
 
 # Marquardt Inventory Management System - Linux Systemd Service Installation
 # This script installs the application as a systemd service for automatic startup
+# Compatible with WSL (Windows Subsystem for Linux)
 
 set -e
 
@@ -10,6 +11,13 @@ SERVICE_NAME="marquardt-inventory"
 SERVICE_USER="marquardt"
 APP_DIR="/opt/marquardt-inventory"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+WSL_DETECTED=false
+
+# Detect WSL environment
+if grep -qi microsoft /proc/version 2>/dev/null || [ -n "${WSL_DISTRO_NAME}" ]; then
+    WSL_DETECTED=true
+    echo "🔍 WSL environment detected"
+fi
 
 echo "🚀 Installing Marquardt Inventory Management System as Linux Service..."
 
@@ -19,10 +27,25 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# WSL-specific checks
+if [ "$WSL_DETECTED" = true ]; then
+    echo "⚠️  WSL detected - some systemd features may be limited"
+    
+    # Check if systemd is available in WSL
+    if ! command -v systemctl &> /dev/null; then
+        echo "❌ systemd not available in this WSL distribution"
+        echo "💡 Consider using: sudo apt install systemd (Ubuntu) or enable systemd in WSL2"
+        echo "🔄 Continuing with manual installation..."
+    fi
+fi
+
 # Create service user
 echo "👤 Creating service user..."
 if ! id "$SERVICE_USER" &>/dev/null; then
-    useradd --system --home-dir "$APP_DIR" --shell /bin/false "$SERVICE_USER"
+    useradd --system --home-dir "$APP_DIR" --shell /bin/false "$SERVICE_USER" 2>/dev/null || {
+        echo "⚠️  Using adduser fallback for WSL compatibility"
+        adduser --system --home "$APP_DIR" --shell /bin/false --disabled-login "$SERVICE_USER"
+    }
     echo "✅ User '$SERVICE_USER' created"
 else
     echo "✅ User '$SERVICE_USER' already exists"
@@ -45,6 +68,19 @@ cp "$PROJECT_DIR/.env.example" "$APP_DIR/.env"
 # Set ownership
 chown -R "$SERVICE_USER:$SERVICE_USER" "$APP_DIR"
 
+# Detect Node.js path
+NODE_PATH=$(which node || echo "/usr/bin/node")
+if [ ! -f "$NODE_PATH" ]; then
+    # Try common Node.js paths
+    for path in /usr/local/bin/node /opt/node/bin/node ~/.nvm/versions/node/*/bin/node; do
+        if [ -f "$path" ]; then
+            NODE_PATH="$path"
+            break
+        fi
+    done
+fi
+echo "🔍 Node.js path: $NODE_PATH"
+
 # Install Node.js dependencies
 echo "📦 Installing dependencies..."
 cd "$APP_DIR"
@@ -64,7 +100,7 @@ Type=simple
 User=$SERVICE_USER
 Group=$SERVICE_USER
 WorkingDirectory=$APP_DIR
-ExecStart=/usr/bin/node server.js
+ExecStart=$NODE_PATH server.js
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -93,17 +129,43 @@ EOF
 
 # Reload systemd and enable service
 echo "🔄 Configuring systemd..."
-systemctl daemon-reload
-systemctl enable "$SERVICE_NAME"
+if command -v systemctl &> /dev/null; then
+    systemctl daemon-reload
+    systemctl enable "$SERVICE_NAME"
+    echo "✅ Systemd service configured"
+else
+    echo "⚠️  systemctl not available - service file created but not enabled"
+    echo "💡 To enable systemd in WSL2: echo '[boot]' | sudo tee -a /etc/wsl.conf && echo 'systemd=true' | sudo tee -a /etc/wsl.conf"
+    echo "🔄 Then restart WSL: wsl --shutdown (from Windows)"
+fi
 
 echo "✅ Installation complete!"
 echo ""
-echo "📋 Next steps:"
-echo "1. Edit configuration: sudo nano $APP_DIR/.env"
-echo "2. Setup database: cd $APP_DIR && sudo -u $SERVICE_USER node setup-db.js"
-echo "3. Create admin users: sudo -u $SERVICE_USER node create-admin.js"
-echo "4. Start service: sudo systemctl start $SERVICE_NAME"
-echo "5. Check status: sudo systemctl status $SERVICE_NAME"
+if [ "$WSL_DETECTED" = true ]; then
+    echo "📋 WSL Next steps:"
+    echo "1. Edit configuration: sudo nano $APP_DIR/.env"
+    echo "2. Setup database: cd $APP_DIR && sudo -u $SERVICE_USER node setup-db.js"
+    echo "3. Create admin users: sudo -u $SERVICE_USER node create-admin.js"
+    if command -v systemctl &> /dev/null; then
+        echo "4. Start service: sudo systemctl start $SERVICE_NAME"
+        echo "5. Check status: sudo systemctl status $SERVICE_NAME"
+    else
+        echo "4. Manual start: cd $APP_DIR && sudo -u $SERVICE_USER $NODE_PATH server.js"
+        echo "5. Or enable systemd in WSL2 and use: sudo systemctl start $SERVICE_NAME"
+    fi
+    echo ""
+    echo "💡 WSL Tips:"
+    echo "- To enable systemd: Add 'systemd=true' to /etc/wsl.conf under [boot] section"
+    echo "- Restart WSL: wsl --shutdown (from Windows Command Prompt)"
+    echo "- Access from Windows: http://localhost:3000"
+else
+    echo "📋 Next steps:"
+    echo "1. Edit configuration: sudo nano $APP_DIR/.env"
+    echo "2. Setup database: cd $APP_DIR && sudo -u $SERVICE_USER node setup-db.js"
+    echo "3. Create admin users: sudo -u $SERVICE_USER node create-admin.js"
+    echo "4. Start service: sudo systemctl start $SERVICE_NAME"
+    echo "5. Check status: sudo systemctl status $SERVICE_NAME"
+fi
 echo ""
 echo "🌐 Access: http://localhost:3000"
 echo "🔑 Default login: GuddiS / Welcome@MQI"

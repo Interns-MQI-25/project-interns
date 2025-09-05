@@ -332,6 +332,11 @@
             
             document.getElementById('startDate').addEventListener('change', function() {
                 document.getElementById('endDate').min = this.value;
+                updateLabAvailability(); // Update lab availability when start date changes
+            });
+            
+            document.getElementById('endDate').addEventListener('change', function() {
+                updateLabAvailability(); // Update lab availability when end date changes
             });
         });
 
@@ -340,13 +345,44 @@
                 const response = await fetch('/hil/api/labs');
                 labs = await response.json();
                 
+                // Load bookings to check availability
+                const bookingsResponse = await fetch('/hil/api/bookings');
+                const bookings = await bookingsResponse.json();
+                
                 const modalLabSelector = document.getElementById('modalLabSelector');
                 modalLabSelector.innerHTML = '<option value="">Select a lab</option>';
                 
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
                 labs.forEach(lab => {
-                    const option = new Option(`${lab.lab_name} (${lab.location})`, lab.lab_id);
+                    // Check if lab is currently booked (for initial load)
+                    const currentBooking = bookings.find(booking => {
+                        const startDate = new Date(booking.start_date);
+                        const endDate = new Date(booking.end_date);
+                        return booking.lab_id == lab.lab_id && today >= startDate && today <= endDate;
+                    });
+                    
+                    let optionText;
+                    if (currentBooking) {
+                        optionText = `${lab.lab_name} (${lab.location}) - Not Available`;
+                    } else {
+                        optionText = `${lab.lab_name} (${lab.location}) - Available`;
+                    }
+                        
+                    const option = new Option(optionText, lab.lab_id);
+                    if (currentBooking) {
+                        option.disabled = true;
+                        option.style.color = '#dc2626';
+                        option.style.backgroundColor = '#fef2f2';
+                    } else {
+                        option.style.color = '#059669';
+                    }
                     modalLabSelector.add(option);
                 });
+                
+                // Store bookings globally for dynamic availability checking
+                window.allBookings = bookings;
             } catch (error) {
                 console.error('Error loading labs:', error);
             }
@@ -392,12 +428,95 @@
                 });
             }
         }
+        
+        function updateLabAvailability() {
+            const modalLabSelector = document.getElementById('modalLabSelector');
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            
+            if (!startDateInput.value || !endDateInput.value || !window.allBookings) {
+                return;
+            }
+            
+            const selectedStart = new Date(startDateInput.value);
+            const selectedEnd = new Date(endDateInput.value);
+            
+            // Clear and rebuild options
+            modalLabSelector.innerHTML = '<option value="">Select a lab</option>';
+            
+            labs.forEach(lab => {
+                // Check for conflicts with selected dates
+                const conflictingBooking = window.allBookings.find(booking => {
+                    if (booking.lab_id != lab.lab_id) return false;
+                    
+                    const bookingStart = new Date(booking.start_date);
+                    const bookingEnd = new Date(booking.end_date);
+                    
+                    // Check for date overlap
+                    return (
+                        (selectedStart <= bookingEnd && selectedEnd >= bookingStart)
+                    );
+                });
+                
+                let optionText;
+                if (conflictingBooking) {
+                    optionText = `${lab.lab_name} (${lab.location}) - Not Available`;
+                } else {
+                    optionText = `${lab.lab_name} (${lab.location}) - Available`;
+                }
+                    
+                const option = new Option(optionText, lab.lab_id);
+                if (conflictingBooking) {
+                    option.disabled = true;
+                    option.style.color = '#dc2626';
+                    option.style.backgroundColor = '#fef2f2';
+                } else {
+                    option.style.color = '#059669';
+                }
+                modalLabSelector.add(option);
+            });
+        }
 
         function showNewBookingModal() {
             const firstSelect = document.querySelector('.attendee-select');
             if (firstSelect && availableEmployees) {
                 firstSelect.innerHTML = '<option value="">Select team member</option>';
                 populateAttendeeSelect(firstSelect);
+            }
+            
+            // Reset lab availability to initial state
+            if (window.allBookings) {
+                const modalLabSelector = document.getElementById('modalLabSelector');
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                modalLabSelector.innerHTML = '<option value="">Select a lab</option>';
+                
+                labs.forEach(lab => {
+                    // Check if lab is currently booked
+                    const currentBooking = window.allBookings.find(booking => {
+                        const startDate = new Date(booking.start_date);
+                        const endDate = new Date(booking.end_date);
+                        return booking.lab_id == lab.lab_id && today >= startDate && today <= endDate;
+                    });
+                    
+                    let optionText;
+                    if (currentBooking) {
+                        optionText = `${lab.lab_name} (${lab.location}) - Not Available`;
+                    } else {
+                        optionText = `${lab.lab_name} (${lab.location}) - Available`;
+                    }
+                        
+                    const option = new Option(optionText, lab.lab_id);
+                    if (currentBooking) {
+                        option.disabled = true;
+                        option.style.color = '#dc2626';
+                        option.style.backgroundColor = '#fef2f2';
+                    } else {
+                        option.style.color = '#059669';
+                    }
+                    modalLabSelector.add(option);
+                });
             }
             
             document.getElementById('newBookingModal').classList.remove('hidden');

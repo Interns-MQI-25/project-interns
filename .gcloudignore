@@ -15,3 +15,25 @@
 
 # Node.js dependencies:
 node_modules/
+
+# Windows Service and Build Artifacts
+daemon/
+*.exe
+node
+
+# Development files
+.env
+*.log
+logs/
+temp/
+
+# Build and deployment files
+build/
+dist/
+deployment/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

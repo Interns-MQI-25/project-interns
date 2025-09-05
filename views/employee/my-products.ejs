@@ -120,8 +120,8 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <% if (product.is_returned) { %>
                                                 <div class="flex flex-col space-y-1">
-                                                    <span class="text-xs font-medium text-gray-600">
-                                                        Returned
+                                                    <span class="text-xs font-medium text-green-600">
+                                                        ✓ Returned
                                                     </span>
                                                     <% if (product.returned_at) { %>
                                                         <span class="text-xs text-gray-500">
@@ -130,16 +130,16 @@
                                                     <% } %>
                                                 </div>
                                             <% } else if (product.return_status === 'requested') { %>
-                                                <span class="text-xs font-medium text-gray-600">
-                                                    Return Requested
+                                                <span class="text-xs font-medium text-yellow-600">
+                                                    ⏳ Return Requested
                                                 </span>
                                             <% } else if (product.return_status === 'rejected') { %>
-                                                <span class="text-xs font-medium text-gray-600">
-                                                    Return Rejected
+                                                <span class="text-xs font-medium text-red-600">
+                                                    ✗ Return Rejected
                                                 </span>
                                             <% } else { %>
-                                                <span class="text-xs font-medium text-gray-600">
-                                                    In Use
+                                                <span class="text-xs font-medium text-[#009A9A]">
+                                                    📦 In Use
                                                 </span>
                                             <% } %>
                                         </td>
@@ -161,7 +161,7 @@
                                                 <div class="flex space-x-3">
                                                     <form action="/employee/return-product" method="POST" onsubmit="return confirm('Are you sure you want to request return of this product again?');">
                                                         <input type="hidden" name="assignment_id" value="<%= product.assignment_id %>" />
-                                                        <button type="submit" class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                                        <button type="submit" class="text-[#009A9A] hover:text-[#007A7A] text-xs font-medium">
                                                             ↩ Return
                                                         </button>
                                                     </form>
@@ -173,7 +173,7 @@
                                                 <div class="flex space-x-3">
                                                     <form action="/employee/return-product" method="POST" onsubmit="return confirm('Are you sure you want to request return of this product?');">
                                                         <input type="hidden" name="assignment_id" value="<%= product.assignment_id %>" />
-                                                        <button type="submit" class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                                        <button type="submit" class="text-[#009A9A] hover:text-[#007A7A] text-xs font-medium">
                                                             ↩ Return
                                                         </button>
                                                     </form>
@@ -234,7 +234,7 @@
                         <button type="button" onclick="hideExtensionModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-[#009A9A] rounded-md hover:bg-[#007A7A]">
                             Submit Request
                         </button>
                     </div>

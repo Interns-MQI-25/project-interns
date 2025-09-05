@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Marquardt India Pvt. Ltd. for GCP",
   "main": "server.js",
+  "bin": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "NODE_ENV=development node server.js",
@@ -10,10 +11,31 @@
     "setup-local": "bash setup-local.sh",
     "setup-local-win": "powershell -ExecutionPolicy Bypass -File setup-local.ps1",
     "gcp-deploy": "gcloud app deploy",
+    "build-exe": "pkg server.js --targets node18-win-x64 --output inventory-management.exe",
+    "build-portable": "node setup-sqlite.js && pkg server.js --targets node18-win-x64 --output inventory-management-portable.exe",
+    "install-service": "node install-service.js",
+    "uninstall-service": "node uninstall-service.js",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "pkg": {
+    "assets": [
+      "views/**/*.ejs",
+      "public/**/*",
+      "config/**/*",
+      "sql/**/*",
+      "uploads/**/*"
+    ],
+    "scripts": [
+      "src/**/*.js",
+      "setup-sqlite.js"
+    ]
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.2.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
@@ -24,7 +46,11 @@
     "multer": "^2.0.2",
     "mysql2": "^3.11.0",
     "node-cron": "^3.0.3",
+    "node-windows": "^1.0.0-beta.8",
     "nodemailer": "^7.0.5",
+    "nodemon": "^3.1.10",
+    "sql.js": "^1.13.0",
+    "sqlite3": "^5.1.7",
     "xlsx": "^0.18.5"
   },
   "engines": {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FST Labs Calendar - Marquardt India Pvt. Ltd.</title>
+    <title>RDT Lab Calendar - Marquardt India Pvt. Ltd.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/responsive.css">
@@ -23,10 +23,10 @@
             
             <div class="flex justify-between items-center mb-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">FST Labs Calendar</h1>
+                    <h1 class="text-2xl font-bold text-gray-900">RDT Lab Calendar</h1>
                     <p class="text-gray-600">Book Functional Safety Test labs with HIL instruments</p>
                 </div>
-                <button onclick="showNewBookingModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                <button onclick="showNewBookingModal()" class="bg-primary-600 hover:bg-primary-700 text-black px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
                     <i class="fas fa-plus mr-2"></i>New Booking
                 </button>
             </div>
@@ -141,7 +141,7 @@
                         <button type="button" onclick="closeNewBookingModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
                             Cancel
                         </button>
-                        <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                        <button type="submit" class="bg-[#009A9A] hover:bg-[#007A7A] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
                             <i class="fas fa-calendar-check mr-2"></i>Book Lab
                         </button>
                     </div>
@@ -183,6 +183,11 @@
             
             document.getElementById('startDate').addEventListener('change', function() {
                 document.getElementById('endDate').min = this.value;
+                updateModalLabOptions(); // Update lab availability when start date changes
+            });
+            
+            document.getElementById('endDate').addEventListener('change', function() {
+                updateModalLabOptions(); // Update lab availability when end date changes
             });
         });
 
@@ -199,10 +204,11 @@
                 
                 labs.forEach(lab => {
                     const option1 = new Option(`${lab.lab_name} (${lab.location})`, lab.lab_id);
-                    const option2 = new Option(`${lab.lab_name} (${lab.location})`, lab.lab_id);
                     labSelector.add(option1);
-                    modalLabSelector.add(option2);
                 });
+                
+                // Update modal lab options with availability
+                updateModalLabOptions();
                 
                 loadEmployees();
                 loadLabBookings();
@@ -228,9 +234,75 @@
                 const response = await fetch(url);
                 bookings = await response.json();
                 updateCalendar();
+                updateModalLabOptions();
             } catch (error) {
                 console.error('Error loading bookings:', error);
             }
+        }
+
+        function updateModalLabOptions() {
+            const modalLabSelector = document.getElementById('modalLabSelector');
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            
+            modalLabSelector.innerHTML = '<option value="">Select a lab</option>';
+            
+            labs.forEach(lab => {
+                let isAvailable = true;
+                let conflictingBooking = null;
+                
+                // If dates are selected, check availability for those dates
+                if (startDateInput.value && endDateInput.value) {
+                    const selectedStart = new Date(startDateInput.value);
+                    const selectedEnd = new Date(endDateInput.value);
+                    
+                    conflictingBooking = bookings.find(booking => {
+                        if (booking.lab_id != lab.lab_id) return false;
+                        
+                        const bookingStart = new Date(booking.start_date);
+                        const bookingEnd = new Date(booking.end_date);
+                        
+                        // Only check active bookings for conflicts
+                        if (booking.status !== 'active') return false;
+                        
+                        // Check for date overlap
+                        return (
+                            (selectedStart <= bookingEnd && selectedEnd >= bookingStart)
+                        );
+                    });
+                    
+                    isAvailable = !conflictingBooking;
+                } else {
+                    // If no dates selected, check if lab is currently booked
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    conflictingBooking = bookings.find(booking => {
+                        const startDate = new Date(booking.start_date);
+                        const endDate = new Date(booking.end_date);
+                        return booking.lab_id == lab.lab_id && booking.status === 'active' && today >= startDate && today <= endDate;
+                    });
+                    
+                    isAvailable = !conflictingBooking;
+                }
+                
+                let optionText;
+                if (!isAvailable) {
+                    optionText = `${lab.lab_name} (${lab.location}) - Not Available`;
+                } else {
+                    optionText = `${lab.lab_name} (${lab.location}) - Available`;
+                }
+                    
+                const option = new Option(optionText, lab.lab_id);
+                if (!isAvailable) {
+                    option.disabled = true;
+                    option.style.color = '#dc2626';
+                    option.style.backgroundColor = '#fef2f2';
+                } else {
+                    option.style.color = '#059669';
+                }
+                modalLabSelector.add(option);
+            });
         }
 
         function updateCalendar() {

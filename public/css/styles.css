@@ -39,7 +39,18 @@
 @layer components {
   /* Responsive button styles */
   .btn-primary {
-    @apply px-3 py-2 sm:px-4 sm:py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 text-sm sm:text-base;
+    @apply px-3 py-2 sm:px-4 sm:py-2 text-white rounded-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 text-sm sm:text-base;
+    background-color: #009A9A;
+    border-color: #009A9A;
+  }
+  
+  .btn-primary:hover {
+    background-color: #007A7A;
+    border-color: #007A7A;
+  }
+  
+  .btn-primary:focus {
+    box-shadow: 0 0 0 3px rgba(0, 154, 154, 0.3);
   }
   
   .btn-secondary {
@@ -63,15 +74,22 @@
   
   /* Enhanced sidebar links */
   .sidebar-link {
-    @apply flex items-center px-3 py-2.5 sm:px-4 sm:py-3 text-gray-700 rounded-lg hover:bg-primary-50 hover:text-primary-700 transition-all duration-200 text-sm sm:text-base group;
+    @apply flex items-center px-3 py-2.5 sm:px-4 sm:py-3 text-gray-700 rounded-lg transition-all duration-200 text-sm sm:text-base group;
+  }
+  
+  .sidebar-link:hover {
+    background-color: rgba(0, 154, 154, 0.1);
+    color: #009A9A;
   }
   
   .sidebar-link.active {
-    @apply bg-primary-100 text-primary-700 border-r-4 border-primary-500;
+    background-color: rgba(0, 154, 154, 0.15);
+    color: #009A9A;
+    border-right: 4px solid #009A9A;
   }
   
   .sidebar-link.active i {
-    @apply text-primary-700;
+    color: #009A9A;
   }
   
   /* Responsive table wrapper */
@@ -132,7 +150,11 @@
   
   /* Focus styles for accessibility */
   .focus-visible {
-    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .focus-visible:focus {
+    --tw-ring-color: #009A9A;
   }
 }
 
@@ -216,7 +238,8 @@
   
   /* Enhanced focus states for accessibility */
   .focus-enhanced:focus {
-    @apply ring-2 ring-primary-500 ring-offset-2 outline-none;
+    @apply ring-2 ring-offset-2 outline-none;
+    --tw-ring-color: #009A9A;
   }
   
   /* Better button styles */

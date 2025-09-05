@@ -86,7 +86,7 @@
                                         <td class="pl-2 pr-4 py-4 text-sm text-gray-500 text-center">
                                             <div class="break-words"><%= request.processed_by_name || '-' %></div>
                                             <% if (request.remarks) { %>
-                                                <div class="text-xs <%= request.status === 'rejected' ? 'text-red-600' : 'text-blue-600' %> mt-1 italic">Remarks: <%= request.remarks %></div>
+                                                <div class="text-xs <%= request.status === 'rejected' ? 'text-red-600' : 'text-[#009A9A]' %> mt-1 italic">Remarks: <%= request.remarks %></div>
                                             <% } %>
                                         </td>
                                     </tr>
@@ -111,7 +111,7 @@
                 <!-- Tab Navigation -->
                 <div class="border-b border-gray-200 mb-4">
                     <nav class="-mb-px flex space-x-8">
-                        <button onclick="showTab('assignments')" id="assignments-tab" class="tab-button active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+                        <button onclick="showTab('assignments')" id="assignments-tab" class="tab-button active py-2 px-1 border-b-2 border-teal-500 font-medium text-sm text-[#009A9A]">
                             Product Assignments
                         </button>
                         <button onclick="showTab('extensions')" id="extensions-tab" class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
@@ -161,7 +161,7 @@
                                             <% } else if (assignment.return_request_status === 'rejected') { %>
                                                 <span class="text-xs font-medium text-red-600">✗ Return Rejected</span>
                                             <% } else { %>
-                                                <span class="text-xs font-medium text-blue-600">📦 Assigned</span>
+                                                <span class="text-xs font-medium text-[#009A9A]">📦 Assigned</span>
                                             <% } %>
                                         </td>
                                         <td class="px-2 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
@@ -180,7 +180,7 @@
                                                 <% } %>
                                             </div>
                                             <% if (assignment.remarks) { %>
-                                                <div class="text-xs <%= assignment.return_request_status === 'rejected' ? 'text-red-600' : 'text-blue-600' %> mt-1 italic">Remarks: <%= assignment.remarks %></div>
+                                                <div class="text-xs <%= assignment.return_request_status === 'rejected' ? 'text-red-600' : 'text-[#009A9A]' %> mt-1 italic">Remarks: <%= assignment.remarks %></div>
                                             <% } %>
                                             
                                             <!-- Action button for requesting return -->
@@ -188,7 +188,7 @@
                                                 <div class="mt-2">
                                                     <form action="/employee/return-product" method="POST" onsubmit="return confirm('Are you sure you want to request return of this product?');" class="inline">
                                                         <input type="hidden" name="assignment_id" value="<%= assignment.assignment_id %>" />
-                                                        <button type="submit" title="Request Return" class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                                        <button type="submit" title="Request Return" class="text-[#009A9A] hover:text-[#007A7A] text-xs font-medium">
                                                             ↩ Request Return
                                                         </button>
                                                     </form>
@@ -302,7 +302,7 @@
             
             // Remove active class from all tabs
             document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                button.classList.remove('active', 'border-teal-500', 'text-[#009A9A]');
                 button.classList.add('border-transparent', 'text-gray-500');
             });
             
@@ -311,7 +311,7 @@
             
             // Add active class to selected tab
             const activeTab = document.getElementById(tabName + '-tab');
-            activeTab.classList.add('active', 'border-blue-500', 'text-blue-600');
+            activeTab.classList.add('active', 'border-teal-500', 'text-[#009A9A]');
             activeTab.classList.remove('border-transparent', 'text-gray-500');
         }
         

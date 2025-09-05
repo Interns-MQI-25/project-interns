@@ -28,7 +28,7 @@ class ChatBot {
         const chatWidget = document.createElement('div');
         chatWidget.innerHTML = `
             <!-- Chat Toggle Button -->
-            <div id="chatToggle" class="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg cursor-pointer transition-all duration-300 transform hover:scale-110">
+            <div id="chatToggle" class="fixed bottom-6 right-6 z-50 bg-[#009A9A] hover:bg-[#007A7A] text-white rounded-full p-4 shadow-lg cursor-pointer transition-all duration-300 transform hover:scale-110">
                 <i class="fas fa-robot text-xl"></i>
                 <div class="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs rounded-full w-7 h-7 flex items-center justify-center animate-pulse shadow-lg">
                     🧠
@@ -48,7 +48,7 @@ class ChatBot {
                 <div class="resize-handle resize-handle-se" data-direction="se"></div>
                 
                 <!-- Chat Header -->
-                <div class="bg-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+                <div class="bg-[#009A9A] text-white p-4 rounded-t-lg flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                         <i class="fas fa-robot"></i>
                         <span class="font-semibold">AI Assistant</span>
@@ -85,7 +85,7 @@ class ChatBot {
                         >
                         <button 
                             id="chatSend" 
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            class="bg-[#009A9A] hover:bg-[#007A7A] text-white px-4 py-2 rounded-lg transition-colors"
                         >
                             <i class="fas fa-paper-plane"></i>
                         </button>
@@ -98,7 +98,7 @@ class ChatBot {
                     </div>
                     <div class="mt-2 text-xs text-gray-500 flex justify-between items-center">
                         <span>🧠 Advanced AI with real-time data access</span>
-                        <span class="text-blue-600">Drag left edge to resize</span>
+                        <span class="text-[#009A9A]">Drag left edge to resize</span>
                     </div>
                 </div>
             </div>
@@ -589,7 +589,7 @@ class ChatBot {
             <div class="inline-block max-w-xs lg:max-w-md px-3 py-2 rounded-lg text-sm ${
                 isBot 
                     ? 'bg-gray-200 text-gray-800' 
-                    : 'bg-blue-600 text-white'
+                    : 'bg-[#009A9A] text-white'
             }">
                 <div class="whitespace-pre-wrap">${this.formatMessage(text)}</div>
                 <div class="text-xs opacity-70 mt-1">${timestamp}</div>

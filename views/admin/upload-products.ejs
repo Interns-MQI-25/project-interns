@@ -89,7 +89,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <% if (column.COLUMN_NAME === 'added_by' || column.COLUMN_NAME === 'inwarded_by') { %>
-                                    <span class="text-blue-600">Auto-set</span>
+                                    <span class="text-[#009A9A]">Auto-set</span>
                                 <% } else { %>
                                     <%= column.IS_NULLABLE === 'NO' ? 'Yes' : 'No' %>
                                 <% } %>
@@ -154,7 +154,7 @@
                                     <span class="font-semibold">Click to upload</span> or drag and drop
                                 </p>
                                 <p class="text-xs text-gray-500">Excel files (.xlsx, .xls) or CSV (Max 10MB)</p>
-                                <p id="selectedFileName" class="text-sm text-blue-600 mt-2 hidden"></p>
+                                <p id="selectedFileName" class="text-sm text-[#009A9A] mt-2 hidden"></p>
                             </div>
                             <input id="excelFile" name="excelFile" type="file" class="hidden" accept=".xlsx,.xls,.csv" required />
                         </label>

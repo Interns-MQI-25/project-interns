@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Marquardt India Pvt. Ltd. for GCP",
   "main": "server.js",
+  "bin": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "NODE_ENV=development node server.js",
@@ -25,6 +26,7 @@
     "mysql2": "^3.11.0",
     "node-cron": "^3.0.3",
     "nodemailer": "^7.0.5",
+    "nodemon": "^3.1.10",
     "xlsx": "^0.18.5"
   },
   "engines": {

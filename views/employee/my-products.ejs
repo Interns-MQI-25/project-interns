@@ -138,7 +138,7 @@
                                                     ✗ Return Rejected
                                                 </span>
                                             <% } else { %>
-                                                <span class="text-xs font-medium text-blue-600">
+                                                <span class="text-xs font-medium text-[#009A9A]">
                                                     📦 In Use
                                                 </span>
                                             <% } %>
@@ -161,7 +161,7 @@
                                                 <div class="flex space-x-3">
                                                     <form action="/employee/return-product" method="POST" onsubmit="return confirm('Are you sure you want to request return of this product again?');">
                                                         <input type="hidden" name="assignment_id" value="<%= product.assignment_id %>" />
-                                                        <button type="submit" class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                                        <button type="submit" class="text-[#009A9A] hover:text-[#007A7A] text-xs font-medium">
                                                             ↩ Return
                                                         </button>
                                                     </form>
@@ -173,7 +173,7 @@
                                                 <div class="flex space-x-3">
                                                     <form action="/employee/return-product" method="POST" onsubmit="return confirm('Are you sure you want to request return of this product?');">
                                                         <input type="hidden" name="assignment_id" value="<%= product.assignment_id %>" />
-                                                        <button type="submit" class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                                        <button type="submit" class="text-[#009A9A] hover:text-[#007A7A] text-xs font-medium">
                                                             ↩ Return
                                                         </button>
                                                     </form>
@@ -234,7 +234,7 @@
                         <button type="button" onclick="hideExtensionModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
                             Cancel
                         </button>
-                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-[#009A9A] rounded-md hover:bg-[#007A7A]">
                             Submit Request
                         </button>
                     </div>

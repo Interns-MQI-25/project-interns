@@ -22,7 +22,7 @@
 
             <!-- Quick Actions -->
             <div class="flex flex-wrap gap-3 mb-6">
-                <button onclick="showAddLabModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                <button onclick="showAddLabModal()" class="bg-[#009A9A] hover:bg-[#007A7A] text-white px-4 py-2 rounded-md text-sm font-medium">
                     <i class="fas fa-plus mr-2"></i>Add New Lab
                 </button>
                 <a href="/hil/labs" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium">
@@ -58,8 +58,8 @@
                                             <td class="px-4 py-4">
                                                 <div class="flex items-start">
                                                     <div class="flex-shrink-0">
-                                                        <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                                                            <i class="fas fa-flask text-blue-600"></i>
+                                                        <div class="h-10 w-10 rounded-lg bg-teal-100 flex items-center justify-center">
+                                                            <i class="fas fa-flask text-[#009A9A]"></i>
                                                         </div>
                                                     </div>
                                                     <div class="ml-4">
@@ -108,7 +108,7 @@
                                             </td>
                                             <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
                                                 <div class="flex space-x-2">
-                                                    <button onclick="editLab(<%= lab.lab_id %>)" class="text-blue-600 hover:text-blue-900">
+                                                    <button onclick="editLab(<%= lab.lab_id %>)" class="text-[#009A9A] hover:text-[#007A7A]">
                                                         <i class="fas fa-edit mr-1"></i>Edit
                                                     </button>
                                                     <% if (lab.active_bookings === 0) { %>
@@ -129,7 +129,7 @@
                         <div class="text-center py-8">
                             <i class="fas fa-flask text-gray-400 text-4xl mb-4"></i>
                             <p class="text-gray-500 mb-4">No HIL labs configured yet</p>
-                            <button onclick="showAddLabModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                            <button onclick="showAddLabModal()" class="bg-[#009A9A] hover:bg-[#007A7A] text-white px-4 py-2 rounded-md text-sm font-medium">
                                 <i class="fas fa-plus mr-2"></i>Add First Lab
                             </button>
                         </div>
@@ -184,7 +184,7 @@
                         <button type="button" onclick="closeAddLabModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md text-sm">
                             Cancel
                         </button>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">
+                        <button type="submit" class="bg-[#009A9A] hover:bg-[#007A7A] text-white px-4 py-2 rounded-md text-sm">
                             <i class="fas fa-plus mr-2"></i>Add Lab
                         </button>
                     </div>

@@ -107,8 +107,14 @@ process.on('unhandledRejection', (reason, promise) => {
  */
 // Database configuration - different for production (App Engine) vs development
 const dbConfig = process.env.NODE_ENV === 'production' ? {
-    // Production: Use Unix socket for Cloud SQL
-    socketPath: process.env.DB_HOST,
+    // Production: Check if using socket path (Cloud SQL) or TCP (Windows)
+    ...(process.env.DB_HOST && process.env.DB_HOST.startsWith('/') ? 
+        { socketPath: process.env.DB_HOST } : 
+        { 
+            host: process.env.DB_HOST || 'localhost',
+            port: process.env.DB_PORT || 3306
+        }
+    ),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,

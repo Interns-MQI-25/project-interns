@@ -21,7 +21,7 @@
             </div>
 
             <div class="flex flex-wrap gap-3 mb-6">
-                <button onclick="showNewBookingModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                <button onclick="showNewBookingModal()" class="bg-[#009A9A] hover:bg-[#007A7A] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
                     <i class="fas fa-plus mr-2"></i>Book New Lab
                 </button>
                 <a href="/employee/hil-calendar" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
@@ -97,7 +97,7 @@
                                         <p class="text-sm font-medium text-gray-500">Duration</p>
                                         <% if (booking.days_remaining !== null) { %>
                                             <% if (booking.days_remaining > 0) { %>
-                                                <p class="text-sm text-blue-600"><%= booking.days_remaining %> days remaining</p>
+                                                <p class="text-sm text-[#009A9A]"><%= booking.days_remaining %> days remaining</p>
                                             <% } else if (booking.days_remaining === 0) { %>
                                                 <p class="text-sm text-orange-600">Ends today</p>
                                             <% } else { %>
@@ -158,10 +158,10 @@
                         <i class="fas fa-calendar-alt text-6xl"></i>
                     </div>
                     <h3 class="mt-4 text-lg font-medium text-gray-900">No HIL bookings yet</h3>
-                    <p class="mt-2 text-sm text-gray-500">Get started by booking your first FST lab.</p>
+                    <p class="mt-2 text-sm text-gray-500">Get started by booking your first RDT lab.</p>
                     <div class="mt-6">
-                        <button onclick="showNewBookingModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
-                            <i class="fas fa-plus mr-2"></i>Book FST Lab
+                        <button onclick="showNewBookingModal()" class="bg-[#009A9A] hover:bg-[#007A7A] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fas fa-plus mr-2"></i>Book RDT Lab
                         </button>
                     </div>
                 </div>
@@ -173,7 +173,7 @@
     <div id="newBookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
         <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
             <div class="mt-3">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Book FST Lab</h3>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Book RDT Lab</h3>
                 <form id="bookingForm" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -227,7 +227,7 @@
                         <button type="button" onclick="closeNewBookingModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
                             Cancel
                         </button>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                        <button type="submit" class="bg-[#009A9A] hover:bg-[#007A7A] text-green px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
                             <i class="fas fa-calendar-check mr-2"></i>Book Lab
                         </button>
                     </div>
@@ -274,7 +274,7 @@
                         <button type="button" onclick="closeEditBookingModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
                             Cancel
                         </button>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                        <button type="submit" class="bg-[#009A9A] hover:bg-[#007A7A] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
                             <i class="fas fa-save mr-2"></i>Update Booking
                         </button>
                     </div>

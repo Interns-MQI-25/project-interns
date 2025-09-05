@@ -210,7 +210,7 @@
                                             <% } else if (assignment.remarks && assignment.remarks.startsWith('RETURN_REJECTED')) { %>
                                                 <span class="text-xs font-medium text-red-600">✗ Return Rejected</span>
                                             <% } else { %>
-                                                <span class="text-xs font-medium text-blue-600">📦 In Use</span>
+                                                <span class="text-xs font-medium text-[#009A9A]">📦 In Use</span>
                                             <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -238,14 +238,14 @@
                                             <% } else if (assignment.remarks && assignment.remarks.startsWith('RETURN_REJECTED')) { %>
                                                 <form action="/monitor/return-product" method="POST" onsubmit="return confirm('Your previous return request was rejected. Do you want to request return again?');">
                                                     <input type="hidden" name="assignment_id" value="<%= assignment.assignment_id %>" />
-                                                    <button type="submit" class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                                    <button type="submit" class="text-[#009A9A] hover:text-[#007A7A] text-xs font-medium">
                                                         ↩ Return
                                                     </button>
                                                 </form>
                                             <% } else { %>
                                                 <form action="/monitor/return-product" method="POST" onsubmit="return confirm('Are you sure you want to request return of this product?');">
                                                     <input type="hidden" name="assignment_id" value="<%= assignment.assignment_id %>" />
-                                                    <button type="submit" class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                                    <button type="submit" class="text-[#009A9A] hover:text-[#007A7A] text-xs font-medium">
                                                         ↩ Return
                                                     </button>
                                                 </form>

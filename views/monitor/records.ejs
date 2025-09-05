@@ -117,7 +117,7 @@
                 <!-- Tab Navigation -->
                 <div class="border-b border-gray-200 mb-4">
                     <nav class="-mb-px flex space-x-8">
-                        <button onclick="showTab('assignments')" id="assignments-tab" class="tab-button active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+                        <button onclick="showTab('assignments')" id="assignments-tab" class="tab-button active py-2 px-1 border-b-2 border-teal-500 font-medium text-sm text-[#009A9A]">
                             Product Assignments
                         </button>
                         <button onclick="showTab('extensions')" id="extensions-tab" class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
@@ -184,8 +184,16 @@
                                                 <span class="text-xs font-medium text-red-600">✗ Rejected</span>
                                             <% } else if (assignment.remarks === 'RETURN_REQUESTED') { %>
                                                 <span class="text-xs font-medium text-yellow-600">⏳ Pending</span>
+                                                <% if (assignment.monitor_id === user.user_id) { %>
+                                                <form action="/monitor/cancel-request" method="POST" onsubmit="return confirm('Are you sure you want to cancel this return request?');" class="inline-block mt-2">
+                                                    <input type="hidden" name="assignment_id" value="<%= assignment.assignment_id %>" />
+                                                    <button type="submit" title="Cancel Return Request" class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors">
+                                                        <i class="fas fa-times mr-1"></i> Cancel
+                                                    </button>
+                                                </form>
+                                                <% } %>
                                             <% } else { %>
-                                                <span class="text-xs font-medium text-blue-600">📦 In Use</span>
+                                                <span class="text-xs font-medium text-[#009A9A]">📦 In Use</span>
                                             <% } %>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -291,7 +299,7 @@
             
             // Remove active class from all tabs
             document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                button.classList.remove('active', 'border-teal-500', 'text-[#009A9A]');
                 button.classList.add('border-transparent', 'text-gray-500');
             });
             
@@ -300,7 +308,7 @@
             
             // Add active class to selected tab
             const activeTab = document.getElementById(tabName + '-tab');
-            activeTab.classList.add('active', 'border-blue-500', 'text-blue-600');
+            activeTab.classList.add('active', 'border-teal-500', 'text-[#009A9A]');
             activeTab.classList.remove('border-transparent', 'text-gray-500');
         }
     </script>

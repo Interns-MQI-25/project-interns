@@ -1397,7 +1397,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             );
 
             if (req.body.show_history_link) {
-                req.flash('success', 'Extension request submitted successfully! <a href="/monitor/records" class="underline text-blue-600 hover:text-blue-800">View in History →</a>');
+                req.flash('success', 'Extension request submitted successfully! <a href="/monitor/records" class="underline text-[#009A9A] hover:text-[#007A7A]">View in History →</a>');
             } else {
                 req.flash('success', 'Extension request submitted successfully. Status updated in your products list.');
             }

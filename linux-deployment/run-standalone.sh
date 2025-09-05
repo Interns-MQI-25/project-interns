@@ -4,6 +4,7 @@
 # This script runs the standalone Linux executable with proper configuration
 
 EXECUTABLE="./marquardt-inventory-linux"
+CONFIG_FILE=".env"
 
 echo "🚀 Starting Marquardt Inventory Management System..."
 
@@ -17,16 +18,20 @@ fi
 # Make sure it's executable
 chmod +x "$EXECUTABLE"
 
-# Set environment variables directly
-echo "📝 Setting configuration..."
-export NODE_ENV=production
-export PORT=3000
-export DB_HOST=localhost
-export DB_USER=sigma
-export DB_PASSWORD=sigma
-export DB_NAME=product_management_system
-export SESSION_SECRET=linux-standalone-secret-$(date +%s)
-echo "✅ Configuration set"
+# Create default .env if it doesn't exist
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "📝 Creating default configuration..."
+    cat > "$CONFIG_FILE" << EOF
+NODE_ENV=production
+PORT=3000
+DB_HOST=localhost
+DB_USER=sigma
+DB_PASSWORD=sigma
+DB_NAME=product_management_system
+SESSION_SECRET=linux-standalone-secret-$(date +%s)
+EOF
+    echo "✅ Configuration created: $CONFIG_FILE"
+fi
 
 # Check if running as root (for port 80/443)
 if [ "$EUID" -eq 0 ]; then

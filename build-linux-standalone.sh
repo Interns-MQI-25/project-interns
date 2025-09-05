@@ -4,7 +4,15 @@ echo "Building standalone Linux executable for global access..."
 # Install pkg if not available
 if ! command -v pkg &> /dev/null; then
     echo "Installing pkg globally..."
-    npm install -g pkg
+    if [ "$EUID" -eq 0 ]; then
+        npm install -g pkg
+    else
+        sudo npm install -g pkg || {
+            echo "⚠️  Global pkg install failed, installing locally..."
+            npm install pkg
+            export PATH="$PATH:./node_modules/.bin"
+        }
+    fi
 fi
 
 # Install dependencies
@@ -199,13 +207,30 @@ EOF
 
 # Build Linux executable
 echo "Building Linux executable..."
-pkg server-linux.js --targets node18-linux-x64 --output marquardt-inventory-linux
+if command -v pkg &> /dev/null; then
+    pkg server-linux.js --targets node18-linux-x64 --output marquardt-inventory-linux
+else
+    echo "❌ pkg command not found, trying with npx..."
+    npx pkg server-linux.js --targets node18-linux-x64 --output marquardt-inventory-linux
+fi
 
-# Make executable
-chmod +x marquardt-inventory-linux
+# Check if executable was created
+if [ -f "marquardt-inventory-linux" ]; then
+    # Make executable
+    chmod +x marquardt-inventory-linux
+    echo "✅ Executable created successfully"
+else
+    echo "❌ Failed to create executable"
+    echo "💡 Fallback: Use 'node server-linux.js' to run directly"
+    chmod +x server-linux.js
+    mv server-linux.js marquardt-inventory-linux.js
+    echo "#!/bin/bash" > marquardt-inventory-linux
+    echo "node \"\$(dirname \"\$0\")/marquardt-inventory-linux.js\"" >> marquardt-inventory-linux
+    chmod +x marquardt-inventory-linux
+fi
 
-# Clean up temporary file
-rm server-linux.js
+# Clean up temporary file if it exists
+[ -f "server-linux.js" ] && rm server-linux.js
 
 echo "✅ Build complete!"
 echo ""

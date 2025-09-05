@@ -23,7 +23,7 @@
         
         .selected-counter {
             font-size: 0.875rem;
-            color: #3b82f6;
+            color: #009A9A;
             font-weight: 500;
         }
         
@@ -34,7 +34,7 @@
         
         /* Style for search input focus */
         #searchInput:focus {
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(0, 154, 154, 0.1);
         }
         
         /* Loading state for table */
@@ -188,7 +188,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                <%= employee.role === 'monitor' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' %>">
+                                                <%= employee.role === 'monitor' ? 'bg-teal-100 text-[#009A9A]' : 'bg-gray-100 text-gray-800' %>">
                                                 <%= employee.role.charAt(0).toUpperCase() + employee.role.slice(1) %>
                                             </span>
                                         </td>

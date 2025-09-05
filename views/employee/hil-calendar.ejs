@@ -349,9 +349,11 @@
                     dayBookings.forEach(booking => {
                         const bookingElement = document.createElement('div');
                         const isOverdue = new Date(booking.end_date) < today;
-                        const colorClass = isOverdue ? 'bg-red-500' : 'bg-blue-500';
+                        const colorClass = isOverdue ? 'bg-red-500' : '';
+                        const colorStyle = isOverdue ? '' : 'background-color: #009A9A;';
                         
                         bookingElement.className = `text-white text-xs p-1 mb-1 rounded cursor-pointer ${colorClass}`;
+                        if (colorStyle) bookingElement.style.cssText = colorStyle;
                         
                         const projectText = booking.project_name.substring(0, 15) + (booking.project_name.length > 15 ? '...' : '');
                         const labText = booking.lab_name ? booking.lab_name.substring(0, 12) + (booking.lab_name.length > 12 ? '...' : '') : '';

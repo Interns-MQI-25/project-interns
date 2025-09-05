@@ -48,7 +48,9 @@ CREATE TABLE IF NOT EXISTS hil_booking_attendees (
     UNIQUE KEY unique_booking_user (booking_id, user_id)
 );
 
--- Clear existing HIL labs and insert new ones
+-- Clear existing HIL data safely
+DELETE FROM hil_booking_attendees;
+DELETE FROM hil_bookings;
 DELETE FROM hil_labs;
 
 -- Insert VT HIL Labs
@@ -128,11 +130,11 @@ SELECT 'MN HIL 58', 'MN Hardware-in-Loop testing facility', 'MN Building', 4, 'R
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
 SELECT 'MN HIL 59', 'MN Hardware-in-Loop testing facility', 'MN Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
--- Create indexes for better performance (if not exists)
-CREATE INDEX IF NOT EXISTS idx_hil_bookings_dates ON hil_bookings(start_date, end_date);
-CREATE INDEX IF NOT EXISTS idx_hil_bookings_lab ON hil_bookings(lab_id);
-CREATE INDEX IF NOT EXISTS idx_hil_bookings_status ON hil_bookings(status);
-CREATE INDEX IF NOT EXISTS idx_hil_attendees_booking ON hil_booking_attendees(booking_id);
+-- Create indexes for better performance
+CREATE INDEX idx_hil_bookings_dates ON hil_bookings(start_date, end_date);
+CREATE INDEX idx_hil_bookings_lab ON hil_bookings(lab_id);
+CREATE INDEX idx_hil_bookings_status ON hil_bookings(status);
+CREATE INDEX idx_hil_attendees_booking ON hil_booking_attendees(booking_id);
 
 -- Display completion message
 SELECT 'HIL Labs schema created successfully!' as message;

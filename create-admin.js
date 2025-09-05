@@ -37,13 +37,13 @@ async function createAdmins() {
                 username: 'GuddiS',
                 full_name: 'Somling Guddi',
                 email: 'Somling.Guddi@marquardt.com ',
-                password: 'Welcome@123'
+                password: 'Welcome@MQI'
             },
             {
                 username: 'KatragaddaV',
                 full_name: 'Venubabu Katragadda',
                 email: 'Venubabu.Katragadda@marquardt.com',
-                password: 'Welcome@123'
+                password: 'Welcome@MQI'
             }
         ];
         

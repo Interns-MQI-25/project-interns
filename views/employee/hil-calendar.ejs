@@ -262,6 +262,9 @@
                         const bookingStart = new Date(booking.start_date);
                         const bookingEnd = new Date(booking.end_date);
                         
+                        // Only check active bookings for conflicts
+                        if (booking.status !== 'active') return false;
+                        
                         // Check for date overlap
                         return (
                             (selectedStart <= bookingEnd && selectedEnd >= bookingStart)
@@ -277,7 +280,7 @@
                     conflictingBooking = bookings.find(booking => {
                         const startDate = new Date(booking.start_date);
                         const endDate = new Date(booking.end_date);
-                        return booking.lab_id == lab.lab_id && today >= startDate && today <= endDate;
+                        return booking.lab_id == lab.lab_id && booking.status === 'active' && today >= startDate && today <= endDate;
                     });
                     
                     isAvailable = !conflictingBooking;

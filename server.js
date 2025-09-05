@@ -149,7 +149,7 @@ app.locals.pool = pool; // Make pool available to all route modules
 app.use(express.urlencoded({ extended: true })); // Parse form data
 app.use(express.json()); // Parse JSON data
 app.use(express.static('public')); // Serve static files (CSS, JS, images)
-app.use('/images', express.static('images')); // Serve company images
+app.use('/images', express.static(path.join(__dirname, 'images'))); // Serve company images
 
 // Session configuration for user authentication and state management
 

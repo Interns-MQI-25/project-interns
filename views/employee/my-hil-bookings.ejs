@@ -227,7 +227,7 @@
                         <button type="button" onclick="closeNewBookingModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
                             Cancel
                         </button>
-                        <button type="submit" class="bg-[#009A9A] hover:bg-[#007A7A] text-green px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                        <button type="submit" class="bg-[#009A9A] hover:bg-[#007A7A] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
                             <i class="fas fa-calendar-check mr-2"></i>Book Lab
                         </button>
                     </div>
@@ -360,7 +360,7 @@
                     const currentBooking = bookings.find(booking => {
                         const startDate = new Date(booking.start_date);
                         const endDate = new Date(booking.end_date);
-                        return booking.lab_id == lab.lab_id && today >= startDate && today <= endDate;
+                        return booking.lab_id == lab.lab_id && booking.status === 'active' && today >= startDate && today <= endDate;
                     });
                     
                     let optionText;
@@ -447,7 +447,7 @@
             labs.forEach(lab => {
                 // Check for conflicts with selected dates
                 const conflictingBooking = window.allBookings.find(booking => {
-                    if (booking.lab_id != lab.lab_id) return false;
+                    if (booking.lab_id != lab.lab_id || booking.status !== 'active') return false;
                     
                     const bookingStart = new Date(booking.start_date);
                     const bookingEnd = new Date(booking.end_date);
@@ -497,7 +497,7 @@
                     const currentBooking = window.allBookings.find(booking => {
                         const startDate = new Date(booking.start_date);
                         const endDate = new Date(booking.end_date);
-                        return booking.lab_id == lab.lab_id && today >= startDate && today <= endDate;
+                        return booking.lab_id == lab.lab_id && booking.status === 'active' && today >= startDate && today <= endDate;
                     });
                     
                     let optionText;

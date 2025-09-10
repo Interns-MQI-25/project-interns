@@ -124,8 +124,8 @@ const dbConfig = process.env.NODE_ENV === 'production' ? {
 } : {
     // Development: Use standard TCP connection
     host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'Neha@012004',
+    user: process.env.DB_USER || 'sigma',
+    password: process.env.DB_PASSWORD || 'sigma',
     database: process.env.DB_NAME || 'product_management_system',
     port: process.env.DB_PORT || 3306,
     connectionLimit: 5,
@@ -149,7 +149,7 @@ app.locals.pool = pool; // Make pool available to all route modules
 app.use(express.urlencoded({ extended: true })); // Parse form data
 app.use(express.json()); // Parse JSON data
 app.use(express.static('public')); // Serve static files (CSS, JS, images)
-app.use('/images', express.static('images')); // Serve company images
+app.use('/images', express.static(path.join(__dirname, 'images'))); // Serve company images
 
 // Session configuration for user authentication and state management
 

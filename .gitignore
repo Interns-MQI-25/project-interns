@@ -46,5 +46,11 @@ uploads/*
 dist/
 build/
 
+# Windows Service and Executable files
+daemon/
+*.exe
+node
+
+# Git helper scripts
 git-push-menu.bat
 git-push-menu.sh

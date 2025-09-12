@@ -321,27 +321,36 @@ app.post('/login', async (req, res) => {
         connection.release();
         
         // Create default admin users with hashed passwords
+        const adminHash = await bcrypt.hash('admin123', 10);
         const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
         const katragaddaHash = await bcrypt.hash('Welcome@MQI', 10);
 
+        await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['admin', 'System Administrator', 'admin@company.com', adminHash, 'admin', 1]);
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Somling.Guddi@marquardt.com', guddiHash, 'admin', 1]);
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['KatragaddaV', 'Venubabu Katragadda', 'Venubabu.Katragadda@marquardt.com', katragaddaHash, 'admin', 1]);
 
         
         
         // Find user with exact username match (case sensitive)
+        console.log('Looking for user:', username);
         const [users] = await pool.execute('SELECT * FROM users WHERE BINARY username = ? AND is_active = 1', [username]);
+        console.log('Found users:', users.length);
         
         if (users.length === 0) {
+            console.log('No user found with username:', username);
             req.flash('error', 'Invalid username or password');
             return res.redirect('/login');
         }
         
         const user = users[0];
+        console.log('User found:', user.username, 'Role:', user.role);
+        
         // Verify password using bcrypt comparison
         const isValid = await bcrypt.compare(password, user.password);
+        console.log('Password valid:', isValid);
         
         if (!isValid) {
+            console.log('Invalid password for user:', username);
             req.flash('error', 'Invalid username or password');
             return res.redirect('/login');
         }

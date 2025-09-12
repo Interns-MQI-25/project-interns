@@ -55,80 +55,80 @@ DELETE FROM hil_labs;
 
 -- Insert VT HIL Labs
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 6', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 6', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 7', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 7', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 8', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 8', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 9', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 9', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 11', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 11', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 12', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 12', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 17', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 17', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 18', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 18', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 19', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 19', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 20', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 20', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 39', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 39', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 40', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 40', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 41', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 41', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 42', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 42', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 47', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 47', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 48', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 48', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 52', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 52', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 53', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 53', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 55', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 55', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'VT HIL 66', 'VT Hardware-in-Loop testing facility', 'VT Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'VT HIL 66', 'VT Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 -- Insert MN HIL Labs
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'MN HIL 33', 'MN Hardware-in-Loop testing facility', 'MN Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'MN HIL 33', 'MN Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'MN HIL 34', 'MN Hardware-in-Loop testing facility', 'MN Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'MN HIL 34', 'MN Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'MN HIL 46', 'MN Hardware-in-Loop testing facility', 'MN Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'MN HIL 46', 'MN Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'MN HIL 58', 'MN Hardware-in-Loop testing facility', 'MN Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'MN HIL 58', 'MN Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 INSERT INTO hil_labs (lab_name, lab_description, location, capacity, equipment_details, created_by) 
-SELECT 'MN HIL 59', 'MN Hardware-in-Loop testing facility', 'MN Building', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
+SELECT 'MN HIL 59', 'MN Hardware-in-Loop testing facility', 'A 2.37(RDT- Labs) ', 4, 'Real-time simulators, ECU testing equipment', user_id FROM users WHERE role = 'admin' LIMIT 1;
 
 -- Create indexes for better performance
 CREATE INDEX idx_hil_bookings_dates ON hil_bookings(start_date, end_date);

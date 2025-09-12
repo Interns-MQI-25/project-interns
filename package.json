@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "NODE_ENV=development node server.js",
+    "global": "node -e \"console.log('🌐 Starting with global access...'); require('child_process').spawn('cmd', ['/c', 'quick-global.bat'], {stdio: 'inherit'});\"",
+    "tunnel": "node -e \"console.log('🚀 Choose your tunnel...'); require('child_process').spawn('cmd', ['/c', 'global-access.bat'], {stdio: 'inherit'});\"",
     "setup-db": "node setup-db.js",
     "setup-local": "bash setup-local.sh",
     "setup-local-win": "powershell -ExecutionPolicy Bypass -File setup-local.ps1",
@@ -35,25 +37,18 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^12.2.0",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-flash": "^0.0.2",
     "express-mysql-session": "^3.0.2",
     "express-session": "^1.18.0",
-    "fs-extra": "^11.3.1",
-    "multer": "^2.0.2",
+    "multer": "^1.4.5-lts.1",
     "mysql2": "^3.11.0",
-    "node-cron": "^3.0.3",
-    "node-windows": "^1.0.0-beta.8",
-    "nodemailer": "^7.0.5",
-    "nodemon": "^3.1.10",
-    "sql.js": "^1.13.0",
-    "sqlite3": "^5.1.7",
+    "nodemailer": "^6.9.14",
     "xlsx": "^0.18.5"
   },
   "engines": {
-    "node": "20"
+    "node": ">=18.0.0"
   }
 }

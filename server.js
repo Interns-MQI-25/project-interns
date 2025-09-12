@@ -83,7 +83,7 @@ try {
 }
 
 const app = express();
-const PORT = process.env.PORT || 80;
+const PORT = process.env.PORT || 8080;
 
 /**
  * Global Error Handlers
@@ -321,14 +321,13 @@ app.post('/login', async (req, res) => {
         connection.release();
         
         // Create default admin users with hashed passwords
-        const testHash = await bcrypt.hash('password', 10);
         const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
-        // const vennuHash = await bcrypt.hash('Vennu@123', 10);
+        const katragaddaHash = await bcrypt.hash('Welcome@MQI', 10);
 
-        // Ensure users table exists and create default admin accounts
-        await pool.execute('CREATE TABLE IF NOT EXISTS users (user_id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) UNIQUE, full_name VARCHAR(100), email VARCHAR(100), password VARCHAR(255), role VARCHAR(20) DEFAULT "admin", is_active BOOLEAN DEFAULT TRUE)');
-        await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['test', 'Test User', 'test@example.com', testHash, 'admin', 1]);
         await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Somling.Guddi@marquardt.com', guddiHash, 'admin', 1]);
+        await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['KatragaddaV', 'Venubabu Katragadda', 'Venubabu.Katragadda@marquardt.com', katragaddaHash, 'admin', 1]);
+
+        
         
         // Find user with exact username match (case sensitive)
         const [users] = await pool.execute('SELECT * FROM users WHERE BINARY username = ? AND is_active = 1', [username]);

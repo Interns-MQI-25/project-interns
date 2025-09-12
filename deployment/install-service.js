@@ -1,38 +1,38 @@
-const Service = require('node-windows').Service;
+const fs = require('fs');
 const path = require('path');
 
-// Create a new service object
-const svc = new Service({
-  name: 'Marquardt Inventory Management',
-  description: 'Marquardt India Inventory Management System - Web Application',
-  script: path.join(__dirname, '..', 'server.js'),
-  nodeOptions: [
-    '--harmony',
-    '--max_old_space_size=4096'
-  ],
-  env: {
-    name: "NODE_ENV",
-    value: "production"
-  }
-});
+const projectRoot = path.join(__dirname, '..');
+const serverPath = path.join(projectRoot, 'server.js');
 
-// Listen for the "install" event, which indicates the process is available as a service.
-svc.on('install', function(){
-  console.log('Service installed successfully!');
-  console.log('Starting Marquardt Inventory Management service...');
-  svc.start();
-});
+// Create startup batch file
+const batchContent = `@echo off
+cd /d "${projectRoot}"
+set NODE_ENV=production
+node server.js
+pause`;
 
-svc.on('start', function(){
-  console.log('Service started successfully!');
-  console.log('Application available at: http://SERVER_IP:3000');
-  console.log('Service Name: Marquardt Inventory Management');
-  console.log('Service Status: Running');
-});
+// Create service batch file
+const serviceBatch = `@echo off
+echo Installing Marquardt Inventory Management Service...
+sc create "MarquardtIMS" binPath= "node \"${serverPath}\"" start= auto
+sc description "MarquardtIMS" "Marquardt India Inventory Management System"
+echo Service created successfully!
+echo To start: sc start MarquardtIMS
+echo To stop: sc stop MarquardtIMS
+echo To delete: sc delete MarquardtIMS
+pause`;
 
-svc.on('error', function(err){
-  console.error('Service error:', err);
-});
-
-console.log('Installing Marquardt Inventory Management as Windows Service...');
-svc.install();
+try {
+  fs.writeFileSync(path.join(projectRoot, 'start-app.bat'), batchContent);
+  fs.writeFileSync(path.join(projectRoot, 'install-windows-service.bat'), serviceBatch);
+  
+  console.log('✅ Service installation files created!');
+  console.log('\n📁 Files created:');
+  console.log('   - start-app.bat (Manual startup)');
+  console.log('   - install-windows-service.bat (Windows Service)');
+  console.log('\n🚀 To run manually: double-click start-app.bat');
+  console.log('🔧 To install as service: Run install-windows-service.bat as Administrator');
+  console.log('\n🌐 Application will be available at: http://localhost:3000');
+} catch (error) {
+  console.error('❌ Error creating service files:', error.message);
+}

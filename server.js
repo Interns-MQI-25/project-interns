@@ -296,6 +296,27 @@ app.get('/login', (req, res) => {
 });
 
 /**
+ * Remove old admin users from database
+ */
+app.get('/cleanup', async (req, res) => {
+    try {
+        await pool.execute('DELETE FROM users WHERE username IN (?, ?)', ['GuddiS', 'KatragaddaV']);
+        
+        const [remainingUsers] = await pool.execute('SELECT username, role FROM users WHERE role = "admin"');
+        
+        res.json({ 
+            success: true, 
+            message: 'Old admin users removed',
+            users: remainingUsers
+        });
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+});
+
+
+
+/**
  * Login Authentication Handler
  * Processes user login credentials, validates against database,
  * creates session, logs activity, and redirects to role-appropriate dashboard
@@ -321,13 +342,34 @@ app.post('/login', async (req, res) => {
         connection.release();
         
         // Create default admin users with hashed passwords
-        const adminHash = await bcrypt.hash('admin123', 10);
-        const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
-        const katragaddaHash = await bcrypt.hash('Welcome@MQI', 10);
+        try {
+            const adminHash = await bcrypt.hash('admin123', 10);
+            const guddiHash = await bcrypt.hash('Welcome@MQI', 10);
+            const katragaddaHash = await bcrypt.hash('Welcome@MQI', 10);
 
-        await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['admin', 'System Administrator', 'admin@company.com', adminHash, 'admin', 1]);
-        await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Somling.Guddi@marquardt.com', guddiHash, 'admin', 1]);
-        await pool.execute('INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['KatragaddaV', 'Venubabu Katragadda', 'Venubabu.Katragadda@marquardt.com', katragaddaHash, 'admin', 1]);
+            // Check if admin user exists, if not create it
+            const [existingAdmin] = await pool.execute('SELECT user_id FROM users WHERE username = ?', ['admin']);
+            if (existingAdmin.length === 0) {
+                await pool.execute('INSERT INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['admin', 'System Administrator', 'admin@company.com', adminHash, 'admin', 1]);
+                console.log('Created admin user');
+            }
+
+            // Check if GuddiS user exists, if not create it
+            const [existingGuddi] = await pool.execute('SELECT user_id FROM users WHERE username = ?', ['GuddiS']);
+            if (existingGuddi.length === 0) {
+                await pool.execute('INSERT INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['GuddiS', 'Somling Guddi', 'Somling.Guddi@marquardt.com', guddiHash, 'admin', 1]);
+                console.log('Created GuddiS user');
+            }
+
+            // Check if KatragaddaV user exists, if not create it
+            const [existingKatragadda] = await pool.execute('SELECT user_id FROM users WHERE username = ?', ['KatragaddaV']);
+            if (existingKatragadda.length === 0) {
+                await pool.execute('INSERT INTO users (username, full_name, email, password, role, is_active) VALUES (?, ?, ?, ?, ?, ?)', ['KatragaddaV', 'Venubabu Katragadda', 'Venubabu.Katragadda@marquardt.com', katragaddaHash, 'admin', 1]);
+                console.log('Created KatragaddaV user');
+            }
+        } catch (userCreationError) {
+            console.error('Error creating admin users:', userCreationError);
+        }
 
         
         
@@ -346,8 +388,15 @@ app.post('/login', async (req, res) => {
         console.log('User found:', user.username, 'Role:', user.role);
         
         // Verify password using bcrypt comparison
+        console.log('Comparing password:', password);
+        console.log('Against hash:', user.password);
         const isValid = await bcrypt.compare(password, user.password);
         console.log('Password valid:', isValid);
+        
+        // Additional test - create fresh hash and compare
+        const testHash = await bcrypt.hash(password, 10);
+        const testValid = await bcrypt.compare(password, testHash);
+        console.log('Test hash comparison:', testValid);
         
         if (!isValid) {
             console.log('Invalid password for user:', username);

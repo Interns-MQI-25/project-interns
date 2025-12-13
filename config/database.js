@@ -10,9 +10,9 @@ const dbConfig = process.env.NODE_ENV === 'production' ? {
             port: process.env.DB_PORT || 3306
         }
     ),
-    user: process.env.DB_USER,
+    user: process.env.DB_USER || process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+    database: process.env.DB_NAME || process.env.DB_DATABASE,
     connectionLimit: 5,
     waitForConnections: true,
     queueLimit: 0,
@@ -20,9 +20,9 @@ const dbConfig = process.env.NODE_ENV === 'production' ? {
 } : {
     // Development: Use standard TCP connection
     host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'sigma',
+    user: process.env.DB_USER || process.env.DB_USERNAME || 'sigma',
     password: process.env.DB_PASSWORD || 'sigma',
-    database: process.env.DB_NAME || 'product_management_system',
+    database: process.env.DB_NAME || process.env.DB_DATABASE || 'product_management_system',
     port: process.env.DB_PORT || 3306,
     connectionLimit: 5,
     waitForConnections: true,

@@ -8,29 +8,29 @@ async function setupDatabase() {
     try {
         // First connect without specifying database
         const connection = await mysql.createConnection({
-            host: process.env.DB_HOST || 'localhost',
-            user: process.env.DB_USER || 'sigma',
-            password: process.env.DB_PASSWORD || 'sigma',
-            port: process.env.DB_PORT || 3306,
-            ssl: (process.env.DB_HOST && process.env.DB_HOST !== 'localhost') ? { rejectUnauthorized: false } : undefined
+            host: process.env.DB_HOST || 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
+            user: process.env.DB_USER || process.env.DB_USERNAME || 'yqep7Jd558B1uEm.root',
+            password: process.env.DB_PASSWORD || 'xASxSG7DJSxAjSFv',
+            port: process.env.DB_PORT || 4000,
+            ssl: { rejectUnauthorized: false }
         });
         
         console.log('✅ Connected to MySQL server');
         
         // Create database if it doesn't exist
-        await connection.execute(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'product_management_system'}`);
+        await connection.execute(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME || process.env.DB_DATABASE || 'test'}\``);
         console.log('✅ Database created/verified');
         
         await connection.end();
         
         // Now connect to the specific database
         const dbConnection = await mysql.createConnection({
-            host: process.env.DB_HOST || 'localhost',
-            user: process.env.DB_USER || 'sigma',
-            password: process.env.DB_PASSWORD || 'sigma',
-            port: process.env.DB_PORT || 3306,
-            database: process.env.DB_NAME || 'product_management_system',
-            ssl: (process.env.DB_HOST && process.env.DB_HOST !== 'localhost') ? { rejectUnauthorized: false } : undefined
+            host: process.env.DB_HOST || 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
+            user: process.env.DB_USER || process.env.DB_USERNAME || 'yqep7Jd558B1uEm.root',
+            password: process.env.DB_PASSWORD || 'xASxSG7DJSxAjSFv',
+            port: process.env.DB_PORT || 4000,
+            database: process.env.DB_NAME || process.env.DB_DATABASE || 'test',
+            ssl: { rejectUnauthorized: false }
         });
         
         // Create tables

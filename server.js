@@ -115,9 +115,9 @@ const dbConfig = process.env.NODE_ENV === 'production' ? {
             port: process.env.DB_PORT || 3306
         }
     ),
-    user: process.env.DB_USER,
+    user: process.env.DB_USER || process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+    database: process.env.DB_NAME || process.env.DB_DATABASE,
     connectionLimit: 5,
     waitForConnections: true,
     queueLimit: 0,
@@ -125,9 +125,9 @@ const dbConfig = process.env.NODE_ENV === 'production' ? {
 } : {
     // Development: Use standard TCP connection
     host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'sigma',
+    user: process.env.DB_USER || process.env.DB_USERNAME || 'sigma',
     password: process.env.DB_PASSWORD || 'sigma',
-    database: process.env.DB_NAME || 'product_management_system',
+    database: process.env.DB_NAME || process.env.DB_DATABASE || 'product_management_system',
     port: process.env.DB_PORT || 3306,
     connectionLimit: 5,
     waitForConnections: true,
@@ -135,9 +135,9 @@ const dbConfig = process.env.NODE_ENV === 'production' ? {
     ssl: (process.env.DB_HOST && process.env.DB_HOST !== 'localhost') ? { rejectUnauthorized: false } : undefined
 };
 
-console.log('Database connection config:', process.env.NODE_ENV === 'production' ? 
+console.log('Database connection config:', (process.env.DB_HOST && process.env.DB_HOST.startsWith('/')) ? 
     `Production mode - using socket: ${process.env.DB_HOST}` : 
-    `Development mode - using host: ${dbConfig.host}:${dbConfig.port}`);
+    `Using host: ${process.env.DB_HOST || 'localhost'}`);
 
 // Create MySQL connection pool for efficient database connections
 const pool = mysql.createPool(dbConfig);

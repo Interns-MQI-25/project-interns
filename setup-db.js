@@ -11,7 +11,8 @@ async function setupDatabase() {
             host: process.env.DB_HOST || 'localhost',
             user: process.env.DB_USER || 'sigma',
             password: process.env.DB_PASSWORD || 'sigma',
-            port: process.env.DB_PORT || 3306
+            port: process.env.DB_PORT || 3306,
+            ssl: (process.env.DB_HOST && process.env.DB_HOST !== 'localhost') ? { rejectUnauthorized: false } : undefined
         });
         
         console.log('✅ Connected to MySQL server');
@@ -28,7 +29,8 @@ async function setupDatabase() {
             user: process.env.DB_USER || 'sigma',
             password: process.env.DB_PASSWORD || 'sigma',
             port: process.env.DB_PORT || 3306,
-            database: process.env.DB_NAME || 'product_management_system'
+            database: process.env.DB_NAME || 'product_management_system',
+            ssl: (process.env.DB_HOST && process.env.DB_HOST !== 'localhost') ? { rejectUnauthorized: false } : undefined
         });
         
         // Create tables

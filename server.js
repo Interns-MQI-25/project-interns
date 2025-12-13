@@ -120,7 +120,8 @@ const dbConfig = process.env.NODE_ENV === 'production' ? {
     database: process.env.DB_NAME,
     connectionLimit: 5,
     waitForConnections: true,
-    queueLimit: 0
+    queueLimit: 0,
+    ssl: { rejectUnauthorized: false }
 } : {
     // Development: Use standard TCP connection
     host: process.env.DB_HOST || 'localhost',
@@ -130,7 +131,8 @@ const dbConfig = process.env.NODE_ENV === 'production' ? {
     port: process.env.DB_PORT || 3306,
     connectionLimit: 5,
     waitForConnections: true,
-    queueLimit: 0
+    queueLimit: 0,
+    ssl: (process.env.DB_HOST && process.env.DB_HOST !== 'localhost') ? { rejectUnauthorized: false } : undefined
 };
 
 console.log('Database connection config:', process.env.NODE_ENV === 'production' ? 

@@ -910,40 +910,37 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Inventory
     router.get('/inventory', requireAuth, requireRole(['admin']), async (req, res) => {
-        let connection;
         try {
-            connection = await pool.getConnection();
-            
-            // Disable ONLY_FULL_GROUP_BY for this session to allow matching non-aggregated columns
-            await connection.query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
-
-            const [products] = await connection.execute(`
+            const [products] = await pool.execute(`
                 SELECT 
                     p.*,
                     u.full_name as added_by_name,
-                    COALESCE((
-                        SELECT SUM(pa.quantity) 
-                        FROM product_assignments pa 
-                        WHERE pa.product_id = p.product_id AND pa.is_returned = FALSE
-                    ), 0) as currently_assigned,
+                    COALESCE(agg.currently_assigned, 0) as currently_assigned,
+                    agg.assigned_to_details,
                     CASE 
                         WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date < CURDATE() THEN 'Overdue'
                         WHEN p.calibration_due_date IS NOT NULL AND p.calibration_due_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'Due Soon'
                         WHEN p.calibration_due_date IS NOT NULL THEN 'Current'
                         ELSE 'Not Required'
-                    END as calibration_status,
-                    GROUP_CONCAT(
-                        CONCAT(emp_user.full_name, ' (', dept.department_name, ')')
-                        ORDER BY pa.assigned_at DESC 
-                        SEPARATOR '; '
-                    ) as assigned_to_details
+                    END as calibration_status
                 FROM products p
                 LEFT JOIN users u ON p.added_by = u.user_id
-                LEFT JOIN product_assignments pa ON p.product_id = pa.product_id AND pa.is_returned = FALSE
-                LEFT JOIN employees emp ON pa.employee_id = emp.employee_id
-                LEFT JOIN users emp_user ON emp.user_id = emp_user.user_id
-                LEFT JOIN departments dept ON emp.department_id = dept.department_id
-                GROUP BY p.product_id
+                LEFT JOIN (
+                    SELECT 
+                        pa.product_id,
+                        SUM(pa.quantity) as currently_assigned,
+                        GROUP_CONCAT(
+                            CONCAT(emp_user.full_name, ' (', dept.department_name, ')')
+                            ORDER BY pa.assigned_at DESC 
+                            SEPARATOR '; '
+                        ) as assigned_to_details
+                    FROM product_assignments pa
+                    LEFT JOIN employees emp ON pa.employee_id = emp.employee_id
+                    LEFT JOIN users emp_user ON emp.user_id = emp_user.user_id
+                    LEFT JOIN departments dept ON emp.department_id = dept.department_id
+                    WHERE pa.is_returned = FALSE
+                    GROUP BY pa.product_id
+                ) agg ON p.product_id = agg.product_id
                 ORDER BY p.asset_type, p.product_category, p.product_name
             `);
             
@@ -954,8 +951,6 @@ module.exports = (pool, requireAuth, requireRole) => {
         } catch (error) {
             console.error('Inventory error:', error);
             res.render('error', { message: 'Error loading inventory: ' + error.message });
-        } finally {
-            if (connection) connection.release();
         }
     });
 

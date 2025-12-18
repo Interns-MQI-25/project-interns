@@ -540,35 +540,84 @@ module.exports = (pool, requireAuth, requireRole) => {
             // Map audit CSV headers to DB columns
             const auditToDbMap = {
                 'No.': 'item_number',
+                'SL.': 'item_number',
+                'S.No.': 'item_number',
                 'Type': 'asset_type',
+                'Asset Type': 'asset_type',
                 'Product Type': 'product_category',
+                'Category': 'product_category',
                 'Product Description': 'product_name',
+                'Asset Name': 'product_name',
+                'Description': 'product_name',
                 'Model Number': 'model_number',
+                'Model': 'model_number',
                 'Brand /Make': 'brand',
+                'Make': 'brand',
+                'Brand': 'brand',
                 'Product Serial Number': 'serial_number',
+                'Serial Number': 'serial_number',
+                'S.N.': 'serial_number',
                 'Manufacturer Identification No.': 'manufacturer_id',
                 'Cost Centre': 'cost_center',
                 'COST': 'cost',
+                'Price': 'cost',
                 'Purchase': 'purchase',
                 'Identification Number ': 'identification_number',
                 'MQI Serial Number(If Applicable)': 'mqi_serial_number',
                 'Quantities': 'quantity',
+                'Qty': 'quantity',
+                'Quantity': 'quantity',
                 'Inward Date (MMM-YY)': 'inward_date',
+                'Inward Date': 'inward_date',
                 'Project': 'project',
                 'Issued Person': 'issued_person',
                 'Asset Tag Number': 'asset_tag_number',
+                'Asset Tag': 'asset_tag_number',
                 'Liscense Renewal required.': 'license_renewal_required',
                 'Calibration required ': 'calibration_required',
+                'Calibration Required': 'calibration_required',
                 'Calibrated On': 'calibrated_on',
                 'Next Calibration Due on': 'calibration_due_date',
+                'Calibration Due Date': 'calibration_due_date',
                 'Frequency for Calibration': 'calibration_frequency',
+                'Calibration Frequency': 'calibration_frequency',
                 'SAP Equipement No.': 'sap_equipment_no',
                 'SAP Maintainance Plan No': 'sap_maintenance_plan_no',
                 // Add more mappings as needed
             };
 
-            const headers = data[0].map(h => h ? h.toString().trim() : '');
-            const rows = data.slice(1);
+            // Find the header row (scan first 10 rows)
+            let headerRowIndex = 0;
+            let maxMatchCount = 0;
+            const searchLimit = Math.min(data.length, 10);
+            
+            for (let i = 0; i < searchLimit; i++) {
+                const row = data[i];
+                if (!row) continue;
+                
+                let matchCount = 0;
+                row.forEach(cell => {
+                    if (cell && typeof cell === 'string') {
+                        const cellTrimmed = cell.toString().trim();
+                        if (auditToDbMap[cellTrimmed]) {
+                            matchCount++;
+                        }
+                    }
+                });
+                
+                if (matchCount > maxMatchCount) {
+                    maxMatchCount = matchCount;
+                    headerRowIndex = i;
+                }
+            }
+            
+            // If no clear match found, fallback to 0 but warn
+            if (maxMatchCount === 0) {
+                console.log('Warning: Could not auto-detect header row. Defaulting to first row.');
+            }
+
+            const headers = data[headerRowIndex].map(h => h ? h.toString().trim() : '');
+            const rows = data.slice(headerRowIndex + 1);
 
             // Get the products table column structure
             const [dbColumns] = await pool.execute(`

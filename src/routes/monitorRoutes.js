@@ -332,7 +332,7 @@ module.exports = (pool, requireAuth, requireRole) => {
                 user: req.session.user, 
                 products: [],
                 stockStats: [],
-                error: 'Error loading stock data'
+                error: 'Error loading stock data: ' + error.message
             });
         }
     });
@@ -976,7 +976,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             res.redirect(redirectPath);
         } catch (error) {
             console.error('Add product error:', error);
-            req.flash('error', 'Error adding product to inventory');
+            req.flash('error', 'Error adding product to inventory: ' + error.message);
             const redirectPath = req.session.user.role === 'admin' ? '/admin/stock' : '/monitor/stock';
             res.redirect(redirectPath);
         }

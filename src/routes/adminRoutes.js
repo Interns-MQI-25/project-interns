@@ -528,14 +528,12 @@ module.exports = (pool, requireAuth, requireRole) => {
 
             // Read the Excel/CSV file from memory buffer
             const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-            const sheetName = workbook.SheetNames[0]; // Use first sheet
-            const sheet = workbook.Sheets[sheetName];
-            // Convert to JSON with header row as keys
-            const data = xlsx.utils.sheet_to_json(sheet, { header: 1 });
-            if (data.length < 2) {
-                req.flash('error', 'Excel file must contain at least a header row and one data row.');
-                return res.redirect('/admin/upload-products');
-            }
+            
+            // Scan all sheets to find the one with the best header match
+            let bestSheetName = '';
+            let bestHeaderRowIndex = 0;
+            let bestMatchCount = 0;
+            let bestData = null;
 
             // Map audit CSV headers to DB columns
             const auditToDbMap = {
@@ -586,38 +584,59 @@ module.exports = (pool, requireAuth, requireRole) => {
                 // Add more mappings as needed
             };
 
-            // Find the header row (scan first 10 rows)
-            let headerRowIndex = 0;
-            let maxMatchCount = 0;
-            const searchLimit = Math.min(data.length, 10);
-            
-            for (let i = 0; i < searchLimit; i++) {
-                const row = data[i];
-                if (!row) continue;
+            for (const sheetName of workbook.SheetNames) {
+                const sheet = workbook.Sheets[sheetName];
+                const currentData = xlsx.utils.sheet_to_json(sheet, { header: 1 });
                 
-                let matchCount = 0;
-                row.forEach(cell => {
-                    if (cell && typeof cell === 'string') {
-                        const cellTrimmed = cell.toString().trim();
-                        if (auditToDbMap[cellTrimmed]) {
-                            matchCount++;
+                if (currentData.length < 1) continue;
+
+                // Find the header row (scan first 10 rows)
+                let currentMaxMatches = 0;
+                let currentHeaderIndex = 0;
+                const searchLimit = Math.min(currentData.length, 10);
+                
+                for (let i = 0; i < searchLimit; i++) {
+                    const row = currentData[i];
+                    if (!row) continue;
+                    
+                    let matchCount = 0;
+                    row.forEach(cell => {
+                        if (cell && typeof cell === 'string') {
+                            const cellTrimmed = cell.toString().trim();
+                            if (auditToDbMap[cellTrimmed]) {
+                                matchCount++;
+                            }
                         }
+                    });
+                    
+                    if (matchCount > currentMaxMatches) {
+                        currentMaxMatches = matchCount;
+                        currentHeaderIndex = i;
                     }
-                });
-                
-                if (matchCount > maxMatchCount) {
-                    maxMatchCount = matchCount;
-                    headerRowIndex = i;
+                }
+
+                // If this sheet has better matches than previous best, update best
+                // Prefer sheets with > 2 matches to avoid false positives on summary sheets
+                if (currentMaxMatches > bestMatchCount) {
+                    bestMatchCount = currentMaxMatches;
+                    bestHeaderRowIndex = currentHeaderIndex;
+                    bestSheetName = sheetName;
+                    bestData = currentData;
                 }
             }
-            
-            // If no clear match found, fallback to 0 but warn
-            if (maxMatchCount === 0) {
-                console.log('Warning: Could not auto-detect header row. Defaulting to first row.');
+
+            if (!bestData || bestMatchCount === 0) {
+                 // Fallback to first sheet if nothing good found
+                 console.log('Warning: No likely header row found in any sheet. Defaulting to first sheet.');
+                 bestSheetName = workbook.SheetNames[0];
+                 const sheet = workbook.Sheets[bestSheetName];
+                 bestData = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+                 bestHeaderRowIndex = 0;
             }
 
-            const headers = data[headerRowIndex].map(h => h ? h.toString().trim() : '');
-            const rows = data.slice(headerRowIndex + 1);
+            const data = bestData;
+            const headers = data[bestHeaderRowIndex].map(h => h ? h.toString().trim() : '');
+            const rows = data.slice(bestHeaderRowIndex + 1);
 
             // Get the products table column structure
             const [dbColumns] = await pool.execute(`

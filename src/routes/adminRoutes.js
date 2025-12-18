@@ -609,8 +609,13 @@ module.exports = (pool, requireAuth, requireRole) => {
                         const productData = {};
                         headers.forEach((header, index) => {
                             const cellValue = row[index];
-                            if (header && expectedColumns.includes(header) && cellValue !== undefined && cellValue !== '') {
-                                productData[header] = cellValue;
+                            if (header) {
+                                // Try to find mapping, otherwise assume header might be the DB column name directly
+                                const dbColumn = auditToDbMap[header.toString().trim()] || header.toString().trim();
+                                
+                                if (expectedColumns.includes(dbColumn) && cellValue !== undefined && cellValue !== '') {
+                                    productData[dbColumn] = cellValue;
+                                }
                             }
                         });
                         

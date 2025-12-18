@@ -910,8 +910,14 @@ module.exports = (pool, requireAuth, requireRole) => {
 
     // Inventory
     router.get('/inventory', requireAuth, requireRole(['admin']), async (req, res) => {
+        let connection;
         try {
-            const [products] = await pool.execute(`
+            connection = await pool.getConnection();
+            
+            // Disable ONLY_FULL_GROUP_BY for this session to allow matching non-aggregated columns
+            await connection.query("SET SESSION sql_mode = (SELECT REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
+
+            const [products] = await connection.execute(`
                 SELECT 
                     p.*,
                     u.full_name as added_by_name,
@@ -947,7 +953,9 @@ module.exports = (pool, requireAuth, requireRole) => {
             });
         } catch (error) {
             console.error('Inventory error:', error);
-            res.render('error', { message: 'Error loading inventory' });
+            res.render('error', { message: 'Error loading inventory: ' + error.message });
+        } finally {
+            if (connection) connection.release();
         }
     });
 

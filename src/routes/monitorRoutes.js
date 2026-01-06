@@ -661,7 +661,7 @@ module.exports = (pool, requireAuth, requireRole) => {
             req.flash('success', `Request ${action} successfully`);
         } catch (error) {
             console.error('Process request error:', error);
-            req.flash('error', 'Error processing request');
+            req.flash('error', 'Error processing request: ' + error.message);
         }
         
         res.redirect('/monitor/approvals');

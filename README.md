@@ -1,218 +1,237 @@
 <div align="center">
 
-# 🚀 Inventory Management System (IMS)
+# 🛠️ Inventory Management System (IMS)
 
-### _Next-Gen Resource Tracking & Management Solution_
+### Enterprise-Grade Resource Tracking & Request Management
 
-[![Node.js](https://img.shields.io/badge/Node.js-20+-2c5282?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0+-00758F?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
-[![Express.js](https://img.shields.io/badge/Express.js-4.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-v.20.0-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-v.8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Express.js](https://img.shields.io/badge/Express.js-v.4.19-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/)
 [![Google Cloud](https://img.shields.io/badge/GCP-Deployed-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)](https://cloud.google.com/)
 
-[**Explore Docs**](#-documentation) · [**Report Bug**](https://github.com/Interns-MQI-25/project-interns/issues) · [**Request Feature**](https://github.com/Interns-MQI-25/project-interns/issues)
+[**Documentation**](#-documentation) • [**Report Issue**](https://github.com/Interns-MQI-25/project-interns/issues) • [**Request Feature**](https://github.com/Interns-MQI-25/project-interns/issues)
 
 </div>
 
 ---
 
-## 📖 Overview
+## 📋 Executive Summary
 
-The **Marquardt Inventory Management System (IMS)** is a robust, enterprise-grade application designed to streamline asset tracking, product requests, and approval workflows. Built with a modern tech stack, it features role-based access control, real-time inventory updates, and an **AI-powered assistant** to help users navigate complex data instantly.
+The **Marquardt Inventory Management System (IMS)** is a specialized enterprise solution engineered to digitalize and streamline the asset lifecycle within Marquardt India Pvt. Ltd. It replaces manual tracking with a centralized, automated platform for managing product requests, approvals, and inventory auditing.
 
-### 🌟 Why This IMS?
+**Core Capabilities:**
 
-- **Intelligent:** Integrated AI chatbot for real-time natural language queries.
-- **Secure:** Role-based access (Employee, Monitor, Admin) with granular permissions.
-- **Scalable:** Dockerized and cloud-ready (Google App Engine, Render).
-- **User-Centric:** Modern, responsive UI with intuitive workflows.
-
----
-
-## ✨ Key Features
-
-| 🧑‍💼 **For Employees**                                     | 🔍 **For Monitors**                               | 👑 **For Admins**                                |
-| :------------------------------------------------------- | :------------------------------------------------ | :----------------------------------------------- |
-| **Request Products:** Easy submission for project needs. | **Approval Workflow:** Review & approve requests. | **User Management:** Full control over accounts. |
-| **Stock View:** Browse live inventory with photos.       | **Stock Control:** Add/Edit products & files.     | **System Analytics:** Detailed usage reports.    |
-| **History:** Track personal requests & returns.          | **Assign Assets:** Manage check-in/check-out.     | **Audit Logs:** Track all system activities.     |
-| **AI Help:** Ask "Where is the soldering iron?".         | **Reports:** Generate assignment summaries.       | **Config:** Manage depts & settings.             |
-
-### 🤖 Advanced AI Assistant
-
-This system features a context-aware chatbot that provides:
-
-- **Real-time Stock Checks:** "Is the Oscilloscope available?"
-- **Assignment Tracking:** "Who has the Multimeter?"
-- **Smart Summaries:** "Summarize my pending requests."
+- **Role-Based Access Control (RBAC):** Strictly enforcement of Employee, Monitor, and Administrator privileges.
+- **Real-Time Inventory Integration:** Live tracking of stock levels with attached documentation and visuals.
+- **Automated Workflows:** Email-driven notification pipelines for requests, approvals, and registration events.
+- **AI-Driven Assistance:** Integrated chatbot for natural language queries regarding stock availability and assignments.
 
 ---
 
-## 🛠️ Tech Stack
+## 💎 Key Features
 
-<div align="center">
+### 🏢 For Administrative Control
 
-|                                                    **Core**                                                    |                                                       **Backend**                                                       |                                                 **Data & Storage**                                                 |                                                     **DevOps**                                                      |
-| :------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------: |
-|       ![HTML5](https://img.shields.io/badge/-HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)        |         ![Node.js](https://img.shields.io/badge/-Node.js-339933?style=flat-square&logo=node.js&logoColor=white)         |         ![MySQL](https://img.shields.io/badge/-MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white)          |        ![Docker](https://img.shields.io/badge/-Docker-2496ED?style=flat-square&logo=docker&logoColor=white)         |
-| ![Tailwind](https://img.shields.io/badge/-Tailwind-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white) |         ![Express](https://img.shields.io/badge/-Express-000000?style=flat-square&logo=express&logoColor=white)         | ![Cloud Storage](https://img.shields.io/badge/-Storage-4285F4?style=flat-square&logo=google-cloud&logoColor=white) |        ![GCP](https://img.shields.io/badge/-GCP-4285F4?style=flat-square&logo=google-cloud&logoColor=white)         |
-|       ![EJS](https://img.shields.io/badge/-EJS-B4CA65?style=flat-square&logo=javascript&logoColor=black)       | ![Nodemailer](https://img.shields.io/badge/-Nodemailer-0078D4?style=flat-square&logo=microsoft-outlook&logoColor=white) |                                                                                                                    | ![GitHub Actions](https://img.shields.io/badge/-CI/CD-2088FF?style=flat-square&logo=github-actions&logoColor=white) |
+| Feature                  | Description                                                                                                 |
+| :----------------------- | :---------------------------------------------------------------------------------------------------------- |
+| **🛡️ User Provisioning** | comprehensive lifecycle management for employee accounts, including registration approval and deactivation. |
+| **📊 System Analytics**  | High-level dashboards visualizing request volume, stock turnover, and user activity metrics.                |
+| **📜 Audit Trails**      | Immutable logs of all critical system actions for security and compliance auditing.                         |
+| **⚙️ Dept Management**   | Dynamic configuration of organizational departments and role assignments.                                   |
 
-</div>
+### 🔎 For Inventory Oversight (Monitors)
 
----
+| Feature                      | Description                                                                              |
+| :--------------------------- | :--------------------------------------------------------------------------------------- |
+| **📡 Approval Pipeline**     | Centralized queue for reviewing and processing product requests from employees.          |
+| **📦 Asset Management**      | CRUD operations for inventory items, including specification uploads and bulk edits.     |
+| **📋 Assignment Tracking**   | Real-time monitoring of checked-out assets, return dates, and overdue alerts.            |
+| **📁 Documentation Control** | Management of technical manuals, calibration certificates, and asset visual attachments. |
 
-## 🚀 Quick Start
+### 💼 For Employee Productivity
 
-### 🐳 Docker (Recommended)
-
-Get up and running in seconds with Docker.
-
-```bash
-# 1. Pull the image
-docker pull priyanshuksharma/project-interns:latest
-
-# 2. Run the container
-docker run -p 3000:3000 priyanshuksharma/project-interns:latest
-```
-
-Acces the app at `http://localhost:3000`
-
-### 🔧 Manual Setup
-
-For developers who want to contribute.
-
-1.  **Clone & Install**
-
-    ```bash
-    git clone https://github.com/Interns-MQI-25/project-interns.git
-    cd project-interns
-    npm install
-    ```
-
-2.  **Database Config**
-
-    - Create a MySQL database `product_management_system`.
-    - Import schema: `mysql -u root -p product_management_system < sql/database.sql`
-    - Rename `.env.example` to `.env` and update credentials.
-
-3.  **Run**
-    ```bash
-    npm run dev  # Starts server with nodemon
-    ```
+| Feature                      | Description                                                                             |
+| :--------------------------- | :-------------------------------------------------------------------------------------- |
+| **🖊️ Streamlined Requests**  | Simplified interface for submitting project-related asset requisitions.                 |
+| **👁️ Live Stock Visibility** | Searchable, filterable catalog of available equipment with real-time status indicators. |
+| **🗂️ Personal Dashboard**    | Unified view of active assignments, request history, and pending approvals.             |
+| **🤖 AI Support**            | "Where is the Oscilloscope?" - Instant answers via the integrated AI assistant.         |
 
 ---
 
-## 📚 Documentation
+## 🔧 Technical Architecture
 
-We have organized comprehensive guides for deployment and troubleshooting in the `render_fixes/` directory:
+This system resembles a modern N-tier architecture optimized for scalability and modularity.
 
-- **☁️ [Cloud Deployment Guide](render_fixes/CLOUD_DEPLOYMENT_GUIDE.md):** Step-by-step instructions for GCP, Heroku, and AWS.
-- **🛠️ Database Fixes:** Scripts like `fix_products_schema.js` are available in `render_fixes/` for troubleshooting schema mismatches.
-- **📦 [Docker Complete Guide](DOCKER_COMPLETE_GUIDE.md):** Advanced Docker configurations.
-
----
-
-## 🔐 Default Credentials
-
-| Role         | Username     | Password      | Notes                   |
-| :----------- | :----------- | :------------ | :---------------------- |
-| **Admin**    | `admin`      | `admin123`    | _Change immediately!_   |
-| **Monitor**  | `john.doe`   | `password123` | Sample monitor account  |
-| **Employee** | `jane.smith` | `password123` | Sample employee account |
-
----
-
-<h2 style="color:#2c5282; border-bottom:2px solid #2c5282; padding-bottom:8px; display:inline-block;">
-  🏗️ System Architecture
-</h2>
+<h3 style="color:#2c5282;">🏗️ System Architecture Diagram</h3>
 
 <div align="center">
 
 ```mermaid
 graph TD
-    subgraph Client ["🖥️ Client Layer"]
-        Browser[("Browser (EJS/Tailwind)")]
+    subgraph Client ["💻 Client Presentation Layer"]
+        Browser[("Browser (EJS / Tailwind CSS)")]
     end
 
-    subgraph Server ["⚙️ Application Layer"]
-        LB[("Load Balancer (Nginx/Cloud)")]
-        Node[("Node.js + Express API")]
-        Auth[("Auth Middleware")]
-        Logic[("Business Logic Controllers")]
+    subgraph Server ["⚙️ Application Business Layer"]
+        LB[("Load Balancer (Nginx / GCP)")]
+        Node[("Node.js Runtime")]
+        Express[("Express.js Framework")]
+        Auth[("Auth Middleware (Bcrypt/Session)")]
+        Logic[("Controllers & Services")]
     end
 
-    subgraph Data ["💾 Data Layer"]
-        DB[("MySQL / TiDB Cloud")]
-        FS[("File Storage (Uploads)")]
+    subgraph Data ["💾 Data Persistence Layer"]
+        DB[("MySQL 8.0 / TiDB Cloud")]
+        FS[("File System / Cloud Storage")]
     end
 
-    subgraph External ["🌐 External Services"]
-        SMTP[("Gmail SMTP")]
+    subgraph Ext ["🌐 External Integrations"]
+        SMTP[("SMTP Relay (Gmail)")]
     end
 
-    Browser <-->|HTTPS/Review| LB
+    Browser <-->|HTTPS / TLS| LB
     LB <--> Node
-    Node --> Auth
+    Node --> Express
+    Express --> Auth
     Auth --> Logic
-    Logic <-->|SQL Queries| DB
-    Logic <-->|Read/Write| FS
-    Logic -->|Send Mail| SMTP
+    Logic <-->|SQL / TCP| DB
+    Logic <-->|I/O| FS
+    Logic -->|SMTP / TLS| SMTP
 
     style Client fill:transparent,stroke:#38b2ac,stroke-width:2px
-    style Server fill:transparent,stroke:#4299e1,stroke-width:2px
-    style Data fill:transparent,stroke:#fc8181,stroke-width:2px
-    style External fill:transparent,stroke:#9f7aea,stroke-width:2px
+    style Server fill:transparent,stroke:#2c5282,stroke-width:2px
+    style Data fill:transparent,stroke:#e53e3e,stroke-width:2px
+    style Ext fill:transparent,stroke:#805ad5,stroke-width:2px
 ```
 
 </div>
 
-### Data Flow
+**Data Flow Sequence:**
 
-1.  **Client Request:** User interacts with the responsive EJS interface.
-2.  **Processing:** Requests are routed through Express.js middleware for authentication and validation.
-3.  **Data Persistence:** Core business data is stored in the relational MySQL database, while file attachments are managed in local/cloud storage.
-4.  **Notifications:** Critical actions trigger async email notifications via standard SMTP.
+1.  **Request Initiation:** User submits a secure HTTPS request via the reactive EJS/Tailwind frontend.
+2.  **Authentication & Routing:** The Express.js router validates the session via `express-session` and routes traffic to the appropriate controller.
+3.  **Business Logic Processing:** Controllers execute business rules (e.g., checking stock availability, validating permissions).
+4.  **Data Persistence:** Transactions are committed to the MySQL database. File uploads are sanitized and stored.
+5.  **External Communication:** Asynchronous notifications are dispatched via Nodemailer to relevant stakeholders.
+
+---
+
+## 💻 Tech Stack & Dependencies
+
+<details>
+<summary><strong>Click to expand full dependency list</strong></summary>
+
+| Category          | Technology       | Version   | Purpose                                       |
+| :---------------- | :--------------- | :-------- | :-------------------------------------------- |
+| **Runtime**       | **Node.js**      | `^20.0.0` | JavaScript execution environment              |
+| **Framework**     | **Express**      | `^4.19.2` | Web server framework                          |
+| **Database**      | **MySQL**        | `^8.0.0`  | Relational database management                |
+| **ORM/Driver**    | **MySQL2**       | `^3.11.0` | Database driver with Promise support          |
+| **Security**      | **Bcryptjs**     | `^2.4.3`  | Password hashing algorithm                    |
+| **Templating**    | **EJS**          | `^3.1.10` | Server-side rendering template engine         |
+| **Styling**       | **Tailwind CSS** | `^3.4.0`  | Utility-first CSS framework                   |
+| **Email**         | **Nodemailer**   | `^7.0.9`  | Email sending service                         |
+| **File Handling** | **Multer**       | `^1.4.5`  | Middleware for handling `multipart/form-data` |
+| **Utilities**     | **XLSX**         | `^0.18.5` | Excel file parsing and generation             |
+
+</details>
+
+---
+
+## 🚀 Deployment & Setup Guide
+
+### 🐳 Docker Configuration (Recommended)
+
+The system is fully containerized for consistency across environments.
+
+```bash
+# 1. Pull the official image
+docker pull priyanshuksharma/project-interns:latest
+
+# 2. Launch the container (Production Mode)
+docker run -d \
+  -p 3000:3000 \
+  -e NODE_ENV=production \
+  -e DB_HOST=your_host \
+  --name ims-app \
+  priyanshuksharma/project-interns:latest
+```
+
+### 🔧 Manual Development Setup
+
+1.  **Clone Repository**
+    ```bash
+    git clone https://github.com/Interns-MQI-25/project-interns.git
+    cd project-interns
+    ```
+2.  **Install Dependencies**
+    ```bash
+    npm ci
+    ```
+3.  **Configure Environment**
+    - Duplicate `.env.example` to `.env`
+    - Populate database credentials (`DB_HOST`, `DB_USER`, `DB_PASS`)
+4.  **Initialize Database**
+    ```bash
+    npm run setup-db
+    ```
+5.  **Start Development Server**
+    ```bash
+    npm run dev
+    ```
+
+---
+
+## 📚 Comprehensive Documentation
+
+We maintain specific guides for different operational needs. Please refer to the `render_fixes/` directory for specialized deployment instructions.
+
+- ☁️ **[Cloud Deployment Strategy](render_fixes/CLOUD_DEPLOYMENT_GUIDE.md)**
+  - Detailed workflows for Google Cloud Platform (App Engine), Heroku, and AWS Elastic Beanstalk.
+- 🛠️ **[Database Maintenance](render_fixes/fix_products_schema.js)**
+  - Schema migration scripts and troubleshooting tools.
+- 📦 **[Docker Deep Dive](DOCKER_COMPLETE_GUIDE.md)**
+  - Advanced container orchestration and networking.
 
 ---
 
 ## 📂 Project Structure
 
-```
+```bash
 project-interns/
-├── 📁 config/           # App configuration
-├── 📁 public/           # Static assets (CSS, JS, Images)
-├── 📁 render_fixes/     # Deployment scripts & guides (New!)
-├── 📁 scripts/          # Utility scripts
-├── 📁 sql/              # Database schema (database.sql)
+├── 📁 config/           # Application configuration & env parsers
+├── 📁 public/           # Static assets (Compiled CSS, Client JS)
+├── 📁 render_fixes/     # Deployment patches & cloud guides
+├── 📁 scripts/          # DevOps & Maintenance utilities
+├── 📁 sql/              # SQL Schema definitions & migrations
 ├── 📁 src/
-│   ├── 📁 middleware/   # Auth & Validation
-│   ├── 📁 routes/       # Express Routes
-│   └── 📁 utils/        # Helpers (Email, Logger)
+│   ├── 📁 middleware/   # Security & Session middleware
+│   ├── 📁 routes/       # Express Route definitions
+│   └── 📁 utils/        # Shared helper libraries
 ├── 📁 views/            # EJS Templates
-│   ├── 📁 admin/        # Admin Dashboard
-│   ├── 📁 employee/     # Employee Dashboard
-│   └── 📁 monitor/      # Monitor Dashboard
-├── app.yaml             # GCP Config
-└── server.js            # Entry Point
+├── app.yaml             # Google App Engine specification
+└── server.js            # Application entry point
 ```
 
 ---
 
-## 🤝 Contributing
+## 👥 Contribution Guidelines
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+We welcome contributions from the development community.
 
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
+1.  **Fork** the repository.
+2.  Create a **Feature Branch** (`git checkout -b feature/AdvancedAnalytics`).
+3.  **Commit** your changes with semantic messages.
+4.  **Push** to the branch.
+5.  Open a **Pull Request** for code review.
 
 ---
 
 <div align="center">
 
-Made with ❤️ by the **Interns MQI 25** Team
+**Developed by Interns MQI 25**
+_Empowering Efficiency through Technology_
 
 </div>

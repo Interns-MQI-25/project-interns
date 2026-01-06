@@ -202,9 +202,12 @@ We maintain specific guides for different operational needs. Please refer to the
 ```bash
 project-interns/
 ├── 📁 config/           # Application configuration & env parsers
+├── 📁 data/             # Data files (CSV, Excel, Templates)
+├── 📁 dist/             # Executable builds (Windows .exe)
+├── 📁 docs/             # Documentation & Deployment Guides
 ├── 📁 public/           # Static assets (Compiled CSS, Client JS)
 ├── 📁 render_fixes/     # Deployment patches & cloud guides
-├── 📁 scripts/          # DevOps & Maintenance utilities
+├── 📁 scripts/          # DevOps & Maintenance utilities (JS, BAT, SH)
 ├── 📁 sql/              # SQL Schema definitions & migrations
 ├── 📁 src/
 │   ├── 📁 middleware/   # Security & Session middleware

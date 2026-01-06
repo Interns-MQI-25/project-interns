@@ -159,10 +159,10 @@ graph TD
     Logic <-->|Read/Write| FS
     Logic -->|Send Mail| SMTP
 
-    style Client fill:#e6fffa,stroke:#38b2ac,stroke-width:2px
-    style Server fill:#ebf8ff,stroke:#4299e1,stroke-width:2px
-    style Data fill:#fff5f5,stroke:#fc8181,stroke-width:2px
-    style External fill:#faf5ff,stroke:#9f7aea,stroke-width:2px
+    style Client fill:transparent,stroke:#38b2ac,stroke-width:2px
+    style Server fill:transparent,stroke:#4299e1,stroke-width:2px
+    style Data fill:transparent,stroke:#fc8181,stroke-width:2px
+    style External fill:transparent,stroke:#9f7aea,stroke-width:2px
 ```
 
 </div>

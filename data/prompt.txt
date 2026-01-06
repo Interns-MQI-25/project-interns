@@ -1,0 +1,180 @@
+UI: HTML, Tailwind CSS
+Backend: Express and node with sql
+
+Types of people who are going to use the website:
+    1. employees: 
+        - they will be able to view their own information,
+        - they will be employees of 1 department
+        - they will be the ones who will be requesting the product for there purposes
+        - they will be able to view the status of their request
+        
+    2. monitors:
+        - they will be able to view all the information of all employees
+        - they will be able to view the status of all requests
+        - they will be able to approve or reject the requests for the project 
+        - they will be able to view the history of all requests
+        - there will be total 4 monitors which will be assigned by admins
+        - they are not permanent, they are chosen among the employees for the particular duration which will be assigned by the admins
+        - the requests by an employee will be visible to all monitors
+        - any monitor can accept the request, then it should be updated to all the monitors account
+        - they will be responsible for add, assign, return of the product
+
+    3. admins:
+        - they will be able to view all the information of all employees
+        - they will be able to view the status of all requests
+        - they will be able to add, remove, edit the employees
+        - they will be able to add, remove, edit the monitors
+        - they will be able to view the history of all requests
+        - they will be able to view the status of all monitors
+        - they will be able to assign the monitors for the particular duration
+        - they will be able to view the status of all employees
+        - they will be responsible for accepting the request for userid creation of the employee
+
+        - Concept: (on sign-up page)
+            1. on login page(sig-in/sign-up)
+            - user will be asked to enter the email and password
+                if the employee is new {
+                    then,
+                        register for new user
+                }
+
+            2. On register page(login page -> register-page)
+                - user will be asked to enter the name, email, password, department
+                - by default the employee will be given the role of normal employee
+                - then after registering it will send the request to the admins
+
+            3. on admin's manage employee page:
+                if request is accepted {
+                    then allow them to login only with the credentials they have entered while registering as the new user
+                }
+
+                else(i.e. rejected) {
+                    the user is invalid
+                }
+
+                In both the conditions the user should be informed either by mail which was entered by employee while registering
+
+
+
+Pages:-
+    1. Login page:
+        1. sign-in:
+            - username
+            - password
+
+        2. sign-up:
+            - full name
+            - username(should be unique)(entered by employee while registering) 
+            - email
+            - password
+            if the employee is new {
+                    then,
+                        register for new user
+                }
+
+
+    2. Different Pages:
+        a. Employees->
+                1. dashboard: here it should show the four buttons 
+                    cards: 
+                        1. records(to show the history of employee)
+                        2. requests(from where it will send the request to its manager)
+                        3. stock(available products in the stock)
+                        4. account history
+
+                2. records: it will show the history of the products assigned to that employee
+                3. requests: from where the employee will send the request for getting the product they need for their on going project
+                4. stock: available products in the stock(also include the quantity column(no of available products))
+                5. account history: such as userid, change password logout
+
+
+        b. Monitor->
+                1. dashboard: here it should show the four buttons 
+                    cards: 
+                        1. records(to show the history of employee)
+                        2. approvals(from where the manager will approve the request for getting the product they need for their on going project)
+                        3. stock(available products in the stock)
+                        4. account history 
+                2. approvals: from where the manager will approve the request for getting the product they need for their on going project
+                3. records: it will show the history of the products assigned by the manager
+                4. stock: available products in the stock(also include the quantity column(no of available products))
+                5. account history: such as userid, change password logout
+                6. reports: it will show the report of the products assigned to the employees and the quantity of the products assigned to the employees
+                7. stock report: it will show the report of the available products in the stock and the quantity of the available products in the stock
+                
+                New add-ons:
+                    1. Add products to inventory
+                    2. Assign product
+                    3. Return product
+                    4. stock(also include the quantity column(no of available products))
+
+                NOTE: Only monitors are responsible for adding, assigning and returning the products
+
+
+        c. Admin page:
+                1. Dashboard: 
+                    cards:
+                        1. Manage employees(from where admins can manage employees):
+                            -> create users manually by entering details of the employees
+                            -> delete users by selecting the user/users by clicking on the checkbox and then delete button
+                            -> edit users by selecting the user/users by clicking on the checkbox and then edit button
+                            -> request for new employee by clicking on the request button
+
+                        2. Manage monitors:
+                            -> assign the role of monitors(total 4) selected among the employees
+                            -> only admin can assign the role of monitors
+                            -> only admin can unassign the role of monitors
+                            -> admin can view the list of monitors
+
+                        3. Manage stock:
+                            -> history of products the stock
+                            -> available products 
+                            -> stock report
+
+                        4. History:
+                            -> history of products assigned to whom
+                            -> history of request and approvals(the monitors who assigned the product to employees)
+                            -> history of return of products
+
+                2. Manage employees:
+                        1. Create/Delete Employees
+                            -> create users manually by entering details of the employees
+                            -> delete users by selecting the user/users by clicking on the checkbox and then delete button
+                            -> edit users by selecting the user/users by clicking on the checkbox and then edit button
+                        
+                        2. Request of new employee:
+                            -> the admin will recieve a request for new employee userid
+                            -> the admin will approve the request and assign the role of employee to the new user
+                            -> Concept:
+                                Logic:
+                                    if request is accepted {
+                                        then allow them to login only with the credentials they have entered while registering as the new user
+                                    }
+
+                                    else(i.e. rejected) {
+                                        the user is invalid
+                                    }
+
+                3. Manage monitors:
+                        1. Assign/Unassign Monitors:
+                            -> assign the role of monitors(total 4) selected among the employees
+                            -> only admin can assign the role of monitors
+                            -> the assignment of the role should be for some fixed duration
+                            -> only admin can unassign the role of monitors
+
+                        2. View Monitors:
+                            -> admin can view the list of monitors
+                            -> the list should include the name, userid, role and duration of the role
+                            -> the list should be sorted by the duration of the role
+
+                        3. Monitor History:
+                            -> history of products assigned by which monitor to which employee
+                            -> it should remain always even though that monitor is unassigned
+
+                4. Stock updates:
+                        -> history of products the stock
+                        -> available products
+                        -> stock report
+                        -> the stock report should include the total number of products, total number of products assigned, total number of products returned 
+                        -> the stock report should include the total number of products assigned to each employee, total number of products returned by each employee
+                        -> the stock report should include the total number of products assigned by each monitor, total number of products returned by each monitor

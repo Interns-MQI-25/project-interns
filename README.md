@@ -192,7 +192,7 @@ We maintain specific guides for different operational needs. Please refer to the
   - Detailed workflows for Google Cloud Platform (App Engine), Heroku, and AWS Elastic Beanstalk.
 - 🛠️ **[Database Maintenance](render_fixes/fix_products_schema.js)**
   - Schema migration scripts and troubleshooting tools.
-- 📦 **[Docker Deep Dive](DOCKER_COMPLETE_GUIDE.md)**
+- 📦 **[Docker Deep Dive](docs/DOCKER_COMPLETE_GUIDE.md)**
   - Advanced container orchestration and networking.
 
 ---

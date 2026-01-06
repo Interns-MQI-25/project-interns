@@ -7,16 +7,16 @@
   "scripts": {
     "start": "node server.js",
     "dev": "NODE_ENV=development node server.js",
-    "global": "node -e \"console.log('🌐 Starting with global access...'); require('child_process').spawn('cmd', ['/c', 'quick-global.bat'], {stdio: 'inherit'});\"",
-    "tunnel": "node -e \"console.log('🚀 Choose your tunnel...'); require('child_process').spawn('cmd', ['/c', 'global-access.bat'], {stdio: 'inherit'});\"",
-    "setup-db": "node setup-db.js",
+    "global": "node -e \"console.log('🌐 Starting with global access...'); require('child_process').spawn('cmd', ['/c', 'scripts/quick-global.bat'], {stdio: 'inherit'});\"",
+    "tunnel": "node -e \"console.log('🚀 Choose your tunnel...'); require('child_process').spawn('cmd', ['/c', 'scripts/global-access.bat'], {stdio: 'inherit'});\"",
+    "setup-db": "node scripts/setup-db.js",
     "setup-local": "bash setup-local.sh",
     "setup-local-win": "powershell -ExecutionPolicy Bypass -File setup-local.ps1",
     "gcp-deploy": "gcloud app deploy",
-    "build-exe": "pkg server.js --targets node18-win-x64 --output inventory-management.exe",
-    "build-portable": "node setup-sqlite.js && pkg server.js --targets node18-win-x64 --output inventory-management-portable.exe",
-    "install-service": "node install-service.js",
-    "uninstall-service": "node uninstall-service.js",
+    "build-exe": "pkg server.js --targets node18-win-x64 --output dist/inventory-management.exe",
+    "build-portable": "node scripts/setup-sqlite.js && pkg server.js --targets node18-win-x64 --output dist/inventory-management-portable.exe",
+    "install-service": "node scripts/install-service.js",
+    "uninstall-service": "node scripts/uninstall-service.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "pkg": {

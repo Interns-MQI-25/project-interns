@@ -194,11 +194,13 @@ CREATE TABLE product_assignments (
     FOREIGN KEY (extension_processed_by) REFERENCES users(user_id)
 );
 
--- Insert admin users with correct password hashes
--- INSERT INTO users (username, full_name, email, password, role, is_super_admin, is_active) VALUES
--- ('admin', 'System Administrator', 'admin@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', TRUE, TRUE),
--- ('test', 'Test User', 'test@example.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE),
--- ('GuddiS', 'Somling Guddi', 'guddi.somling@marquardt.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', FALSE, TRUE);
+-- Insert admin users with proper bcrypt hashes
+-- Password for GuddiS and KatragaddaV: Welcome@MQI
+-- Password for admin: admin123
+INSERT IGNORE INTO users (username, full_name, email, password, role, is_active) VALUES 
+('admin', 'System Administrator', 'admin@company.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1),
+('GuddiS', 'Somling Guddi', 'Somling.Guddi@marquardt.com', '$2a$10$HlfD3YLfq0MrI4.jXhiMpOWpL8f8T8mLo4PnT8wO0YfRpMJhJGxsG', 'admin', 1),
+('KatragaddaV', 'Venubabu Katragadda', 'Venubabu.Katragadda@marquardt.com', '$2a$10$HlfD3YLfq0MrI4.jXhiMpOWpL8f8T8mLo4PnT8wO0YfRpMJhJGxsG', 'admin', 1);
 
 -- Insert departments with updated Marquardt structure
 INSERT INTO departments (department_name, description) VALUES 

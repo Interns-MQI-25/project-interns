@@ -94,8 +94,8 @@ CREATE TABLE registration_requests (
 -- Create products table with all additional fields
 CREATE TABLE products (
     product_id INT AUTO_INCREMENT PRIMARY KEY,
-    item_number INT,
-    asset_type VARCHAR(50),
+    item_number VARCHAR(100),
+    asset_type VARCHAR(50) DEFAULT 'Hardware',
     product_category VARCHAR(100),
     product_name VARCHAR(500),
     model_number VARCHAR(100),
@@ -104,6 +104,7 @@ CREATE TABLE products (
     quantity INT DEFAULT 1,
     added_by INT,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    description TEXT,
     calibration_required BOOLEAN DEFAULT FALSE,
     calibration_frequency VARCHAR(50),
     calibration_due_date DATE,
@@ -122,6 +123,7 @@ CREATE TABLE products (
     next_renewal_date DATE,
     new_license_key VARCHAR(255) NULL,
     new_version_number VARCHAR(50) NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (added_by) REFERENCES users(user_id),
     FOREIGN KEY (inwarded_by) REFERENCES users(user_id)
 );
@@ -150,7 +152,7 @@ CREATE TABLE product_requests (
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     processed_by INT,
     processed_at TIMESTAMP NULL,
-    return_date TIMESTAMP NULL,
+    return_date DATE NULL,
     assigned_monitor_id INT NULL,
     remarks TEXT NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
@@ -167,18 +169,29 @@ CREATE TABLE product_assignments (
     monitor_id INT NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    return_date TIMESTAMP NULL,
+    return_date DATE NULL,
     is_returned BOOLEAN DEFAULT FALSE,
     returned_at TIMESTAMP NULL,
     returned_to INT,
-    return_status ENUM('none', 'requested', 'approved') DEFAULT 'none',
+    return_status ENUM('none', 'requested', 'approved', 'rejected') DEFAULT 'none',
     remarks TEXT NULL,
     return_remarks TEXT NULL,
+    
+    -- Extension Request Columns
+    extension_requested BOOLEAN DEFAULT FALSE,
+    extension_reason TEXT NULL,
+    new_return_date DATE NULL,
+    extension_status ENUM('none', 'requested', 'approved', 'rejected') DEFAULT 'none',
+    extension_requested_at TIMESTAMP NULL,
+    extension_processed_by INT NULL,
+    extension_processed_at TIMESTAMP NULL,
+    extension_remarks TEXT NULL,
 
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
     FOREIGN KEY (monitor_id) REFERENCES users(user_id),
-    FOREIGN KEY (returned_to) REFERENCES users(user_id)
+    FOREIGN KEY (returned_to) REFERENCES users(user_id),
+    FOREIGN KEY (extension_processed_by) REFERENCES users(user_id)
 );
 
 -- Insert admin users with correct password hashes
@@ -327,33 +340,7 @@ VALUES (@sample_user_id, 1, TRUE);
 -- Display completion message
 
 -- ================= Additional Schema Changes and Extensions =================
-
--- Add missing columns to products table
-ALTER TABLE products 
-ADD COLUMN IF NOT EXISTS description TEXT,
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
-UPDATE products SET updated_at = added_at WHERE updated_at IS NULL;
-
--- Add extension request columns to product_assignments table
-ALTER TABLE product_assignments 
-ADD COLUMN IF NOT EXISTS extension_requested BOOLEAN DEFAULT FALSE,
-ADD COLUMN IF NOT EXISTS extension_reason TEXT NULL,
-ADD COLUMN IF NOT EXISTS new_return_date DATE NULL,
-ADD COLUMN IF NOT EXISTS extension_status ENUM('none', 'requested', 'approved', 'rejected') DEFAULT 'none',
-ADD COLUMN IF NOT EXISTS extension_requested_at TIMESTAMP NULL,
-ADD COLUMN IF NOT EXISTS extension_processed_by INT NULL,
-ADD COLUMN IF NOT EXISTS extension_processed_at TIMESTAMP NULL,
-ADD COLUMN IF NOT EXISTS extension_remarks TEXT NULL;
-ALTER TABLE product_assignments 
-ADD CONSTRAINT IF NOT EXISTS fk_extension_processed_by 
-FOREIGN KEY (extension_processed_by) REFERENCES users(user_id);
-
--- Add return_date column to product_requests table
-ALTER TABLE product_requests ADD COLUMN IF NOT EXISTS return_date DATE NULL;
-
--- Add 'rejected' status to return_status enum
-ALTER TABLE product_assignments 
-MODIFY COLUMN return_status ENUM('none', 'requested', 'approved', 'rejected') DEFAULT 'none';
+-- (Merged into CREATE TABLE statements above)
 
 -- Add product_attachments table for file uploads
 CREATE TABLE IF NOT EXISTS product_attachments (

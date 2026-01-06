@@ -123,6 +123,57 @@ We have organized comprehensive guides for deployment and troubleshooting in the
 
 ---
 
+## 🏗️ System Architecture
+
+<div align="center">
+
+```mermaid
+graph TD
+    subgraph Client ["🖥️ Client Layer"]
+        Browser[("Browser (EJS/Tailwind)")]
+    end
+
+    subgraph Server ["⚙️ Application Layer"]
+        LB[("Load Balancer (Nginx/Cloud)")]
+        Node[("Node.js + Express API")]
+        Auth[("Auth Middleware")]
+        Logic[("Business Logic Controllers")]
+    end
+
+    subgraph Data ["💾 Data Layer"]
+        DB[("MySQL / TiDB Cloud")]
+        FS[("File Storage (Uploads)")]
+    end
+
+    subgraph External ["🌐 External Services"]
+        SMTP[("Gmail SMTP")]
+    end
+
+    Browser <-->|HTTPS/Review| LB
+    LB <--> Node
+    Node --> Auth
+    Auth --> Logic
+    Logic <-->|SQL Queries| DB
+    Logic <-->|Read/Write| FS
+    Logic -->|Send Mail| SMTP
+
+    style Client fill:#e6fffa,stroke:#38b2ac,stroke-width:2px
+    style Server fill:#ebf8ff,stroke:#4299e1,stroke-width:2px
+    style Data fill:#fff5f5,stroke:#fc8181,stroke-width:2px
+    style External fill:#faf5ff,stroke:#9f7aea,stroke-width:2px
+```
+
+</div>
+
+### Data Flow
+
+1.  **Client Request:** User interacts with the responsive EJS interface.
+2.  **Processing:** Requests are routed through Express.js middleware for authentication and validation.
+3.  **Data Persistence:** Core business data is stored in the relational MySQL database, while file attachments are managed in local/cloud storage.
+4.  **Notifications:** Critical actions trigger async email notifications via standard SMTP.
+
+---
+
 ## 📂 Project Structure
 
 ```

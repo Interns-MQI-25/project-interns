@@ -123,7 +123,9 @@ We have organized comprehensive guides for deployment and troubleshooting in the
 
 ---
 
-## 🏗️ System Architecture
+<h2 style="color:#2c5282; border-bottom:2px solid #2c5282; padding-bottom:8px; display:inline-block;">
+  🏗️ System Architecture
+</h2>
 
 <div align="center">
 
